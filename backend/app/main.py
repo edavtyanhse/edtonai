@@ -88,6 +88,7 @@ async def analyze(payload: AnalyzeIn):
                 role=payload.role or "кандидат",
             ),
         )
+        tips = tips.strip()
     except Exception as e:
         tips = f"AI error: {e}"
 
@@ -111,7 +112,7 @@ async def generate(payload: GenerateIn):
                 vacancy=payload.vacancy_text,
                 role=payload.target_role or "кандидат",
             ),
-        )
+        ).strip()
     except Exception as e:
         improved_resume = f"[AI error while generating resume]: {e}"
 
@@ -123,7 +124,7 @@ async def generate(payload: GenerateIn):
                 vacancy=payload.vacancy_text,
                 role=payload.target_role or "кандидат",
             ),
-        )
+        ).strip()
     except Exception as e:
         cover_letter = f"[AI error while generating cover letter]: {e}"
 

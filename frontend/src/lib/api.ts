@@ -1,0 +1,57 @@
+const API_URL = (import.meta.env.VITE_API_URL as string | undefined) ?? "";
+
+if (!API_URL) {
+  console.warn("VITE_API_URL is not defined. API requests will fail until it is set.");
+}
+
+export type AnalyzeReq = {
+  resume_text: string;
+  vacancy_text: string;
+  role?: string;
+};
+
+export type AnalyzeRes = {
+  match_score: number;
+  matched_skills: string[];
+  missing_skills: string[];
+  tips: string;
+};
+
+export type GenerateReq = {
+  resume_text: string;
+  vacancy_text: string;
+  target_role?: string;
+};
+
+export type GenerateRes = {
+  improved_resume: string;
+  cover_letter: string;
+  ats_score: number;
+};
+
+async function request<T>(path: string, body: unknown): Promise<T> {
+  if (!API_URL) {
+    throw new Error("VITE_API_URL is not configured");
+  }
+
+  const response = await fetch(`${API_URL}${path}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`${response.status} ${response.statusText} ${text}`.trim());
+  }
+
+  return response.json() as Promise<T>;
+}
+
+export const api = {
+  analyze: (payload: AnalyzeReq) => request<AnalyzeRes>("/api/analyze", payload),
+  generate: (payload: GenerateReq) => request<GenerateRes>("/api/generate", payload),
+};
+
