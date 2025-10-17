@@ -1,5 +1,11 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { useNavigate } from "react-router-dom";
 import { FileText, Target, Sparkles, ArrowRight, CheckCircle2 } from "lucide-react";
 import heroImage from "@/assets/hero-image.jpg";
@@ -26,11 +32,26 @@ const Landing = () => {
   ];
 
   const benefits = [
-    "Персонализация под каждую вакансию",
-    "Анализ совпадения навыков",
-    "ATS-оптимизированные документы",
-    "Рекомендации от AI",
-    "Готовые к отправке файлы"
+    {
+      title: "Персонализация под каждую вакансию",
+      description: "AI анализирует требования работодателя и адаптирует ваше резюме, подчёркивая релевантные навыки и опыт для конкретной позиции."
+    },
+    {
+      title: "Анализ совпадения навыков",
+      description: "Получите детальную информацию о том, насколько ваш профиль соответствует вакансии. Узнайте, какие навыки совпадают, а какие стоит добавить."
+    },
+    {
+      title: "ATS-оптимизированные документы",
+      description: "Резюме оптимизировано для прохождения автоматических систем отбора (ATS), используемых большинством крупных компаний."
+    },
+    {
+      title: "Рекомендации от AI",
+      description: "Получайте персональные рекомендации по улучшению резюме: какие навыки добавить, как лучше описать опыт, что подчеркнуть."
+    },
+    {
+      title: "Готовые к отправке файлы",
+      description: "Скачивайте адаптированное резюме в PDF или DOCX формате, а также персонализированное сопроводительное письмо."
+    }
   ];
 
   return (
@@ -63,22 +84,29 @@ const Landing = () => {
             <div className="inline-block px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium">
               Powered by AI
             </div>
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight">
+            <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold leading-tight">
               Создай персонализированное резюме за минуты
             </h1>
-            <p className="text-lg text-muted-foreground">
+            <p className="text-base md:text-lg text-muted-foreground">
               Вставь вакансию — получи адаптированное резюме и письмо с рекомендациями от AI
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
               <Button 
                 size="lg" 
-                className="gradient-hero text-lg shadow-card hover:shadow-lg transition-all"
+                className="gradient-hero shadow-card hover:shadow-lg transition-all"
                 onClick={() => navigate('/upload')}
               >
                 Начать бесплатно
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
-              <Button size="lg" variant="outline" className="text-lg">
+              <Button 
+                size="lg" 
+                variant="outline"
+                onClick={() => {
+                  const exampleSection = document.getElementById('example');
+                  exampleSection?.scrollIntoView({ behavior: 'smooth' });
+                }}
+              >
                 Посмотреть пример
               </Button>
             </div>
@@ -126,17 +154,25 @@ const Landing = () => {
                 Все инструменты для успешного отклика в одном месте
               </p>
             </div>
-            <div className="grid gap-4">
+            <Accordion type="single" collapsible className="space-y-4">
               {benefits.map((benefit, index) => (
-                <div 
+                <AccordionItem 
                   key={index} 
-                  className="flex items-center gap-3 p-4 rounded-lg bg-background border shadow-soft hover:shadow-card transition-all"
+                  value={`item-${index}`}
+                  className="border rounded-lg bg-background shadow-soft hover:shadow-card transition-all px-6"
                 >
-                  <CheckCircle2 className="w-6 h-6 text-success flex-shrink-0" />
-                  <span className="text-lg">{benefit}</span>
-                </div>
+                  <AccordionTrigger className="hover:no-underline">
+                    <div className="flex items-center gap-3">
+                      <CheckCircle2 className="w-5 h-5 text-success flex-shrink-0" />
+                      <span className="text-lg font-medium text-left">{benefit.title}</span>
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent className="text-muted-foreground pl-8 pb-4">
+                    {benefit.description}
+                  </AccordionContent>
+                </AccordionItem>
               ))}
-            </div>
+            </Accordion>
             <div className="mt-8 text-center">
               <Button 
                 size="lg" 
@@ -147,6 +183,71 @@ const Landing = () => {
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Example Section */}
+      <section id="example" className="bg-secondary/30 py-16 md:py-24">
+        <div className="container mx-auto px-4">
+          <div className="max-w-4xl mx-auto">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl md:text-4xl font-bold mb-4">Пример работы</h2>
+              <p className="text-muted-foreground text-lg">
+                Посмотрите, как EdTon.ai трансформирует ваше резюме
+              </p>
+            </div>
+            <Card className="p-8 shadow-card">
+              <div className="space-y-6">
+                <div className="space-y-4">
+                  <h3 className="text-xl font-semibold flex items-center gap-2">
+                    <FileText className="w-5 h-5 text-primary" />
+                    Исходное резюме
+                  </h3>
+                  <div className="p-4 bg-secondary/50 rounded-lg text-sm">
+                    <p className="font-medium mb-2">Product Manager, 2 года опыта</p>
+                    <p className="text-muted-foreground">
+                      • Опыт в fintech<br/>
+                      • Знание SQL, Python<br/>
+                      • Управление roadmap
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="flex justify-center">
+                  <ArrowRight className="w-8 h-8 text-primary rotate-90 md:rotate-0" />
+                </div>
+
+                <div className="space-y-4">
+                  <h3 className="text-xl font-semibold flex items-center gap-2">
+                    <Target className="w-5 h-5 text-primary" />
+                    Вакансия
+                  </h3>
+                  <div className="p-4 bg-secondary/50 rounded-lg text-sm">
+                    <p className="font-medium mb-2">Product Manager в EdTech</p>
+                    <p className="text-muted-foreground">
+                      Требуется: аналитика, A/B-тестирование, управление backlog
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex justify-center">
+                  <Sparkles className="w-8 h-8 text-primary animate-pulse-slow" />
+                </div>
+
+                <div className="space-y-4">
+                  <h3 className="text-xl font-semibold flex items-center gap-2">
+                    <CheckCircle2 className="w-5 h-5 text-success" />
+                    Результат (74% совпадение)
+                  </h3>
+                  <div className="p-4 bg-success/10 border border-success/20 rounded-lg text-sm space-y-2">
+                    <p className="font-medium">✅ Совпадающие навыки: SQL, Python, управление backlog</p>
+                    <p className="font-medium text-warning">⚠️ Недостающие: A/B Testing, EdTech experience</p>
+                    <p className="font-medium text-primary">💡 Рекомендация: добавить примеры образовательных проектов</p>
+                  </div>
+                </div>
+              </div>
+            </Card>
           </div>
         </div>
       </section>

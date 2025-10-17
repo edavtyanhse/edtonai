@@ -28,13 +28,77 @@ const Results = () => {
   }, []);
 
   const handleDownload = (type: string) => {
+    // Create a sample document content
+    const content = type === "PDF" || type === "DOCX" 
+      ? `EdTon.ai - Адаптированное резюме
+
+Product Manager
+
+ПРОФЕССИОНАЛЬНЫЙ ОПЫТ
+• 2+ года опыта в product management
+• Работа с SQL и Python для анализа данных
+• Успешное управление product roadmap
+• Опыт A/B тестирования и аналитики
+
+КЛЮЧЕВЫЕ НАВЫКИ
+• Product Management
+• Data Analysis (SQL, Python)
+• A/B Testing
+• Roadmap Planning
+• Agile/Scrum
+
+ОБРАЗОВАНИЕ
+Высшее образование
+
+---
+Создано с помощью EdTon.ai`
+      : `Уважаемый рекрутер,
+
+С интересом рассматриваю вакансию Product Manager в вашей компании.
+
+Мой опыт в product management и работа с данными (SQL, Python) позволяют мне эффективно управлять продуктом и принимать обоснованные решения на основе аналитики.
+
+Буду рад обсудить, как мой опыт может быть полезен вашей команде.
+
+С уважением,
+[Ваше имя]
+
+---
+Создано с помощью EdTon.ai`;
+
+    // Create and download file
+    const blob = new Blob([content], { type: 'text/plain' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = type === "Письмо" 
+      ? 'cover-letter-edton.txt' 
+      : `resume-edton.${type.toLowerCase()}`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+
     toast({
       title: "Скачивание началось",
-      description: `${type} будет сохранён на вашем устройстве`,
+      description: `${type} сохранён на вашем устройстве`,
     });
   };
 
   const handleCopy = () => {
+    const coverLetterText = `Уважаемый рекрутер,
+
+С интересом рассматриваю вакансию Product Manager в вашей компании.
+
+Мой опыт в product management и работа с данными (SQL, Python) позволяют мне эффективно управлять продуктом и принимать обоснованные решения на основе аналитики.
+
+Буду рад обсудить, как мой опыт может быть полезен вашей команде.
+
+С уважением,
+[Ваше имя]`;
+
+    navigator.clipboard.writeText(coverLetterText);
+    
     toast({
       title: "Скопировано",
       description: "Текст письма скопирован в буфер обмена",
