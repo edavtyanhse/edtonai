@@ -1,0 +1,15 @@
+services:
+  db:
+    image: postgres:16
+    container_name: edton_pg
+    environment:
+      POSTGRES_USER: edton
+      POSTGRES_PASSWORD: edton
+      POSTGRES_DB: edton
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+      - ./db:/docker-entrypoint-initdb.d  # чтобы миграция выполнилась автоматически
+volumes:
+  db_data:

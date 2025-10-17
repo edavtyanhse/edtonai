@@ -7,3 +7,25 @@ build/
 .DS_Store
 __pycache__/
 *.pyc
+# --- Python ---
+backend/.venv/
+**/__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# --- Node/Frontend ---
+frontend/node_modules/
+frontend/dist/
+frontend/build/
+
+# --- Env/Secrets ---
+.env
+.env.*
+**/.env
+**/.env.*
+
+# --- OS/IDE ---
+.DS_Store
+.vscode/
+.idea/
