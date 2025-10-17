@@ -1,35 +1,129 @@
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useMutation } from "@tanstack/react-query";
+import { Sparkles, CheckCircle2, AlertCircle, Lightbulb, ArrowRight } from "lucide-react";
+
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { useNavigate } from "react-router-dom";
-import { Sparkles, CheckCircle2, AlertCircle, Lightbulb, ArrowRight } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useToast } from "@/hooks/use-toast";
+import { api } from "@/lib/api";
+import {
+  clearGenerationSession,
+  loadAnalysisSession,
+  saveGenerationSession,
+  type AnalysisSession,
+} from "@/lib/session";
+
+const normalizeTips = (tips: string): string[] => {
+  return tips
+    .split(/\r?\n/)
+    .map((line) => line.replace(/^[-*\d\.\)\s]+/, "").trim())
+    .filter(Boolean);
+};
 
 const Analysis = () => {
   const navigate = useNavigate();
-  const matchPercentage = 76;
+  const { toast } = useToast();
+  const [analysis, setAnalysis] = useState<AnalysisSession | null>(null);
 
-  const matchingSkills = [
-    { name: "Product Management", level: "high" },
-    { name: "SQL", level: "high" },
-    { name: "Python", level: "medium" },
-    { name: "Roadmap Planning", level: "high" },
-    { name: "Data Analysis", level: "medium" },
-  ];
+  useEffect(() => {
+    const session = loadAnalysisSession();
+    if (!session) {
+      toast({
+        title: "Нет данных для анализа",
+        description: "Загрузите резюме и вакансию заново",
+        variant: "destructive",
+      });
+      navigate("/upload", { replace: true });
+      return;
+    }
+    clearGenerationSession();
+    setAnalysis(session);
+  }, [navigate, toast]);
 
-  const missingSkills = [
-    { name: "A/B Testing", importance: "high" },
-    { name: "EdTech Experience", importance: "medium" },
-    { name: "Learning Analytics", importance: "medium" },
-  ];
+  const matchPercentage = analysis?.response.match_score ?? 0;
+  const totalSkills =
+    (analysis?.response.matched_skills.length ?? 0) +
+    (analysis?.response.missing_skills.length ?? 0);
+  const skillCoverage = totalSkills
+    ? Math.round((100 * (analysis?.response.matched_skills.length ?? 0)) / totalSkills)
+    : Math.round(matchPercentage);
+  const experienceScore = Math.round((matchPercentage + skillCoverage) / 2);
 
-  const recommendations = [
-    "Добавьте конкретные примеры A/B тестов из предыдущего опыта",
-    "Подчеркните опыт работы с образовательными проектами или продуктами",
-    "Укажите знакомство с метриками обучения и engagement студентов",
-    "Добавьте примеры успешного запуска образовательных фич",
-  ];
+  const matchingSkills = useMemo(() => {
+    const skills = analysis?.response.matched_skills ?? [];
+    return skills.map((skill, index) => ({
+      name: skill,
+      level: index < 3 ? "high" : "medium",
+    }));
+  }, [analysis?.response.matched_skills]);
+
+  const missingSkills = useMemo(() => {
+    const skills = analysis?.response.missing_skills ?? [];
+    return skills.map((skill, index) => ({
+      name: skill,
+      importance: index < 2 ? "high" : "medium",
+    }));
+  }, [analysis?.response.missing_skills]);
+
+  const recommendations = useMemo(() => {
+    const tips = analysis?.response.tips ?? "";
+    return normalizeTips(tips);
+  }, [analysis?.response.tips]);
+
+  const generateMutation = useMutation({
+    mutationFn: async () => {
+      if (!analysis) {
+        throw new Error("Нет данных для генерации");
+      }
+
+      return api.generate({
+        resume_text: analysis.request.resume_text,
+        vacancy_text: analysis.request.vacancy_text,
+        target_role: analysis.request.role,
+      });
+    },
+    onSuccess: (data) => {
+      if (!analysis) {
+        return;
+      }
+      saveGenerationSession({
+        request: {
+          resume_text: analysis.request.resume_text,
+          vacancy_text: analysis.request.vacancy_text,
+          target_role: analysis.request.role,
+        },
+        response: data,
+      });
+      toast({
+        title: "Генерация завершена",
+        description: "Резюме и сопроводительное письмо готовы",
+      });
+      navigate("/results");
+    },
+    onError: (error: unknown) => {
+      const message = error instanceof Error ? error.message : "Не удалось создать документы";
+      toast({
+        title: "Ошибка генерации",
+        description: message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  if (!analysis) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4 text-center">
+          <Sparkles className="w-8 h-8 text-primary animate-spin" />
+          <p className="text-muted-foreground">Подготавливаем данные для анализа...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -56,15 +150,15 @@ const Analysis = () => {
               <span className="text-sm font-medium">Загрузка</span>
             </div>
             <div className="flex-1 h-0.5 bg-primary mx-4" />
-            <div className="flex flex-col items-center gap-2">
-              <div className="w-10 h-10 rounded-full gradient-hero flex items-center justify-center text-primary-foreground font-semibold">
+              <div className="flex flex-col items-center gap-2">
+                <div className="w-10 h-10 rounded-full gradient-hero flex items-center justify-center text-primary-foreground font-semibold">
                 2
               </div>
               <span className="text-sm font-medium">Анализ</span>
             </div>
             <div className="flex-1 h-0.5 bg-border mx-4" />
-            <div className="flex flex-col items-center gap-2">
-              <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center text-muted-foreground font-semibold">
+              <div className="flex flex-col items-center gap-2">
+                <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center text-muted-foreground font-semibold">
                 3
               </div>
               <span className="text-sm text-muted-foreground">Генерация</span>
@@ -77,7 +171,7 @@ const Analysis = () => {
           <div className="text-center space-y-2 animate-fade-in">
             <h1 className="text-3xl md:text-4xl font-bold">Результат анализа</h1>
             <p className="text-muted-foreground text-lg">
-              Ваше резюме проанализировано для вакансии "Product Manager в EdTech"
+              Ваше резюме проанализировано для выбранной вакансии
             </p>
           </div>
 
@@ -112,24 +206,25 @@ const Analysis = () => {
                 </div>
               </div>
               <div className="flex-1 space-y-4">
-                <h2 className="text-2xl font-semibold">Хорошее соответствие!</h2>
+                <h2 className="text-2xl font-semibold">
+                  {matchPercentage >= 70 ? "Хорошее соответствие!" : "Есть, что улучшить"}
+                </h2>
                 <p className="text-muted-foreground">
-                  Ваш профиль хорошо подходит для данной позиции. С небольшими улучшениями вы значительно 
-                  повысите шансы на получение приглашения.
+                  Мы сопоставили навыки из резюме с требованиями вакансии и подготовили рекомендации для повышения релевантности.
                 </p>
                 <div className="space-y-2">
                   <div className="flex items-center justify-between text-sm">
                     <span>Ключевые навыки</span>
-                    <span className="font-medium">85%</span>
+                    <span className="font-medium">{skillCoverage}%</span>
                   </div>
-                  <Progress value={85} className="h-2" />
+                  <Progress value={skillCoverage} className="h-2" />
                 </div>
                 <div className="space-y-2">
                   <div className="flex items-center justify-between text-sm">
                     <span>Опыт и требования</span>
-                    <span className="font-medium">72%</span>
+                    <span className="font-medium">{experienceScore}%</span>
                   </div>
-                  <Progress value={72} className="h-2" />
+                  <Progress value={experienceScore} className="h-2" />
                 </div>
               </div>
             </div>
@@ -139,21 +234,21 @@ const Analysis = () => {
           <Card className="shadow-soft animate-slide-up">
             <Tabs defaultValue="matching" className="w-full">
               <TabsList className="w-full justify-start rounded-none border-b bg-transparent p-0">
-                <TabsTrigger 
-                  value="matching" 
+                <TabsTrigger
+                  value="matching"
                   className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent"
                 >
                   <CheckCircle2 className="w-4 h-4 mr-2" />
                   Совпадающие навыки
                 </TabsTrigger>
-                <TabsTrigger 
+                <TabsTrigger
                   value="missing"
                   className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent"
                 >
                   <AlertCircle className="w-4 h-4 mr-2" />
                   Недостающие навыки
                 </TabsTrigger>
-                <TabsTrigger 
+                <TabsTrigger
                   value="recommendations"
                   className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent"
                 >
@@ -167,14 +262,23 @@ const Analysis = () => {
                   Эти навыки из вашего резюме соответствуют требованиям вакансии
                 </p>
                 <div className="grid gap-3">
-                  {matchingSkills.map((skill, index) => (
-                    <div key={index} className="flex items-center justify-between p-4 rounded-lg bg-success/5 border border-success/20">
-                      <span className="font-medium">{skill.name}</span>
-                      <Badge variant={skill.level === "high" ? "default" : "secondary"} className="bg-success text-success-foreground">
-                        {skill.level === "high" ? "Отлично" : "Хорошо"}
-                      </Badge>
+                  {matchingSkills.length === 0 ? (
+                    <div className="p-4 rounded-lg bg-muted/40 text-sm text-muted-foreground">
+                      Мы не нашли совпадающих навыков. Попробуйте дополнить резюме ключевыми словами из вакансии.
                     </div>
-                  ))}
+                  ) : (
+                    matchingSkills.map((skill) => (
+                      <div key={skill.name} className="flex items-center justify-between p-4 rounded-lg bg-success/5 border border-success/20">
+                        <span className="font-medium capitalize">{skill.name}</span>
+                        <Badge
+                          variant={skill.level === "high" ? "default" : "secondary"}
+                          className="bg-success text-success-foreground"
+                        >
+                          {skill.level === "high" ? "Отлично" : "Хорошо"}
+                        </Badge>
+                      </div>
+                    ))
+                  )}
                 </div>
               </TabsContent>
 
@@ -183,14 +287,23 @@ const Analysis = () => {
                   Эти навыки требуются для вакансии, но не указаны в вашем резюме
                 </p>
                 <div className="grid gap-3">
-                  {missingSkills.map((skill, index) => (
-                    <div key={index} className="flex items-center justify-between p-4 rounded-lg bg-warning/5 border border-warning/20">
-                      <span className="font-medium">{skill.name}</span>
-                      <Badge variant={skill.importance === "high" ? "destructive" : "secondary"} className="bg-warning text-warning-foreground">
-                        {skill.importance === "high" ? "Важно" : "Желательно"}
-                      </Badge>
+                  {missingSkills.length === 0 ? (
+                    <div className="p-4 rounded-lg bg-success/10 text-sm text-success">
+                      Отлично! Все ключевые навыки уже упомянуты в резюме.
                     </div>
-                  ))}
+                  ) : (
+                    missingSkills.map((skill) => (
+                      <div key={skill.name} className="flex items-center justify-between p-4 rounded-lg bg-warning/5 border border-warning/20">
+                        <span className="font-medium capitalize">{skill.name}</span>
+                        <Badge
+                          variant={skill.importance === "high" ? "destructive" : "secondary"}
+                          className="bg-warning text-warning-foreground"
+                        >
+                          {skill.importance === "high" ? "Важно" : "Желательно"}
+                        </Badge>
+                      </div>
+                    ))
+                  )}
                 </div>
               </TabsContent>
 
@@ -199,12 +312,18 @@ const Analysis = () => {
                   Рекомендации AI для улучшения вашего отклика
                 </p>
                 <div className="grid gap-3">
-                  {recommendations.map((rec, index) => (
-                    <div key={index} className="flex gap-3 p-4 rounded-lg bg-primary/5 border border-primary/20">
-                      <Lightbulb className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-                      <span>{rec}</span>
+                  {recommendations.length === 0 ? (
+                    <div className="p-4 rounded-lg bg-muted/40 text-sm text-muted-foreground">
+                      Советы от модели пока недоступны. Попробуйте повторить анализ позже.
                     </div>
-                  ))}
+                  ) : (
+                    recommendations.map((rec, index) => (
+                      <div key={`${index}-${rec}`} className="flex gap-3 p-4 rounded-lg bg-primary/5 border border-primary/20">
+                        <Lightbulb className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
+                        <span>{rec}</span>
+                      </div>
+                    ))
+                  )}
                 </div>
               </TabsContent>
             </Tabs>
@@ -215,10 +334,20 @@ const Analysis = () => {
             <Button
               size="lg"
               className="gradient-hero text-lg shadow-card min-w-[250px]"
-              onClick={() => navigate('/results')}
+              onClick={() => generateMutation.mutate()}
+              disabled={generateMutation.isPending}
             >
-              Сгенерировать документы
-              <ArrowRight className="ml-2 h-5 w-5" />
+              {generateMutation.isPending ? (
+                <>
+                  <Sparkles className="mr-2 h-5 w-5 animate-spin" />
+                  Генерируем документы...
+                </>
+              ) : (
+                <>
+                  Сгенерировать документы
+                  <ArrowRight className="ml-2 h-5 w-5" />
+                </>
+              )}
             </Button>
           </div>
         </div>
@@ -228,3 +357,4 @@ const Analysis = () => {
 };
 
 export default Analysis;
+
