@@ -1,3 +1,4 @@
+const API_URL = import.meta.env.VITE_API_URL as string;
 const API_URL = (import.meta.env.VITE_API_URL as string | undefined) ?? "";
 
 if (!API_URL) {
@@ -53,5 +54,22 @@ async function request<T>(path: string, body: unknown): Promise<T> {
 export const api = {
   analyze: (payload: AnalyzeReq) => request<AnalyzeRes>("/api/analyze", payload),
   generate: (payload: GenerateReq) => request<GenerateRes>("/api/generate", payload),
+  parseFile: async (file: File) => {
+    const fd = new FormData();
+    fd.append("file", file);
+
+    const response = await fetch(`${API_URL}/api/parse`, {
+      method: "POST",
+      body: fd,
+    });
+
+    if (!response.ok) {
+      const text = await response.text();
+      throw new Error(`${response.status} ${response.statusText} ${text}`.trim());
+    }
+
+    return response.text();
+  },
+};
 };
 

@@ -16,6 +16,7 @@ from .prompts import (
     PROMPT_USER_CL,
 )
 from .db import db_health  # NEW: DB health-check
+from .ingest import router as ingest_router
 
 app = FastAPI(title="EdTon.ai API")
 
@@ -27,6 +28,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.include_router(ingest_router)
 
 # ── Pydantic-модели ───────────────────────────────────────────────────────────
 class AnalyzeIn(BaseModel):
@@ -80,7 +83,7 @@ async def analyze(payload: AnalyzeIn):
 
     # Советы от AI; если провайдер упал — вернём текст ошибки
     try:
-        tips = await get_ai().chat(
+        raw_tips = await get_ai().chat(
             system=PROMPT_SYSTEM_ANALYSIS,
             user=PROMPT_USER_ANALYSIS.format(
                 resume=payload.resume_text,
@@ -88,6 +91,7 @@ async def analyze(payload: AnalyzeIn):
                 role=payload.role or "кандидат",
             ),
         )
+        tips = raw_tips.strip()
         tips = tips.strip()
     except Exception as e:
         tips = f"AI error: {e}"
@@ -105,30 +109,42 @@ async def generate(payload: GenerateIn):
     ai = get_ai()
 
     try:
-        improved_resume = await ai.chat(
+        resume_raw = await ai.chat(
             system=PROMPT_SYSTEM_RESUME,
             user=PROMPT_USER_RESUME.format(
                 resume=payload.resume_text,
                 vacancy=payload.vacancy_text,
                 role=payload.target_role or "кандидат",
             ),
+        )
+        improved_resume = resume_raw.strip()
         ).strip()
     except Exception as e:
         improved_resume = f"[AI error while generating resume]: {e}"
 
     try:
-        cover_letter = await ai.chat(
+        resume_for_cover = (
+            improved_resume
+            if not improved_resume.startswith("[AI error")
+            else payload.resume_text
+        )
+        cover_raw = await ai.chat(
             system=PROMPT_SYSTEM_CL,
             user=PROMPT_USER_CL.format(
-                resume=improved_resume,
+                resume=resume_for_cover,
                 vacancy=payload.vacancy_text,
                 role=payload.target_role or "кандидат",
             ),
+        )
+        cover_letter = cover_raw.strip()
         ).strip()
     except Exception as e:
         cover_letter = f"[AI error while generating cover letter]: {e}"
 
-    score = ats_score(improved_resume, payload.vacancy_text)
+    score_source = (
+        improved_resume if not improved_resume.startswith("[AI error") else payload.resume_text
+    )
+    score = ats_score(score_source, payload.vacancy_text)
 
     return GenerateOut(
         improved_resume=improved_resume,

@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { useMutation } from "@tanstack/react-query";
 import { Sparkles, CheckCircle2, AlertCircle, Lightbulb, ArrowRight } from "lucide-react";
 
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -17,6 +19,90 @@ import {
   type AnalysisSession,
 } from "@/lib/session";
 
+type ParsedTips = {
+  matchScore?: number;
+  matchSummary?: string;
+  matchedSkills: string[];
+  missingSkills: string[];
+  recommendations: { title: string; details?: string }[];
+};
+
+const parseAnalysisMarkdown = (tips: string): ParsedTips => {
+  const result: ParsedTips = {
+    matchedSkills: [],
+    missingSkills: [],
+    recommendations: [],
+  };
+
+  if (!tips || tips.trim().toLowerCase().startsWith("ai error")) {
+    return result;
+  }
+
+  const matches = [...tips.matchAll(/^#\s+(.+)$/gm)];
+  if (matches.length === 0) {
+    return result;
+  }
+
+  const getSectionBody = (startIndex: number, nextIndex?: number) => {
+    const bodyStart = matches[startIndex].index! + matches[startIndex][0].length;
+    const bodyEnd = nextIndex !== undefined ? matches[nextIndex].index! : tips.length;
+    return tips.slice(bodyStart, bodyEnd).trim();
+  };
+
+  matches.forEach((match, index) => {
+    const heading = match[1].trim().toLowerCase();
+    const body = getSectionBody(index, index + 1 < matches.length ? index + 1 : undefined);
+
+    if (!body) {
+      return;
+    }
+
+    if (heading.startsWith("матч")) {
+      const lines = body.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+      if (lines.length > 0) {
+        const scoreMatch = lines[0].match(/(\d+(?:[\.,]\d+)?)\s*%/);
+        if (scoreMatch) {
+          result.matchScore = Number(scoreMatch[1].replace(",", "."));
+        }
+        result.matchSummary = lines[0].replace(/^(\d+(?:[\.,]\d+)?)\s*%\s*[—\-–]\s*/u, "").trim();
+      }
+    } else if (heading.includes("совпадающ")) {
+      const skills = body
+        .split(/\r?\n/)
+        .map((line) => line.trim())
+        .filter((line) => /^[-*]/.test(line))
+        .map((line) => line.replace(/^[-*]\s*/, "").trim())
+        .filter(Boolean);
+      result.matchedSkills = skills;
+    } else if (heading.includes("недостающ")) {
+      const skills = body
+        .split(/\r?\n/)
+        .map((line) => line.trim())
+        .filter((line) => /^[-*]/.test(line))
+        .map((line) => line.replace(/^[-*]\s*/, "").trim())
+        .filter(Boolean);
+      result.missingSkills = skills;
+    } else if (heading.includes("рекомендац")) {
+      const lines = body.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+      let current: { title: string; details?: string } | null = null;
+
+      lines.forEach((line) => {
+        if (/^[-*]\s*/.test(line)) {
+          const content = line.replace(/^[-*]\s*/, "").trim();
+          if (/^детали[:：]/i.test(content)) {
+            if (current) {
+              current.details = content.replace(/^детали[:：]\s*/i, "").trim();
+            }
+          } else {
+            current = { title: content };
+            result.recommendations.push(current);
+          }
+        }
+      });
+    }
+  });
+
+  return result;
 const normalizeTips = (tips: string): string[] => {
   return tips
     .split(/\r?\n/)
@@ -44,6 +130,35 @@ const Analysis = () => {
     setAnalysis(session);
   }, [navigate, toast]);
 
+  const parsedTips = useMemo(
+    () => parseAnalysisMarkdown(analysis?.response.tips ?? ""),
+    [analysis?.response.tips],
+  );
+  const aiTipsError = (analysis?.response.tips ?? "").trim().toLowerCase().startsWith("ai error");
+  const rawMatchScore = parsedTips.matchScore ?? analysis?.response.match_score ?? 0;
+  const matchPercentage = Math.round(rawMatchScore);
+  const matchSummary = parsedTips.matchSummary;
+
+  const matchingSkills = useMemo(() => {
+    const skills = new Set<string>();
+    (analysis?.response.matched_skills ?? []).forEach((skill) => skills.add(skill));
+    parsedTips.matchedSkills.forEach((skill) => skills.add(skill));
+    return Array.from(skills).sort((a, b) => a.localeCompare(b, "ru"));
+  }, [analysis?.response.matched_skills, parsedTips]);
+
+  const missingSkills = useMemo(() => {
+    const skills = new Set<string>();
+    (analysis?.response.missing_skills ?? []).forEach((skill) => skills.add(skill));
+    parsedTips.missingSkills.forEach((skill) => skills.add(skill));
+    return Array.from(skills).sort((a, b) => a.localeCompare(b, "ru"));
+  }, [analysis?.response.missing_skills, parsedTips]);
+
+  const totalSkills = matchingSkills.length + missingSkills.length;
+  const skillCoverage = totalSkills
+    ? Math.round((100 * matchingSkills.length) / totalSkills)
+    : Math.round(matchPercentage);
+  const readinessScore = Math.round((rawMatchScore + skillCoverage) / 2);
+  const recommendations = parsedTips.recommendations;
   const matchPercentage = analysis?.response.match_score ?? 0;
   const totalSkills =
     (analysis?.response.matched_skills.length ?? 0) +
@@ -175,6 +290,14 @@ const Analysis = () => {
             </p>
           </div>
 
+          {aiTipsError && (
+            <Alert variant="destructive" className="animate-fade-in">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Не удалось получить советы от модели</AlertTitle>
+              <AlertDescription>{analysis?.response.tips}</AlertDescription>
+            </Alert>
+          )}
+
           {/* Match Score */}
           <Card className="p-8 shadow-card animate-slide-up">
             <div className="flex flex-col md:flex-row items-center gap-8">
@@ -212,6 +335,11 @@ const Analysis = () => {
                 <p className="text-muted-foreground">
                   Мы сопоставили навыки из резюме с требованиями вакансии и подготовили рекомендации для повышения релевантности.
                 </p>
+                {matchSummary && (
+                  <p className="text-sm text-muted-foreground border-l-2 border-primary/40 pl-3">
+                    {matchSummary}
+                  </p>
+                )}
                 <div className="space-y-2">
                   <div className="flex items-center justify-between text-sm">
                     <span>Ключевые навыки</span>
@@ -221,6 +349,10 @@ const Analysis = () => {
                 </div>
                 <div className="space-y-2">
                   <div className="flex items-center justify-between text-sm">
+                    <span>Готовность профиля</span>
+                    <span className="font-medium">{readinessScore}%</span>
+                  </div>
+                  <Progress value={readinessScore} className="h-2" />
                     <span>Опыт и требования</span>
                     <span className="font-medium">{experienceScore}%</span>
                   </div>
@@ -261,6 +393,23 @@ const Analysis = () => {
                 <p className="text-muted-foreground mb-4">
                   Эти навыки из вашего резюме соответствуют требованиям вакансии
                 </p>
+                {matchingSkills.length === 0 ? (
+                  <div className="p-4 rounded-lg bg-muted/40 text-sm text-muted-foreground">
+                    Мы не нашли совпадающих навыков. Попробуйте дополнить резюме ключевыми словами из вакансии.
+                  </div>
+                ) : (
+                  <div className="flex flex-wrap gap-2">
+                    {matchingSkills.map((skill) => (
+                      <Badge
+                        key={skill}
+                        variant="secondary"
+                        className="border border-success/30 bg-success/10 text-success-foreground"
+                      >
+                        {skill}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
                 <div className="grid gap-3">
                   {matchingSkills.length === 0 ? (
                     <div className="p-4 rounded-lg bg-muted/40 text-sm text-muted-foreground">
@@ -286,6 +435,23 @@ const Analysis = () => {
                 <p className="text-muted-foreground mb-4">
                   Эти навыки требуются для вакансии, но не указаны в вашем резюме
                 </p>
+                {missingSkills.length === 0 ? (
+                  <div className="p-4 rounded-lg bg-success/10 text-sm text-success">
+                    Отлично! Все ключевые навыки уже упомянуты в резюме.
+                  </div>
+                ) : (
+                  <div className="flex flex-wrap gap-2">
+                    {missingSkills.map((skill) => (
+                      <Badge
+                        key={skill}
+                        variant="outline"
+                        className="border-warning/40 bg-warning/10 text-warning-foreground"
+                      >
+                        {skill}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
                 <div className="grid gap-3">
                   {missingSkills.length === 0 ? (
                     <div className="p-4 rounded-lg bg-success/10 text-sm text-success">
@@ -311,6 +477,29 @@ const Analysis = () => {
                 <p className="text-muted-foreground mb-4">
                   Рекомендации AI для улучшения вашего отклика
                 </p>
+                {recommendations.length === 0 || aiTipsError ? (
+                  <div className="p-4 rounded-lg bg-muted/40 text-sm text-muted-foreground">
+                    Советы от модели пока недоступны. Попробуйте повторить анализ позже.
+                  </div>
+                ) : (
+                  <Accordion type="multiple" className="w-full">
+                    {recommendations.map((rec, index) => (
+                      <AccordionItem value={`rec-${index}`} key={`rec-${index}`}>
+                        <AccordionTrigger className="text-left text-base">
+                          <div className="flex items-center gap-2">
+                            <Lightbulb className="w-4 h-4 text-primary" />
+                            <span>{rec.title}</span>
+                          </div>
+                        </AccordionTrigger>
+                        <AccordionContent>
+                          <p className="text-sm text-muted-foreground">
+                            {rec.details || "Уточните детали самостоятельно и добавьте в резюме релевантные факты."}
+                          </p>
+                        </AccordionContent>
+                      </AccordionItem>
+                    ))}
+                  </Accordion>
+                )}
                 <div className="grid gap-3">
                   {recommendations.length === 0 ? (
                     <div className="p-4 rounded-lg bg-muted/40 text-sm text-muted-foreground">

@@ -19,6 +19,7 @@ const Upload = () => {
   const [resumeText, setResumeText] = useState("");
   const [jobDescription, setJobDescription] = useState("");
   const [targetRole, setTargetRole] = useState("");
+  const [isParsingFile, setIsParsingFile] = useState(false);
 
   const analyzeMutation = useMutation({
     mutationFn: (payload: AnalyzeReq) => api.analyze(payload),
@@ -54,6 +55,20 @@ const Upload = () => {
     setResumeFile(file);
 
     try {
+      setIsParsingFile(true);
+      const text = await api.parseFile(file);
+      setResumeText(text);
+      toast({
+        title: "Файл распознан",
+        description: `${file.name} успешно преобразован в текст`,
+      });
+    } catch (error) {
+      console.error("Failed to parse resume file", error);
+      const message =
+        error instanceof Error ? error.message : "Вставьте текст резюме вручную ниже";
+      toast({
+        title: "Не удалось распознать файл",
+        description: message,
       const text = await file.text();
       setResumeText(text);
       toast({
@@ -67,6 +82,8 @@ const Upload = () => {
         description: "Вставьте текст резюме вручную ниже",
         variant: "destructive",
       });
+    } finally {
+      setIsParsingFile(false);
     }
   };
 
@@ -245,12 +262,15 @@ const Upload = () => {
               size="lg"
               className="gradient-hero text-lg shadow-card min-w-[250px]"
               onClick={handleAnalyze}
+              disabled={analyzeMutation.isPending || isParsingFile}
+            >
+              {analyzeMutation.isPending || isParsingFile ? (
               disabled={analyzeMutation.isPending}
             >
               {analyzeMutation.isPending ? (
                 <>
                   <Sparkles className="mr-2 h-5 w-5 animate-spin" />
-                  Анализирую...
+                  {isParsingFile ? "Обрабатываю файл..." : "Анализирую..."}
                 </>
               ) : (
                 <>

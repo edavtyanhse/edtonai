@@ -13,11 +13,22 @@ COMMON = {
     "testing",
     "jira",
     "figma",
+    "аналитик",
+    "bpmn",
+    "uml",
+    "требования",
+    "конфлюенс",
+    "госзакупки",
+    "гост",
+    "идеф0",
+    "idef0",
+    "bpm",
+    "ms office",
 }
 
 
 def extract_skills(text: str) -> list[str]:
-    tokens = re.findall(r"[A-Za-zА-Яа-я0-9\-\+/#\.]{2,}", text.lower())
+    tokens = re.findall(r"[A-Za-zА-Яа-яЁё0-9\-\+/#\.]{2,}", (text or "").lower())
     return sorted(set(tokens) & COMMON)
 
 

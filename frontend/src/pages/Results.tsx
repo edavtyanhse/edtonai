@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { Sparkles, CheckCircle2, FileText, Mail, Download, Copy, AlertCircle } from "lucide-react";
 import { Sparkles, CheckCircle2, FileText, Mail, Download, Copy } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import {
   loadGenerationSession,
@@ -38,6 +40,10 @@ const Results = () => {
 
   const atsScore = session?.response.ats_score ?? 0;
   const roleLabel = useMemo(() => session?.request.target_role || "ваша цель", [session?.request.target_role]);
+  const resumeText = session?.response.improved_resume ?? "";
+  const coverText = session?.response.cover_letter ?? "";
+  const resumeHasError = resumeText.trim().toLowerCase().startsWith("[ai error");
+  const coverHasError = coverText.trim().toLowerCase().startsWith("[ai error");
 
   const handleDownload = (kind: "resume" | "cover") => {
     if (!session) return;
@@ -143,6 +149,16 @@ const Results = () => {
                   </p>
                 </div>
               </div>
+              {resumeHasError && (
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertTitle>Не удалось сгенерировать новое резюме</AlertTitle>
+                  <AlertDescription>{session?.response.improved_resume}</AlertDescription>
+                </Alert>
+              )}
+              <Textarea readOnly value={resumeText} className="min-h-[220px] resize-none bg-muted/50" />
+              <div className="flex flex-wrap gap-2">
+                <Button variant="outline" size="sm" onClick={() => handleCopy(resumeText, "Резюме")}>
               <Textarea readOnly value={session.response.improved_resume} className="min-h-[220px] resize-none bg-muted/50" />
               <div className="flex flex-wrap gap-2">
                 <Button variant="outline" size="sm" onClick={() => handleCopy(session.response.improved_resume, "Резюме")}>
@@ -167,6 +183,16 @@ const Results = () => {
                   </p>
                 </div>
               </div>
+              {coverHasError && (
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertTitle>Не удалось сгенерировать письмо</AlertTitle>
+                  <AlertDescription>{session?.response.cover_letter}</AlertDescription>
+                </Alert>
+              )}
+              <Textarea readOnly value={coverText} className="min-h-[220px] resize-none bg-muted/50" />
+              <div className="flex flex-wrap gap-2">
+                <Button variant="outline" size="sm" onClick={() => handleCopy(coverText, "Письмо")}>
               <Textarea readOnly value={session.response.cover_letter} className="min-h-[220px] resize-none bg-muted/50" />
               <div className="flex flex-wrap gap-2">
                 <Button variant="outline" size="sm" onClick={() => handleCopy(session.response.cover_letter, "Письмо")}>

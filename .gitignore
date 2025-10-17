@@ -33,3 +33,26 @@ frontend/build/
 .idea/
 
 frontend/.env
+frontend/bun.lockb
+
+# --- Binary assets ---
+**/*.png
+**/*.ico
+**/*.webmanifest
+**/*.pdf
+**/*.doc
+**/*.docx
+**/*.zip
+**/*.7z
+**/*.rar
+**/*.jpg
+**/*.jpeg
+**/*.gif
+**/*.webp
+**/*.mp3
+**/*.mp4
+**/*.mov
+**/*.woff
+**/*.woff2
+**/*.ttf
+**/*.otf
