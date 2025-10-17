@@ -1,4 +1,9 @@
 const API_URL = import.meta.env.VITE_API_URL as string;
+const API_URL = (import.meta.env.VITE_API_URL as string | undefined) ?? "";
+
+if (!API_URL) {
+  console.warn("VITE_API_URL is not defined. API requests will fail until it is set.");
+}
 
 export type AnalyzeReq = {
   resume_text: string;
@@ -26,6 +31,10 @@ export type GenerateRes = {
 };
 
 async function request<T>(path: string, body: unknown): Promise<T> {
+  if (!API_URL) {
+    throw new Error("VITE_API_URL is not configured");
+  }
+
   const response = await fetch(`${API_URL}${path}`, {
     method: "POST",
     headers: {
@@ -62,3 +71,5 @@ export const api = {
     return response.text();
   },
 };
+};
+

@@ -69,6 +69,17 @@ const Upload = () => {
       toast({
         title: "Не удалось распознать файл",
         description: message,
+      const text = await file.text();
+      setResumeText(text);
+      toast({
+        title: "Файл загружен",
+        description: `${file.name} сконвертирован в текст для анализа`,
+      });
+    } catch (error) {
+      console.error("Failed to read resume file", error);
+      toast({
+        title: "Не удалось прочитать файл",
+        description: "Вставьте текст резюме вручную ниже",
         variant: "destructive",
       });
     } finally {
@@ -254,6 +265,9 @@ const Upload = () => {
               disabled={analyzeMutation.isPending || isParsingFile}
             >
               {analyzeMutation.isPending || isParsingFile ? (
+              disabled={analyzeMutation.isPending}
+            >
+              {analyzeMutation.isPending ? (
                 <>
                   <Sparkles className="mr-2 h-5 w-5 animate-spin" />
                   {isParsingFile ? "Обрабатываю файл..." : "Анализирую..."}

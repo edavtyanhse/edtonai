@@ -103,6 +103,11 @@ const parseAnalysisMarkdown = (tips: string): ParsedTips => {
   });
 
   return result;
+const normalizeTips = (tips: string): string[] => {
+  return tips
+    .split(/\r?\n/)
+    .map((line) => line.replace(/^[-*\d\.\)\s]+/, "").trim())
+    .filter(Boolean);
 };
 
 const Analysis = () => {
@@ -154,6 +159,35 @@ const Analysis = () => {
     : Math.round(matchPercentage);
   const readinessScore = Math.round((rawMatchScore + skillCoverage) / 2);
   const recommendations = parsedTips.recommendations;
+  const matchPercentage = analysis?.response.match_score ?? 0;
+  const totalSkills =
+    (analysis?.response.matched_skills.length ?? 0) +
+    (analysis?.response.missing_skills.length ?? 0);
+  const skillCoverage = totalSkills
+    ? Math.round((100 * (analysis?.response.matched_skills.length ?? 0)) / totalSkills)
+    : Math.round(matchPercentage);
+  const experienceScore = Math.round((matchPercentage + skillCoverage) / 2);
+
+  const matchingSkills = useMemo(() => {
+    const skills = analysis?.response.matched_skills ?? [];
+    return skills.map((skill, index) => ({
+      name: skill,
+      level: index < 3 ? "high" : "medium",
+    }));
+  }, [analysis?.response.matched_skills]);
+
+  const missingSkills = useMemo(() => {
+    const skills = analysis?.response.missing_skills ?? [];
+    return skills.map((skill, index) => ({
+      name: skill,
+      importance: index < 2 ? "high" : "medium",
+    }));
+  }, [analysis?.response.missing_skills]);
+
+  const recommendations = useMemo(() => {
+    const tips = analysis?.response.tips ?? "";
+    return normalizeTips(tips);
+  }, [analysis?.response.tips]);
 
   const generateMutation = useMutation({
     mutationFn: async () => {
@@ -319,6 +353,10 @@ const Analysis = () => {
                     <span className="font-medium">{readinessScore}%</span>
                   </div>
                   <Progress value={readinessScore} className="h-2" />
+                    <span>Опыт и требования</span>
+                    <span className="font-medium">{experienceScore}%</span>
+                  </div>
+                  <Progress value={experienceScore} className="h-2" />
                 </div>
               </div>
             </div>
@@ -372,6 +410,25 @@ const Analysis = () => {
                     ))}
                   </div>
                 )}
+                <div className="grid gap-3">
+                  {matchingSkills.length === 0 ? (
+                    <div className="p-4 rounded-lg bg-muted/40 text-sm text-muted-foreground">
+                      Мы не нашли совпадающих навыков. Попробуйте дополнить резюме ключевыми словами из вакансии.
+                    </div>
+                  ) : (
+                    matchingSkills.map((skill) => (
+                      <div key={skill.name} className="flex items-center justify-between p-4 rounded-lg bg-success/5 border border-success/20">
+                        <span className="font-medium capitalize">{skill.name}</span>
+                        <Badge
+                          variant={skill.level === "high" ? "default" : "secondary"}
+                          className="bg-success text-success-foreground"
+                        >
+                          {skill.level === "high" ? "Отлично" : "Хорошо"}
+                        </Badge>
+                      </div>
+                    ))
+                  )}
+                </div>
               </TabsContent>
 
               <TabsContent value="missing" className="p-6 space-y-4">
@@ -395,6 +452,25 @@ const Analysis = () => {
                     ))}
                   </div>
                 )}
+                <div className="grid gap-3">
+                  {missingSkills.length === 0 ? (
+                    <div className="p-4 rounded-lg bg-success/10 text-sm text-success">
+                      Отлично! Все ключевые навыки уже упомянуты в резюме.
+                    </div>
+                  ) : (
+                    missingSkills.map((skill) => (
+                      <div key={skill.name} className="flex items-center justify-between p-4 rounded-lg bg-warning/5 border border-warning/20">
+                        <span className="font-medium capitalize">{skill.name}</span>
+                        <Badge
+                          variant={skill.importance === "high" ? "destructive" : "secondary"}
+                          className="bg-warning text-warning-foreground"
+                        >
+                          {skill.importance === "high" ? "Важно" : "Желательно"}
+                        </Badge>
+                      </div>
+                    ))
+                  )}
+                </div>
               </TabsContent>
 
               <TabsContent value="recommendations" className="p-6 space-y-4">
@@ -424,6 +500,20 @@ const Analysis = () => {
                     ))}
                   </Accordion>
                 )}
+                <div className="grid gap-3">
+                  {recommendations.length === 0 ? (
+                    <div className="p-4 rounded-lg bg-muted/40 text-sm text-muted-foreground">
+                      Советы от модели пока недоступны. Попробуйте повторить анализ позже.
+                    </div>
+                  ) : (
+                    recommendations.map((rec, index) => (
+                      <div key={`${index}-${rec}`} className="flex gap-3 p-4 rounded-lg bg-primary/5 border border-primary/20">
+                        <Lightbulb className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
+                        <span>{rec}</span>
+                      </div>
+                    ))
+                  )}
+                </div>
               </TabsContent>
             </Tabs>
           </Card>

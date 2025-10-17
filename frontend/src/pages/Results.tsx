@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Sparkles, CheckCircle2, FileText, Mail, Download, Copy, AlertCircle } from "lucide-react";
+import { Sparkles, CheckCircle2, FileText, Mail, Download, Copy } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -158,6 +159,9 @@ const Results = () => {
               <Textarea readOnly value={resumeText} className="min-h-[220px] resize-none bg-muted/50" />
               <div className="flex flex-wrap gap-2">
                 <Button variant="outline" size="sm" onClick={() => handleCopy(resumeText, "Резюме")}>
+              <Textarea readOnly value={session.response.improved_resume} className="min-h-[220px] resize-none bg-muted/50" />
+              <div className="flex flex-wrap gap-2">
+                <Button variant="outline" size="sm" onClick={() => handleCopy(session.response.improved_resume, "Резюме")}>
                   <Copy className="w-4 h-4 mr-2" />Скопировать
                 </Button>
                 <Button variant="outline" size="sm" onClick={() => handleDownload("resume")}>
@@ -189,6 +193,9 @@ const Results = () => {
               <Textarea readOnly value={coverText} className="min-h-[220px] resize-none bg-muted/50" />
               <div className="flex flex-wrap gap-2">
                 <Button variant="outline" size="sm" onClick={() => handleCopy(coverText, "Письмо")}>
+              <Textarea readOnly value={session.response.cover_letter} className="min-h-[220px] resize-none bg-muted/50" />
+              <div className="flex flex-wrap gap-2">
+                <Button variant="outline" size="sm" onClick={() => handleCopy(session.response.cover_letter, "Письмо")}>
                   <Copy className="w-4 h-4 mr-2" />Скопировать
                 </Button>
                 <Button variant="outline" size="sm" onClick={() => handleDownload("cover")}>

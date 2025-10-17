@@ -92,6 +92,7 @@ async def analyze(payload: AnalyzeIn):
             ),
         )
         tips = raw_tips.strip()
+        tips = tips.strip()
     except Exception as e:
         tips = f"AI error: {e}"
 
@@ -117,6 +118,7 @@ async def generate(payload: GenerateIn):
             ),
         )
         improved_resume = resume_raw.strip()
+        ).strip()
     except Exception as e:
         improved_resume = f"[AI error while generating resume]: {e}"
 
@@ -135,6 +137,7 @@ async def generate(payload: GenerateIn):
             ),
         )
         cover_letter = cover_raw.strip()
+        ).strip()
     except Exception as e:
         cover_letter = f"[AI error while generating cover letter]: {e}"
 
