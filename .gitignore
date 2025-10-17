@@ -29,3 +29,6 @@ frontend/build/
 .DS_Store
 .vscode/
 .idea/
+
+frontend/.env
+
