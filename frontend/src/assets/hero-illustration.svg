@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300">
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2563eb" />
+      <stop offset="100%" stop-color="#7c3aed" />
+    </linearGradient>
+  </defs>
+  <rect width="400" height="300" rx="24" fill="url(#grad)" />
+  <g fill="white" font-family="Inter, Arial, sans-serif" text-anchor="middle">
+    <text x="50%" y="45%" font-size="56" font-weight="700">EdTon.ai</text>
+    <text x="50%" y="62%" font-size="22">Умный ассистент для карьеры</text>
+  </g>
+</svg>
