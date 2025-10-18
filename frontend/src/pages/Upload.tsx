@@ -1,33 +1,87 @@
+import { useState, useMemo } from "react";
+import type { ChangeEvent } from "react";
+import { useNavigate } from "react-router-dom";
+import { useMutation } from "@tanstack/react-query";
+import { Upload as UploadIcon, FileText, Sparkles, ArrowRight, Link2 } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { useNavigate } from "react-router-dom";
-import { useState } from "react";
-import { Upload as UploadIcon, FileText, Sparkles, ArrowRight, Link2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { api, type AnalyzeReq } from "@/lib/api";
+import { saveAnalysisSession } from "@/lib/session";
 
 const Upload = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [resumeFile, setResumeFile] = useState<File | null>(null);
+  const [resumeText, setResumeText] = useState("");
   const [jobDescription, setJobDescription] = useState("");
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [targetRole, setTargetRole] = useState("");
+  const [isParsingFile, setIsParsingFile] = useState(false);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setResumeFile(e.target.files[0]);
-      toast({
-        title: "Файл загружен",
-        description: `${e.target.files[0].name} готов к анализу`,
+  const analyzeMutation = useMutation({
+    mutationFn: (payload: AnalyzeReq) => api.analyze(payload),
+    onSuccess: (data, variables) => {
+      saveAnalysisSession({
+        request: variables,
+        response: data,
       });
+      toast({
+        title: "Анализ завершён",
+        description: "Мы нашли ключевые совпадения и рекомендации",
+      });
+      navigate("/analysis");
+    },
+    onError: (error: unknown) => {
+      const message = error instanceof Error ? error.message : "Не удалось выполнить анализ";
+      toast({
+        title: "Ошибка анализа",
+        description: message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const resumeCharacters = useMemo(() => resumeText.trim().length, [resumeText]);
+
+  const handleFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
+    if (!event.target.files || !event.target.files[0]) {
+      return;
+    }
+
+    const file = event.target.files[0];
+    setResumeFile(file);
+
+    try {
+      setIsParsingFile(true);
+      const text = await api.parseFile(file);
+      setResumeText(text);
+      toast({
+        title: "Файл распознан",
+        description: `${file.name} успешно преобразован в текст`,
+      });
+    } catch (error) {
+      console.error("Failed to parse resume file", error);
+      const message =
+        error instanceof Error ? error.message : "Вставьте текст резюме вручную ниже";
+      toast({
+        title: "Не удалось распознать файл",
+        description: message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsParsingFile(false);
     }
   };
 
   const handleAnalyze = () => {
-    if (!resumeFile) {
+    if (!resumeText.trim()) {
       toast({
-        title: "Загрузите резюме",
-        description: "Необходимо загрузить файл резюме",
+        title: "Добавьте резюме",
+        description: "Вставьте текст или загрузите файл с резюме",
         variant: "destructive",
       });
       return;
@@ -41,11 +95,13 @@ const Upload = () => {
       return;
     }
 
-    setIsAnalyzing(true);
-    // Simulate analysis
-    setTimeout(() => {
-      navigate('/analysis');
-    }, 2000);
+    const payload: AnalyzeReq = {
+      resume_text: resumeText,
+      vacancy_text: jobDescription,
+      role: targetRole || undefined,
+    };
+
+    analyzeMutation.mutate(payload);
   };
 
   return (
@@ -110,7 +166,7 @@ const Upload = () => {
                   type="file"
                   id="resume-upload"
                   className="hidden"
-                  accept=".pdf,.docx,.doc"
+                  accept=".pdf,.docx,.doc,.txt"
                   onChange={handleFileChange}
                 />
                 <label htmlFor="resume-upload" className="cursor-pointer space-y-4 block">
@@ -130,7 +186,7 @@ const Upload = () => {
               {resumeFile && (
                 <div className="flex items-center gap-2 p-3 bg-success/10 rounded-lg animate-fade-in">
                   <FileText className="w-5 h-5 text-success" />
-                  <span className="text-sm font-medium">{resumeFile.name}</span>
+                  <span className="text-sm font-medium truncate">{resumeFile.name}</span>
                 </div>
               )}
             </div>
@@ -158,18 +214,50 @@ const Upload = () => {
             </div>
           </Card>
 
+          {/* Resume Text */}
+          <Card className="p-8 shadow-soft animate-slide-up">
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-primary" />
+                <h2 className="text-xl font-semibold">Проверьте текст резюме</h2>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="resume-text">Текст резюме</Label>
+                <Textarea
+                  id="resume-text"
+                  placeholder="Вставьте сюда текст резюме, если файл не распознался"
+                  className="min-h-[220px] resize-y"
+                  value={resumeText}
+                  onChange={(e) => setResumeText(e.target.value)}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Символов: {resumeCharacters}
+                </p>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="target-role">Целевая роль (необязательно)</Label>
+                <Input
+                  id="target-role"
+                  placeholder="Например, Product Manager"
+                  value={targetRole}
+                  onChange={(e) => setTargetRole(e.target.value)}
+                />
+              </div>
+            </div>
+          </Card>
+
           {/* Action Button */}
           <div className="flex justify-center">
             <Button
               size="lg"
               className="gradient-hero text-lg shadow-card min-w-[250px]"
               onClick={handleAnalyze}
-              disabled={isAnalyzing}
+              disabled={analyzeMutation.isPending || isParsingFile}
             >
-              {isAnalyzing ? (
+              {analyzeMutation.isPending || isParsingFile ? (
                 <>
                   <Sparkles className="mr-2 h-5 w-5 animate-spin" />
-                  Анализирую...
+                  {isParsingFile ? "Обрабатываю файл..." : "Анализирую..."}
                 </>
               ) : (
                 <>
