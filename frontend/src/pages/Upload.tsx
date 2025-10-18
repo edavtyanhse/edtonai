@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import type { ChangeEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { useMutation } from "@tanstack/react-query";
 import { Upload as UploadIcon, FileText, Sparkles, ArrowRight, Link2 } from "lucide-react";
@@ -46,12 +47,12 @@ const Upload = () => {
 
   const resumeCharacters = useMemo(() => resumeText.trim().length, [resumeText]);
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files || !e.target.files[0]) {
+  const handleFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
+    if (!event.target.files || !event.target.files[0]) {
       return;
     }
 
-    const file = e.target.files[0];
+    const file = event.target.files[0];
     setResumeFile(file);
 
     try {
@@ -69,17 +70,6 @@ const Upload = () => {
       toast({
         title: "Не удалось распознать файл",
         description: message,
-      const text = await file.text();
-      setResumeText(text);
-      toast({
-        title: "Файл загружен",
-        description: `${file.name} сконвертирован в текст для анализа`,
-      });
-    } catch (error) {
-      console.error("Failed to read resume file", error);
-      toast({
-        title: "Не удалось прочитать файл",
-        description: "Вставьте текст резюме вручную ниже",
         variant: "destructive",
       });
     } finally {
@@ -265,9 +255,6 @@ const Upload = () => {
               disabled={analyzeMutation.isPending || isParsingFile}
             >
               {analyzeMutation.isPending || isParsingFile ? (
-              disabled={analyzeMutation.isPending}
-            >
-              {analyzeMutation.isPending ? (
                 <>
                   <Sparkles className="mr-2 h-5 w-5 animate-spin" />
                   {isParsingFile ? "Обрабатываю файл..." : "Анализирую..."}
