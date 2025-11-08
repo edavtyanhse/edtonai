@@ -1,18 +1,20 @@
-import type { AnalyzeReq, AnalyzeRes, GenerateReq, GenerateRes } from "./api";
-
 const isBrowser = typeof window !== "undefined";
 
 export const ANALYSIS_STORAGE_KEY = "edton.analysis";
 export const GENERATION_STORAGE_KEY = "edton.generation";
 
 export type AnalysisSession = {
-  request: AnalyzeReq;
-  response: AnalyzeRes;
+  analysisId: string;
+  resumeId: string;
+  vacancyId: string;
+  createdAt: string;
 };
 
 export type GenerationSession = {
-  request: GenerateReq;
-  response: GenerateRes;
+  analysisId: string;
+  resumeDocumentId: string;
+  coverLetterDocumentId: string;
+  atsScore: number;
 };
 
 export function saveAnalysisSession(data: AnalysisSession): void {

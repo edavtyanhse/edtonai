@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { Sparkles, CheckCircle2, FileText, Mail, Download, Copy, AlertCircle } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -7,6 +8,7 @@ import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
+import { api } from "@/lib/api";
 import {
   loadGenerationSession,
   loadAnalysisSession,
@@ -17,7 +19,6 @@ const Results = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [session, setSession] = useState<GenerationSession | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const generation = loadGenerationSession();
@@ -34,19 +35,54 @@ const Results = () => {
       return;
     }
     setSession(generation);
-    setIsLoading(false);
   }, [navigate, toast]);
 
-  const atsScore = session?.response.ats_score ?? 0;
-  const roleLabel = useMemo(() => session?.request.target_role || "ваша цель", [session?.request.target_role]);
-  const resumeText = session?.response.improved_resume ?? "";
-  const coverText = session?.response.cover_letter ?? "";
+  const resumeDocumentQuery = useQuery({
+    queryKey: ["document", session?.resumeDocumentId],
+    queryFn: async () => {
+      if (!session?.resumeDocumentId) {
+        throw new Error("Нет идентификатора резюме");
+      }
+      return api.getDocument(session.resumeDocumentId);
+    },
+    enabled: !!session?.resumeDocumentId,
+  });
+
+  const coverDocumentQuery = useQuery({
+    queryKey: ["document", session?.coverLetterDocumentId],
+    queryFn: async () => {
+      if (!session?.coverLetterDocumentId) {
+        throw new Error("Нет идентификатора письма");
+      }
+      return api.getDocument(session.coverLetterDocumentId);
+    },
+    enabled: !!session?.coverLetterDocumentId,
+  });
+
+  const analysisQuery = useQuery({
+    queryKey: ["analysis", session?.analysisId],
+    queryFn: async () => {
+      if (!session?.analysisId) {
+        throw new Error("Нет анализа для генерации");
+      }
+      return api.getAnalysis(session.analysisId);
+    },
+    enabled: !!session?.analysisId,
+    staleTime: 30_000,
+  });
+
+  const isLoading =
+    !session || resumeDocumentQuery.isLoading || coverDocumentQuery.isLoading || analysisQuery.isLoading;
+
+  const resumeText = resumeDocumentQuery.data?.content ?? "";
+  const coverText = coverDocumentQuery.data?.content ?? "";
   const resumeHasError = resumeText.trim().toLowerCase().startsWith("[ai error");
   const coverHasError = coverText.trim().toLowerCase().startsWith("[ai error");
+  const atsScore = resumeDocumentQuery.data?.ats_score ?? session?.atsScore ?? 0;
+  const roleLabel = useMemo(() => analysisQuery.data?.analysis.role || "ваша цель", [analysisQuery.data?.analysis.role]);
 
   const handleDownload = (kind: "resume" | "cover") => {
-    if (!session) return;
-    const content = kind === "resume" ? session.response.improved_resume : session.response.cover_letter;
+    const content = kind === "resume" ? resumeText : coverText;
     const fileName = kind === "resume" ? "resume-edton.txt" : "cover-letter-edton.txt";
     const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
     const url = URL.createObjectURL(blob);
@@ -71,7 +107,36 @@ const Results = () => {
     });
   };
 
-  if (isLoading || !session) {
+  if (!session) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4 text-center">
+          <Sparkles className="w-8 h-8 text-primary animate-spin" />
+          <p className="text-muted-foreground">Загружаем сгенерированные документы...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (resumeDocumentQuery.isError || coverDocumentQuery.isError) {
+    const message =
+      resumeDocumentQuery.error instanceof Error
+        ? resumeDocumentQuery.error.message
+        : coverDocumentQuery.error instanceof Error
+          ? coverDocumentQuery.error.message
+          : "Не удалось загрузить документы";
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Alert variant="destructive" className="max-w-xl">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Ошибка загрузки</AlertTitle>
+          <AlertDescription>{message}</AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
+
+  if (isLoading || !resumeDocumentQuery.data || !coverDocumentQuery.data) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="flex flex-col items-center gap-4 text-center">
@@ -87,12 +152,15 @@ const Results = () => {
       {/* Header */}
       <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate('/')}>
+          <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate('/')}
             <div className="w-8 h-8 rounded-lg gradient-hero flex items-center justify-center">
               <Sparkles className="w-5 h-5 text-primary-foreground" />
             </div>
             <span className="text-xl font-bold">EdTon.ai</span>
           </div>
+          <Button variant="outline" onClick={() => navigate('/history')}>
+            История
+          </Button>
         </div>
       </header>
 
@@ -152,7 +220,7 @@ const Results = () => {
                 <Alert variant="destructive">
                   <AlertCircle className="h-4 w-4" />
                   <AlertTitle>Не удалось сгенерировать новое резюме</AlertTitle>
-                  <AlertDescription>{session?.response.improved_resume}</AlertDescription>
+                  <AlertDescription>{resumeText}</AlertDescription>
                 </Alert>
               )}
               <Textarea readOnly value={resumeText} className="min-h-[220px] resize-none bg-muted/50" />
@@ -183,7 +251,7 @@ const Results = () => {
                 <Alert variant="destructive">
                   <AlertCircle className="h-4 w-4" />
                   <AlertTitle>Не удалось сгенерировать письмо</AlertTitle>
-                  <AlertDescription>{session?.response.cover_letter}</AlertDescription>
+                  <AlertDescription>{coverText}</AlertDescription>
                 </Alert>
               )}
               <Textarea readOnly value={coverText} className="min-h-[220px] resize-none bg-muted/50" />
