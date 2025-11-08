@@ -1,13 +1,66 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300">
+<svg width="1200" height="900" viewBox="0 0 1200 900" fill="none" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#2563eb" />
-      <stop offset="100%" stop-color="#7c3aed" />
+    <linearGradient id="heroGradient" x1="120" y1="80" x2="1080" y2="820" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#4F8EF9" />
+      <stop offset="1" stop-color="#8B7CFB" />
     </linearGradient>
+    <linearGradient id="panelGradient" x1="0" y1="0" x2="360" y2="260" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.9" />
+      <stop offset="1" stop-color="#E9EEFF" stop-opacity="0.9" />
+    </linearGradient>
+    <linearGradient id="insightGradient" x1="0" y1="0" x2="220" y2="180" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#4F8EF9" stop-opacity="0.18" />
+      <stop offset="1" stop-color="#8B7CFB" stop-opacity="0.32" />
+    </linearGradient>
+    <clipPath id="roundedFrame">
+      <rect x="120" y="110" width="960" height="680" rx="48" ry="48" />
+    </clipPath>
   </defs>
-  <rect width="400" height="300" rx="24" fill="url(#grad)" />
-  <g fill="white" font-family="Inter, Arial, sans-serif" text-anchor="middle">
-    <text x="50%" y="45%" font-size="56" font-weight="700">EdTon.ai</text>
-    <text x="50%" y="62%" font-size="22">Умный ассистент для карьеры</text>
+  <rect x="120" y="110" width="960" height="680" rx="48" fill="url(#heroGradient)" opacity="0.16" />
+  <g clip-path="url(#roundedFrame)">
+    <rect x="170" y="160" width="360" height="520" rx="32" fill="url(#panelGradient)" />
+    <rect x="560" y="160" width="480" height="320" rx="32" fill="url(#panelGradient)" />
+    <rect x="560" y="510" width="480" height="170" rx="32" fill="url(#panelGradient)" />
+    <text x="200" y="210" fill="#182A4A" font-family="'Inter', sans-serif" font-size="26" font-weight="600">Загрузка резюме</text>
+    <rect x="200" y="232" width="300" height="90" rx="18" fill="#FFFFFF" opacity="0.9" />
+    <text x="220" y="268" fill="#4F5B7E" font-family="'Inter', sans-serif" font-size="18" font-weight="600">Мария Смирнова</text>
+    <text x="220" y="294" fill="#6C7A9A" font-family="'Inter', sans-serif" font-size="15">Product Manager · 2 года</text>
+    <text x="220" y="324" fill="#6C7A9A" font-family="'Inter', sans-serif" font-size="15">Навыки: SQL, Python, Agile</text>
+    <rect x="200" y="344" width="300" height="120" rx="18" fill="#FFFFFF" opacity="0.92" />
+    <text x="220" y="380" fill="#4F5B7E" font-family="'Inter', sans-serif" font-size="17">Опыт</text>
+    <text x="220" y="408" fill="#6C7A9A" font-family="'Inter', sans-serif" font-size="15">• Запуск 3 финтех продуктов</text>
+    <text x="220" y="434" fill="#6C7A9A" font-family="'Inter', sans-serif" font-size="15">• Рост NPS на 26%</text>
+    <rect x="200" y="484" width="300" height="120" rx="18" fill="#FFFFFF" opacity="0.95" />
+    <text x="220" y="520" fill="#4F5B7E" font-family="'Inter', sans-serif" font-size="17">Цель</text>
+    <text x="220" y="548" fill="#6C7A9A" font-family="'Inter', sans-serif" font-size="15">Вакансия: Lead PM · EdTech</text>
+    <text x="220" y="574" fill="#6C7A9A" font-family="'Inter', sans-serif" font-size="15">Фокус: исследования, A/B тесты</text>
+    <text x="600" y="210" fill="#182A4A" font-family="'Inter', sans-serif" font-size="26" font-weight="600">AI-анализ соответствия</text>
+    <rect x="600" y="240" width="420" height="200" rx="24" fill="#FFFFFF" opacity="0.96" />
+    <text x="630" y="282" fill="#4F5B7E" font-family="'Inter', sans-serif" font-size="18" font-weight="600">Совпадение профиля</text>
+    <rect x="630" y="302" width="360" height="14" rx="7" fill="#E5EBFF" />
+    <rect x="630" y="302" width="264" height="14" rx="7" fill="#4F8EF9" />
+    <text x="1000" y="314" fill="#4F8EF9" font-family="'Inter', sans-serif" font-size="14" font-weight="600">74%</text>
+    <text x="630" y="340" fill="#6C7A9A" font-family="'Inter', sans-serif" font-size="15">Совпадают: SQL, Python, Agile</text>
+    <text x="630" y="368" fill="#6C7A9A" font-family="'Inter', sans-serif" font-size="15">Рекомендация: подчеркнуть A/B тесты</text>
+    <rect x="630" y="396" width="360" height="32" rx="16" fill="#FCEFD6" />
+    <text x="648" y="417" fill="#C07A1C" font-family="'Inter', sans-serif" font-size="14" font-weight="600">Добавить пример EdTech проекта</text>
+    <text x="600" y="500" fill="#182A4A" font-family="'Inter', sans-serif" font-size="26" font-weight="600">Готовый пакет документов</text>
+    <rect x="600" y="540" width="420" height="120" rx="24" fill="#FFFFFF" opacity="0.95" />
+    <text x="630" y="580" fill="#4F5B7E" font-family="'Inter', sans-serif" font-size="18" font-weight="600">PDF / DOCX · Cover Letter</text>
+    <text x="630" y="608" fill="#6C7A9A" font-family="'Inter', sans-serif" font-size="15">AI формирует адаптированные документы</text>
+    <g opacity="0.85">
+      <rect x="860" y="560" width="120" height="48" rx="14" fill="#4F8EF9" />
+      <text x="882" y="590" fill="#FFFFFF" font-family="'Inter', sans-serif" font-size="16" font-weight="600">Скачать</text>
+    </g>
+    <g>
+      <rect x="600" y="688" width="420" height="72" rx="22" fill="url(#insightGradient)" />
+      <text x="630" y="724" fill="#39486A" font-family="'Inter', sans-serif" font-size="17">💡 Подсказка AI: добавьте блок про EdTech исследования</text>
+    </g>
+    <g opacity="0.35">
+      <circle cx="1040" cy="220" r="70" stroke="#8B7CFB" stroke-width="8" stroke-dasharray="14 18" fill="none" />
+      <circle cx="520" cy="640" r="48" stroke="#4F8EF9" stroke-width="6" stroke-dasharray="10 14" fill="none" />
+      <path d="M420 220 C440 190 480 190 500 220" stroke="#4F8EF9" stroke-width="4" stroke-linecap="round" fill="none" />
+      <path d="M420 260 C440 290 480 290 500 260" stroke="#8B7CFB" stroke-width="4" stroke-linecap="round" fill="none" />
+    </g>
   </g>
 </svg>
