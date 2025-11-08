@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/accordion";
 import { useNavigate } from "react-router-dom";
 import { FileText, Target, Sparkles, ArrowRight, CheckCircle2 } from "lucide-react";
-import heroImage from "@/assets/hero-image.jpg";
+import heroImage from "@/assets/hero-illustration.svg";
 
 const Landing = () => {
   const navigate = useNavigate();

@@ -1,12 +1,11 @@
 from __future__ import annotations
+import os
 from pathlib import Path
 from typing import Optional
-from dotenv import load_dotenv
-import os
 
-from sqlalchemy import text
+from dotenv import load_dotenv
+from sqlalchemy import create_engine, text
 from sqlalchemy.engine import Engine
-from sqlalchemy import create_engine
 
 # гарантированно грузим backend/.env
 ENV_PATH = Path(__file__).resolve().parent.parent / ".env"
