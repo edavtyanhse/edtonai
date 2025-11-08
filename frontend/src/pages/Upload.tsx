@@ -24,10 +24,12 @@ const Upload = () => {
 
   const analyzeMutation = useMutation({
     mutationFn: (payload: AnalyzeReq) => api.analyze(payload),
-    onSuccess: (data, variables) => {
+    onSuccess: (data) => {
       saveAnalysisSession({
-        request: variables,
-        response: data,
+        analysisId: data.analysis_id,
+        resumeId: data.resume_id,
+        vacancyId: data.vacancy_id,
+        createdAt: data.created_at,
       });
       toast({
         title: "Анализ завершён",
@@ -109,12 +111,15 @@ const Upload = () => {
       {/* Header */}
       <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate('/')}>
+          <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate('/')}
             <div className="w-8 h-8 rounded-lg gradient-hero flex items-center justify-center">
               <Sparkles className="w-5 h-5 text-primary-foreground" />
             </div>
             <span className="text-xl font-bold">EdTon.ai</span>
           </div>
+          <Button variant="outline" onClick={() => navigate('/history')}>
+            История
+          </Button>
         </div>
       </header>
 
