@@ -101,6 +101,42 @@ export type GenerationSummary = {
   created_at: string;
 };
 
+export type ParsedContactInfo = {
+  full_name?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  location?: string | null;
+  links: string[];
+};
+
+export type ParsedExperience = {
+  company?: string | null;
+  role?: string | null;
+  period?: string | null;
+  responsibilities: string[];
+  achievements: string[];
+};
+
+export type ParsedEducation = {
+  institution?: string | null;
+  degree?: string | null;
+  period?: string | null;
+  details: string[];
+};
+
+export type ParsedResumeStructured = {
+  contacts: ParsedContactInfo | null;
+  experience: ParsedExperience[];
+  education: ParsedEducation[];
+  skills: string[];
+};
+
+export type ParsedResumeResponse = {
+  raw_text: string;
+  structured: ParsedResumeStructured | null;
+  ocr_error: string | null;
+};
+
 async function request<T>(path: string, body: unknown): Promise<T> {
   const response = await fetch(`${API_URL}${path}`, {
     method: "POST",
@@ -144,7 +180,7 @@ export const api = {
   getDocument: (documentId: string) =>
     getRequest<DocumentRecord>(`/api/documents/${documentId}`),
   listGenerations: () => getRequest<GenerationSummary[]>("/api/generations"),
-  parseFile: async (file: File) => {
+  parseFile: async (file: File): Promise<ParsedResumeResponse> => {
     const fd = new FormData();
     fd.append("file", file);
 
@@ -161,6 +197,6 @@ export const api = {
       throw new Error(`${response.status} ${response.statusText} ${text}`.trim());
     }
 
-    return response.text();
+    return response.json();
   },
 };
