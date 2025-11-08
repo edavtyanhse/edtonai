@@ -7,10 +7,8 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { useNavigate } from "react-router-dom";
-import { FileText, Target, Sparkles, ArrowRight, CheckCircle2, CircleCheck } from "lucide-react";
+import { FileText, Target, Sparkles, ArrowRight, CheckCircle2 } from "lucide-react";
 import heroImage from "@/assets/hero-illustration.svg";
-import { HeroAnalysisPreview } from "@/components/landing/HeroAnalysisPreview";
-import { ResumeInsightsCarousel } from "@/components/landing/ResumeInsightsCarousel";
 
 const Landing = () => {
   const navigate = useNavigate();

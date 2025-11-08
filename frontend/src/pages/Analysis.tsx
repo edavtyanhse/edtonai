@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import { Sparkles, CheckCircle2, AlertCircle, Lightbulb, ArrowRight } from "lucide-react";
 
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -108,11 +108,11 @@ const parseAnalysisMarkdown = (tips: string): ParsedTips => {
 const Analysis = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [session, setSession] = useState<AnalysisSession | null>(null);
+  const [analysis, setAnalysis] = useState<AnalysisSession | null>(null);
 
   useEffect(() => {
-    const activeSession = loadAnalysisSession();
-    if (!activeSession) {
+    const session = loadAnalysisSession();
+    if (!session) {
       toast({
         title: "Нет данных для анализа",
         description: "Загрузите резюме и вакансию заново",
@@ -122,46 +122,31 @@ const Analysis = () => {
       return;
     }
     clearGenerationSession();
-    setSession(activeSession);
+    setAnalysis(session);
   }, [navigate, toast]);
 
-  const analysisQuery = useQuery({
-    queryKey: ["analysis", session?.analysisId],
-    queryFn: async () => {
-      if (!session) {
-        throw new Error("Нет активного анализа");
-      }
-      return api.getAnalysis(session.analysisId);
-    },
-    enabled: !!session,
-    staleTime: 30_000,
-  });
-
-  const analysisDetail = analysisQuery.data;
-  const analysisRecord = analysisDetail?.analysis;
-
   const parsedTips = useMemo(
-    () => parseAnalysisMarkdown(analysisRecord?.tips ?? ""),
-    [analysisRecord?.tips],
+    () => parseAnalysisMarkdown(analysis?.response.tips ?? ""),
+    [analysis?.response.tips],
   );
-  const aiTipsError = (analysisRecord?.tips ?? "").trim().toLowerCase().startsWith("ai error");
-  const rawMatchScore = parsedTips.matchScore ?? analysisRecord?.match_score ?? 0;
+  const aiTipsError = (analysis?.response.tips ?? "").trim().toLowerCase().startsWith("ai error");
+  const rawMatchScore = parsedTips.matchScore ?? analysis?.response.match_score ?? 0;
   const matchPercentage = Math.round(rawMatchScore);
   const matchSummary = parsedTips.matchSummary;
 
   const matchingSkills = useMemo(() => {
     const skills = new Set<string>();
-    (analysisRecord?.matched_skills ?? []).forEach((skill) => skills.add(skill));
+    (analysis?.response.matched_skills ?? []).forEach((skill) => skills.add(skill));
     parsedTips.matchedSkills.forEach((skill) => skills.add(skill));
     return Array.from(skills).sort((a, b) => a.localeCompare(b, "ru"));
-  }, [analysisRecord?.matched_skills, parsedTips]);
+  }, [analysis?.response.matched_skills, parsedTips]);
 
   const missingSkills = useMemo(() => {
     const skills = new Set<string>();
-    (analysisRecord?.missing_skills ?? []).forEach((skill) => skills.add(skill));
+    (analysis?.response.missing_skills ?? []).forEach((skill) => skills.add(skill));
     parsedTips.missingSkills.forEach((skill) => skills.add(skill));
     return Array.from(skills).sort((a, b) => a.localeCompare(b, "ru"));
-  }, [analysisRecord?.missing_skills, parsedTips]);
+  }, [analysis?.response.missing_skills, parsedTips]);
 
   const totalSkills = matchingSkills.length + missingSkills.length;
   const skillCoverage = totalSkills
@@ -172,21 +157,27 @@ const Analysis = () => {
 
   const generateMutation = useMutation({
     mutationFn: async () => {
-      if (!session || !analysisRecord) {
+      if (!analysis) {
         throw new Error("Нет данных для генерации");
       }
 
       return api.generate({
-        analysis_id: session.analysisId,
-        target_role: analysisRecord.role ?? undefined,
+        resume_text: analysis.request.resume_text,
+        vacancy_text: analysis.request.vacancy_text,
+        target_role: analysis.request.role,
       });
     },
     onSuccess: (data) => {
+      if (!analysis) {
+        return;
+      }
       saveGenerationSession({
-        analysisId: data.analysis_id,
-        resumeDocumentId: data.resume_document_id,
-        coverLetterDocumentId: data.cover_letter_document_id,
-        atsScore: data.ats_score,
+        request: {
+          resume_text: analysis.request.resume_text,
+          vacancy_text: analysis.request.vacancy_text,
+          target_role: analysis.request.role,
+        },
+        response: data,
       });
       toast({
         title: "Генерация завершена",
@@ -204,39 +195,12 @@ const Analysis = () => {
     },
   });
 
-  if (!session) {
+  if (!analysis) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="flex flex-col items-center gap-4 text-center">
           <Sparkles className="w-8 h-8 text-primary animate-spin" />
           <p className="text-muted-foreground">Подготавливаем данные для анализа...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (analysisQuery.isError) {
-    const message =
-      analysisQuery.error instanceof Error
-        ? analysisQuery.error.message
-        : "Не удалось загрузить анализ";
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Alert variant="destructive" className="max-w-xl">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Ошибка загрузки</AlertTitle>
-          <AlertDescription>{message}</AlertDescription>
-        </Alert>
-      </div>
-    );
-  }
-
-  if (analysisQuery.isLoading || !analysisDetail || !analysisRecord) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4 text-center">
-          <Sparkles className="w-8 h-8 text-primary animate-spin" />
-          <p className="text-muted-foreground">Получаем сохранённый анализ...</p>
         </div>
       </div>
     );
@@ -270,15 +234,15 @@ const Analysis = () => {
               <span className="text-sm font-medium">Загрузка</span>
             </div>
             <div className="flex-1 h-0.5 bg-primary mx-4" />
-            <div className="flex flex-col items-center gap-2">
-              <div className="w-10 h-10 rounded-full gradient-hero flex items-center justify-center text-primary-foreground font-semibold">
+              <div className="flex flex-col items-center gap-2">
+                <div className="w-10 h-10 rounded-full gradient-hero flex items-center justify-center text-primary-foreground font-semibold">
                 2
               </div>
               <span className="text-sm font-medium">Анализ</span>
             </div>
             <div className="flex-1 h-0.5 bg-border mx-4" />
-            <div className="flex flex-col items-center gap-2">
-              <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center text-muted-foreground font-semibold">
+              <div className="flex flex-col items-center gap-2">
+                <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center text-muted-foreground font-semibold">
                 3
               </div>
               <span className="text-sm text-muted-foreground">Генерация</span>
@@ -291,7 +255,7 @@ const Analysis = () => {
           <div className="text-center space-y-2 animate-fade-in">
             <h1 className="text-3xl md:text-4xl font-bold">Результат анализа</h1>
             <p className="text-muted-foreground text-lg">
-              Ваше резюме проанализировано для {analysisRecord.role ?? "выбранной вакансии"}
+              Ваше резюме проанализировано для выбранной вакансии
             </p>
           </div>
 
@@ -299,7 +263,7 @@ const Analysis = () => {
             <Alert variant="destructive" className="animate-fade-in">
               <AlertCircle className="h-4 w-4" />
               <AlertTitle>Не удалось получить советы от модели</AlertTitle>
-              <AlertDescription>{analysisRecord.tips}</AlertDescription>
+              <AlertDescription>{analysis?.response.tips}</AlertDescription>
             </Alert>
           )}
 
@@ -404,7 +368,7 @@ const Analysis = () => {
                       <Badge
                         key={skill}
                         variant="secondary"
-                        className="border border-success/30 bg-success/10 text-success-foreground"
+                        className="border border-success/40 bg-success/20 text-success"
                       >
                         {skill}
                       </Badge>
@@ -427,7 +391,7 @@ const Analysis = () => {
                       <Badge
                         key={skill}
                         variant="outline"
-                        className="border-warning/40 bg-warning/10 text-warning-foreground"
+                        className="border-warning/50 bg-warning/20 text-warning"
                       >
                         {skill}
                       </Badge>
@@ -495,3 +459,4 @@ const Analysis = () => {
 };
 
 export default Analysis;
+

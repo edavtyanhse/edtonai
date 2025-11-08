@@ -18,17 +18,8 @@ from .prompts import (
     PROMPT_SYSTEM_CL,
     PROMPT_USER_CL,
 )
-from .db import db_health
+from .db import db_health  # NEW: DB health-check
 from .ingest import router as ingest_router
-from .repositories import (
-    GenerationBundle,
-    create_analysis_record,
-    get_analysis_detail,
-    get_document,
-    list_analyses,
-    list_generations,
-    persist_generation,
-)
 
 app = FastAPI(title="EdTon.ai API")
 
@@ -42,17 +33,6 @@ app.add_middleware(
 )
 
 app.include_router(ingest_router)
-
-
-# ── Auth helpers ───────────────────────────────────────────────────────────────
-def get_current_user_id(x_user_id: str = Header(alias="X-User-Id")) -> str:
-    if not x_user_id:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Missing X-User-Id header",
-        )
-    return x_user_id
-
 
 # ── Pydantic-модели ───────────────────────────────────────────────────────────
 class AnalyzeIn(BaseModel):
@@ -203,7 +183,7 @@ async def analyze(payload: AnalyzeIn, user_id: str = Depends(get_current_user_id
             ),
         )
         tips = raw_tips.strip()
-    except Exception as e:  # pragma: no cover - network safeguard
+    except Exception as e:
         tips = f"AI error: {e}"
 
     analysis, resume, vacancy = create_analysis_record(
@@ -288,46 +268,31 @@ async def generate(payload: GenerateIn, user_id: str = Depends(get_current_user_
             ),
         )
         improved_resume = resume_raw.strip()
-    except Exception as e:  # pragma: no cover - network safeguard
+    except Exception as e:
         improved_resume = f"[AI error while generating resume]: {e}"
 
     try:
         resume_for_cover = (
             improved_resume
             if not improved_resume.startswith("[AI error")
-            else resume_text
+            else payload.resume_text
         )
         cover_raw = await ai.chat(
             system=PROMPT_SYSTEM_CL,
             user=PROMPT_USER_CL.format(
                 resume=resume_for_cover,
-                vacancy=vacancy_text,
-                role=payload.target_role or analysis_record.role or "кандидат",
+                vacancy=payload.vacancy_text,
+                role=payload.target_role or "кандидат",
             ),
         )
         cover_letter = cover_raw.strip()
-    except Exception as e:  # pragma: no cover - network safeguard
+    except Exception as e:
         cover_letter = f"[AI error while generating cover letter]: {e}"
 
     score_source = (
-        improved_resume if not improved_resume.startswith("[AI error") else resume_text
+        improved_resume if not improved_resume.startswith("[AI error") else payload.resume_text
     )
-    score = ats_score(score_source, vacancy_text)
-
-    resume_doc, cover_doc, analysis_record, resume_record, vacancy_record = (
-        persist_generation(
-            user_id=user_id,
-            analysis_id=analysis_record.id,
-            resume_text=resume_text,
-            vacancy_text=vacancy_text,
-            target_role=payload.target_role,
-            improved_resume=improved_resume,
-            cover_letter=cover_letter,
-            ats_score=score,
-            resume_skills=resume_keywords,
-            vacancy_keywords=vacancy_keywords,
-        )
-    )
+    score = ats_score(score_source, payload.vacancy_text)
 
     return GenerateOut(
         analysis_id=analysis_record.id,
@@ -339,63 +304,3 @@ async def generate(payload: GenerateIn, user_id: str = Depends(get_current_user_
         cover_letter=cover_letter,
         ats_score=score,
     )
-
-
-@app.get("/api/analyses", response_model=list[AnalysisSummaryOut])
-async def list_analysis_history(user_id: str = Depends(get_current_user_id)):
-    records = []
-    for analysis in list_analyses(user_id):
-        resume_title = analysis.resume.title if analysis.resume else None
-        vacancy_title = analysis.vacancy.title if analysis.vacancy else None
-        records.append(
-            AnalysisSummaryOut(
-                id=analysis.id,
-                resume_id=analysis.resume_id,
-                vacancy_id=analysis.vacancy_id,
-                role=analysis.role,
-                match_score=analysis.match_score,
-                created_at=analysis.created_at,
-                resume_title=resume_title,
-                vacancy_title=vacancy_title,
-            )
-        )
-    return records
-
-
-@app.get("/api/analyses/{analysis_id}", response_model=AnalysisDetailOut)
-async def analysis_detail(analysis_id: str, user_id: str = Depends(get_current_user_id)):
-    try:
-        analysis, resume, vacancy, documents = get_analysis_detail(user_id, analysis_id)
-    except ValueError as exc:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc))
-
-    return AnalysisDetailOut(
-        analysis=AnalysisRecordOut.model_validate(analysis),
-        resume=ResumeOut.model_validate(resume),
-        vacancy=VacancyOut.model_validate(vacancy),
-        documents=[DocumentOut.model_validate(doc) for doc in documents],
-    )
-
-
-@app.get("/api/documents/{document_id}", response_model=DocumentOut)
-async def document_detail(document_id: str, user_id: str = Depends(get_current_user_id)):
-    try:
-        document = get_document(user_id, document_id)
-    except ValueError as exc:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc))
-    return DocumentOut.model_validate(document)
-
-
-@app.get("/api/generations", response_model=list[GenerationSummaryOut])
-async def generation_history(user_id: str = Depends(get_current_user_id)):
-    bundles: List[GenerationBundle] = list_generations(user_id)
-    return [
-        GenerationSummaryOut(
-            analysis_id=bundle.analysis_id,
-            resume_document_id=bundle.resume_document_id,
-            cover_letter_document_id=bundle.cover_letter_document_id,
-            ats_score=bundle.ats_score,
-            created_at=bundle.created_at,
-        )
-        for bundle in bundles
-    ]

@@ -1,57 +1,59 @@
-"""Utilities for parsing uploaded resume files into UTF-8 text."""
+"""Utilities for parsing uploaded resume files into structured UTF-8 text."""
 from __future__ import annotations
 
-import base64
 import json
 from io import BytesIO
 
 from fastapi import APIRouter, HTTPException, UploadFile
 from pdfminer.high_level import extract_text as pdf_extract_text
-from pydantic import ValidationError
+from pydantic import BaseModel, ConfigDict, Field
 import chardet
 import docx
 
+from .prompts import PROMPT_SYSTEM_PARSE, PROMPT_USER_PARSE
 from .providers import get_ai
-from .schemas import ParseResumeResponse, ParsedResumePayload
 
 router = APIRouter()
 
 
-SYSTEM_PROMPT = (
-    "You are a precise resume parser. "
-    "Return only valid JSON that matches the provided schema, without extra text."
-)
+class ContactInfo(BaseModel):
+    full_name: str | None = None
+    title: str | None = None
+    email: str | None = None
+    phone: str | None = None
+    location: str | None = None
+    links: list[str] = Field(default_factory=list)
 
-USER_PROMPT_TEMPLATE = """
-You receive a resume file encoded as base64. Extract the content and reply with JSON only.
-Schema:
-{{
-  "contacts": {{
-    "full_name": string|null,
-    "email": string|null,
-    "phone": string|null,
-    "location": string|null,
-    "links": [string]
-  }},
-  "experience": [{{
-    "company": string|null,
-    "role": string|null,
-    "period": string|null,
-    "responsibilities": [string],
-    "achievements": [string]
-  }}],
-  "education": [{{
-    "institution": string|null,
-    "degree": string|null,
-    "period": string|null,
-    "details": [string]
-  }}],
-  "skills": [string]
-}}
-If a field is unknown use null or an empty array. Keep wording from the resume.
-Base64 file:
-{encoded}
-"""
+
+class ExperienceEntry(BaseModel):
+    company: str | None = None
+    position: str | None = None
+    period: str | None = None
+    responsibilities: list[str] = Field(default_factory=list)
+    achievements: list[str] = Field(default_factory=list)
+
+
+class EducationEntry(BaseModel):
+    institution: str | None = None
+    degree: str | None = None
+    period: str | None = None
+    details: list[str] = Field(default_factory=list)
+
+
+class ResumeStructured(BaseModel):
+    summary: str | None = None
+    contact: ContactInfo = Field(default_factory=ContactInfo)
+    experiences: list[ExperienceEntry] = Field(default_factory=list)
+    education: list[EducationEntry] = Field(default_factory=list)
+    skills: list[str] = Field(default_factory=list)
+    languages: list[str] = Field(default_factory=list)
+
+    model_config = ConfigDict(extra="ignore")
+
+
+class ParseResumeOut(ResumeStructured):
+    raw_text: str
+    warnings: list[str] = Field(default_factory=list)
 
 
 def _decode_bytes(data: bytes) -> str:
@@ -64,62 +66,57 @@ def _decode_bytes(data: bytes) -> str:
         return data.decode("utf-8", errors="ignore")
 
 
-def _extract_raw_text(filename: str, raw: bytes) -> str:
+def _coerce_json_block(text: str) -> str:
+    start = text.find("{")
+    end = text.rfind("}")
+    if start == -1 or end == -1 or end <= start:
+        raise ValueError("AI ответ не похож на JSON")
+    return text[start : end + 1]
+
+
+async def _structure_resume(raw_text: str) -> tuple[ResumeStructured, list[str]]:
+    warnings: list[str] = []
+    if not raw_text.strip():
+        warnings.append("Файл не содержит текста")
+        return ResumeStructured(), warnings
+
+    try:
+        ai = get_ai()
+        response = await ai.chat(
+            system=PROMPT_SYSTEM_PARSE,
+            user=PROMPT_USER_PARSE.format(resume=raw_text),
+        )
+        payload = json.loads(_coerce_json_block(response))
+        structured = ResumeStructured.model_validate(payload)
+        return structured, warnings
+    except Exception as exc:  # pragma: no cover - AI может вернуть что угодно
+        warnings.append(f"AI parse error: {exc}")
+        return ResumeStructured(), warnings
+
+
+@router.post("/api/parse", response_model=ParseResumeOut)
+async def parse(file: UploadFile) -> ParseResumeOut:
+    """Extract plain UTF-8 text from supported resume file formats and structure it."""
+    filename = (file.filename or "").lower()
+    raw = await file.read()
+
     try:
         if filename.endswith(".pdf"):
-            return pdf_extract_text(BytesIO(raw))
-        if filename.endswith(".docx"):
+            text = pdf_extract_text(BytesIO(raw))
+        elif filename.endswith(".docx"):
             document = docx.Document(BytesIO(raw))
-            return "\n".join(paragraph.text for paragraph in document.paragraphs)
-        if filename.endswith(".txt") or filename.endswith(".md"):
-            return _decode_bytes(raw)
+            text = "\n".join(paragraph.text for paragraph in document.paragraphs)
+        elif filename.endswith(".doc"):
+            # .doc файлы часто распознаются как двоичные, попытаемся декодировать их как текст
+            text = _decode_bytes(raw)
+        elif filename.endswith(".txt") or filename.endswith(".md"):
+            text = _decode_bytes(raw)
+        else:
+            raise HTTPException(status_code=400, detail="Unsupported file type. Use PDF/DOCX/TXT.")
     except HTTPException:
         raise
     except Exception as exc:  # pragma: no cover - defensive, unexpected parsing errors
         raise HTTPException(status_code=422, detail=f"Parse error: {exc}") from exc
 
-    raise HTTPException(
-        status_code=400,
-        detail="Unsupported file type. Use PDF/DOCX/TXT.",
-    )
-
-
-async def _structured_parse(raw: bytes) -> tuple[ParsedResumePayload | None, str | None]:
-    """Send raw bytes to DeepSeek and parse structured resume data."""
-
-    encoded = base64.b64encode(raw).decode("ascii")
-    try:
-        ai = get_ai()
-    except RuntimeError as exc:
-        return None, f"OCR provider misconfiguration: {exc}"
-
-    try:
-        response = await ai.chat(
-            system=SYSTEM_PROMPT,
-            user=USER_PROMPT_TEMPLATE.format(encoded=encoded),
-        )
-    except Exception as exc:  # pragma: no cover - network/runtime errors
-        return None, f"OCR request failed: {exc}"
-
-    try:
-        payload = json.loads(response)
-    except json.JSONDecodeError as exc:
-        return None, f"OCR response was not valid JSON: {exc}"
-
-    try:
-        return ParsedResumePayload.model_validate(payload), None
-    except ValidationError as exc:
-        return None, f"OCR response did not match schema: {exc}"
-
-
-@router.post("/api/parse", response_model=ParseResumeResponse)
-async def parse(file: UploadFile) -> ParseResumeResponse:
-    """Extract plain UTF-8 text and structured resume data."""
-    filename = (file.filename or "").lower()
-    raw = await file.read()
-
-    text = _extract_raw_text(filename, raw)
-
-    structured, ocr_error = await _structured_parse(raw)
-
-    return ParseResumeResponse(raw_text=text, structured=structured, ocr_error=ocr_error)
+    structured, warnings = await _structure_resume(text)
+    return ParseResumeOut(raw_text=text, warnings=warnings, **structured.model_dump())

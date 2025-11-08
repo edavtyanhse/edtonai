@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
 import { Sparkles, CheckCircle2, FileText, Mail, Download, Copy, AlertCircle } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -8,7 +7,6 @@ import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
-import { api } from "@/lib/api";
 import {
   loadGenerationSession,
   loadAnalysisSession,
@@ -19,6 +17,7 @@ const Results = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [session, setSession] = useState<GenerationSession | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const generation = loadGenerationSession();
@@ -35,54 +34,19 @@ const Results = () => {
       return;
     }
     setSession(generation);
+    setIsLoading(false);
   }, [navigate, toast]);
 
-  const resumeDocumentQuery = useQuery({
-    queryKey: ["document", session?.resumeDocumentId],
-    queryFn: async () => {
-      if (!session?.resumeDocumentId) {
-        throw new Error("Нет идентификатора резюме");
-      }
-      return api.getDocument(session.resumeDocumentId);
-    },
-    enabled: !!session?.resumeDocumentId,
-  });
-
-  const coverDocumentQuery = useQuery({
-    queryKey: ["document", session?.coverLetterDocumentId],
-    queryFn: async () => {
-      if (!session?.coverLetterDocumentId) {
-        throw new Error("Нет идентификатора письма");
-      }
-      return api.getDocument(session.coverLetterDocumentId);
-    },
-    enabled: !!session?.coverLetterDocumentId,
-  });
-
-  const analysisQuery = useQuery({
-    queryKey: ["analysis", session?.analysisId],
-    queryFn: async () => {
-      if (!session?.analysisId) {
-        throw new Error("Нет анализа для генерации");
-      }
-      return api.getAnalysis(session.analysisId);
-    },
-    enabled: !!session?.analysisId,
-    staleTime: 30_000,
-  });
-
-  const isLoading =
-    !session || resumeDocumentQuery.isLoading || coverDocumentQuery.isLoading || analysisQuery.isLoading;
-
-  const resumeText = resumeDocumentQuery.data?.content ?? "";
-  const coverText = coverDocumentQuery.data?.content ?? "";
+  const atsScore = session?.response.ats_score ?? 0;
+  const roleLabel = useMemo(() => session?.request.target_role || "ваша цель", [session?.request.target_role]);
+  const resumeText = session?.response.improved_resume ?? "";
+  const coverText = session?.response.cover_letter ?? "";
   const resumeHasError = resumeText.trim().toLowerCase().startsWith("[ai error");
   const coverHasError = coverText.trim().toLowerCase().startsWith("[ai error");
-  const atsScore = resumeDocumentQuery.data?.ats_score ?? session?.atsScore ?? 0;
-  const roleLabel = useMemo(() => analysisQuery.data?.analysis.role || "ваша цель", [analysisQuery.data?.analysis.role]);
 
   const handleDownload = (kind: "resume" | "cover") => {
-    const content = kind === "resume" ? resumeText : coverText;
+    if (!session) return;
+    const content = kind === "resume" ? session.response.improved_resume : session.response.cover_letter;
     const fileName = kind === "resume" ? "resume-edton.txt" : "cover-letter-edton.txt";
     const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
     const url = URL.createObjectURL(blob);
@@ -107,36 +71,7 @@ const Results = () => {
     });
   };
 
-  if (!session) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4 text-center">
-          <Sparkles className="w-8 h-8 text-primary animate-spin" />
-          <p className="text-muted-foreground">Загружаем сгенерированные документы...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (resumeDocumentQuery.isError || coverDocumentQuery.isError) {
-    const message =
-      resumeDocumentQuery.error instanceof Error
-        ? resumeDocumentQuery.error.message
-        : coverDocumentQuery.error instanceof Error
-          ? coverDocumentQuery.error.message
-          : "Не удалось загрузить документы";
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Alert variant="destructive" className="max-w-xl">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Ошибка загрузки</AlertTitle>
-          <AlertDescription>{message}</AlertDescription>
-        </Alert>
-      </div>
-    );
-  }
-
-  if (isLoading || !resumeDocumentQuery.data || !coverDocumentQuery.data) {
+  if (isLoading || !session) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="flex flex-col items-center gap-4 text-center">
@@ -220,7 +155,7 @@ const Results = () => {
                 <Alert variant="destructive">
                   <AlertCircle className="h-4 w-4" />
                   <AlertTitle>Не удалось сгенерировать новое резюме</AlertTitle>
-                  <AlertDescription>{resumeText}</AlertDescription>
+                  <AlertDescription>{session?.response.improved_resume}</AlertDescription>
                 </Alert>
               )}
               <Textarea readOnly value={resumeText} className="min-h-[220px] resize-none bg-muted/50" />
@@ -251,7 +186,7 @@ const Results = () => {
                 <Alert variant="destructive">
                   <AlertCircle className="h-4 w-4" />
                   <AlertTitle>Не удалось сгенерировать письмо</AlertTitle>
-                  <AlertDescription>{coverText}</AlertDescription>
+                  <AlertDescription>{session?.response.cover_letter}</AlertDescription>
                 </Alert>
               )}
               <Textarea readOnly value={coverText} className="min-h-[220px] resize-none bg-muted/50" />
