@@ -7,6 +7,7 @@ import Landing from "./pages/Landing";
 import Upload from "./pages/Upload";
 import Analysis from "./pages/Analysis";
 import Results from "./pages/Results";
+import History from "./pages/History";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -22,6 +23,7 @@ const App = () => (
           <Route path="/upload" element={<Upload />} />
           <Route path="/analysis" element={<Analysis />} />
           <Route path="/results" element={<Results />} />
+          <Route path="/history" element={<History />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

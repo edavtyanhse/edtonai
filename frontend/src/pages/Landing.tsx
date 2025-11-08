@@ -16,18 +16,19 @@ const Landing = () => {
   const features = [
     {
       icon: FileText,
-      title: "Загрузите резюме",
-      description: "Быстрая загрузка вашего резюме в PDF или DOCX формате"
+      title: "1. Импортируйте резюме и вакансию",
+      description: "Загрузите PDF/DOCX или вставьте ссылку на вакансию, EdTon автоматически выделит ключевые требования."
     },
     {
       icon: Target,
-      title: "Система анализирует",
-      description: "AI проверяет совпадения с требованиями вакансии"
+      title: "2. Получите аналитику совпадения",
+      description:
+        "AI сравнит опыт с вакансией, построит карту навыков и покажет, что усиливает отклик, а что стоит добавить."
     },
     {
       icon: Sparkles,
-      title: "Получите результат",
-      description: "Адаптированное резюме и сопроводительное письмо за минуты"
+      title: "3. Экспортируйте адаптированные документы",
+      description: "Скачайте обновлённое резюме, сопроводительное письмо и чек-лист действий в один клик."
     }
   ];
 
@@ -79,28 +80,47 @@ const Landing = () => {
 
       {/* Hero Section */}
       <section className="container mx-auto px-4 py-16 md:py-24">
-        <div className="grid lg:grid-cols-2 gap-12 items-center">
+        <div className="grid items-center gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
           <div className="space-y-6 animate-fade-in">
-            <div className="inline-block px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium">
-              Powered by AI
+            <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary">
+              <Sparkles className="h-4 w-4" />
+              AI-конструктор откликов
             </div>
             <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold leading-tight">
-              Создай персонализированное резюме за минуты
+              Превратите резюме в точный ответ на вакансию за 5 минут
             </h1>
             <p className="text-base md:text-lg text-muted-foreground">
-              Вставь вакансию — получи адаптированное резюме и письмо с рекомендациями от AI
+              EdTon.ai анализирует ваше резюме и требования работодателя, собирает сильные стороны и выдаёт готовые документы с рекомендациями по улучшению.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4">
-              <Button 
-                size="lg" 
+            <div className="grid gap-4 text-sm text-muted-foreground sm:grid-cols-2">
+              <div className="flex items-start gap-3">
+                <CircleCheck className="mt-0.5 h-5 w-5 text-primary" />
+                <p>Глубокий анализ hard и soft skills с оценкой совпадения.</p>
+              </div>
+              <div className="flex items-start gap-3">
+                <CircleCheck className="mt-0.5 h-5 w-5 text-primary" />
+                <p>Готовые версии резюме, письма и чек-лист действий.</p>
+              </div>
+              <div className="flex items-start gap-3">
+                <CircleCheck className="mt-0.5 h-5 w-5 text-primary" />
+                <p>AI-подсказки по тону, структуре и релевантным примерам.</p>
+              </div>
+              <div className="flex items-start gap-3">
+                <CircleCheck className="mt-0.5 h-5 w-5 text-primary" />
+                <p>Экспорт в PDF/DOCX и интеграция с ATS-требованиями.</p>
+              </div>
+            </div>
+            <div className="flex flex-col gap-4 sm:flex-row">
+              <Button
+                size="lg"
                 className="gradient-hero shadow-card hover:shadow-lg transition-all"
                 onClick={() => navigate('/upload')}
               >
                 Начать бесплатно
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
-              <Button 
-                size="lg" 
+              <Button
+                size="lg"
                 variant="outline"
                 onClick={() => {
                   const exampleSection = document.getElementById('example');
@@ -111,12 +131,13 @@ const Landing = () => {
               </Button>
             </div>
           </div>
-          <div className="relative animate-slide-up">
-            <img 
-              src={heroImage} 
-              alt="EdTon.ai Interface" 
-              className="rounded-2xl shadow-card w-full"
+          <div className="relative animate-slide-up space-y-6">
+            <img
+              src={heroImage}
+              alt="EdTon.ai AI workflow illustration"
+              className="w-full rounded-3xl border border-primary/10 shadow-card"
             />
+            <HeroAnalysisPreview />
           </div>
         </div>
       </section>
@@ -190,64 +211,55 @@ const Landing = () => {
       {/* Example Section */}
       <section id="example" className="bg-secondary/30 py-16 md:py-24">
         <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto">
+          <div className="mx-auto max-w-5xl">
             <div className="text-center mb-12">
               <h2 className="text-3xl md:text-4xl font-bold mb-4">Пример работы</h2>
               <p className="text-muted-foreground text-lg">
-                Посмотрите, как EdTon.ai трансформирует ваше резюме
+                Посмотрите, как EdTon.ai расшифровывает сильные стороны и формирует выдачу
               </p>
             </div>
-            <Card className="p-8 shadow-card">
+            <div className="grid gap-8 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
+              <Card className="p-8 shadow-card">
+                <div className="space-y-6">
+                  <div className="space-y-4">
+                    <h3 className="flex items-center gap-2 text-xl font-semibold">
+                      <FileText className="w-5 h-5 text-primary" />
+                      Исходные данные
+                    </h3>
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <div className="rounded-xl border border-dashed border-primary/30 bg-secondary/40 p-4 text-sm">
+                        <p className="font-medium mb-2">Резюме</p>
+                        <p className="text-muted-foreground">Product Manager, 2 года · Финтех</p>
+                        <p className="text-muted-foreground">SQL · Python · Discovery-интервью</p>
+                      </div>
+                      <div className="rounded-xl border border-dashed border-primary/30 bg-secondary/40 p-4 text-sm">
+                        <p className="font-medium mb-2">Вакансия</p>
+                        <p className="text-muted-foreground">Lead PM в EdTech, акцент на A/B тесты</p>
+                        <p className="text-muted-foreground">Нужна экспертиза в образовательных продуктах</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex justify-center">
+                    <Sparkles className="h-10 w-10 text-primary animate-pulse-slow" />
+                  </div>
+                  <div className="space-y-4">
+                    <h3 className="flex items-center gap-2 text-xl font-semibold">
+                      <CheckCircle2 className="w-5 h-5 text-success" />
+                      Что делает EdTon.ai
+                    </h3>
+                    <ul className="space-y-2 text-sm text-muted-foreground">
+                      <li>• Сравнивает навыки и опыт с JD, подсвечивая совпадения и пробелы</li>
+                      <li>• Переписывает блок опыта с акцентом на релевантные метрики</li>
+                      <li>• Формирует рекомендации по следующему шагу и сопроводительное письмо</li>
+                    </ul>
+                  </div>
+                </div>
+              </Card>
               <div className="space-y-6">
-                <div className="space-y-4">
-                  <h3 className="text-xl font-semibold flex items-center gap-2">
-                    <FileText className="w-5 h-5 text-primary" />
-                    Исходное резюме
-                  </h3>
-                  <div className="p-4 bg-secondary/50 rounded-lg text-sm">
-                    <p className="font-medium mb-2">Product Manager, 2 года опыта</p>
-                    <p className="text-muted-foreground">
-                      • Опыт в fintech<br/>
-                      • Знание SQL, Python<br/>
-                      • Управление roadmap
-                    </p>
-                  </div>
-                </div>
-                
-                <div className="flex justify-center">
-                  <ArrowRight className="w-8 h-8 text-primary rotate-90 md:rotate-0" />
-                </div>
-
-                <div className="space-y-4">
-                  <h3 className="text-xl font-semibold flex items-center gap-2">
-                    <Target className="w-5 h-5 text-primary" />
-                    Вакансия
-                  </h3>
-                  <div className="p-4 bg-secondary/50 rounded-lg text-sm">
-                    <p className="font-medium mb-2">Product Manager в EdTech</p>
-                    <p className="text-muted-foreground">
-                      Требуется: аналитика, A/B-тестирование, управление backlog
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex justify-center">
-                  <Sparkles className="w-8 h-8 text-primary animate-pulse-slow" />
-                </div>
-
-                <div className="space-y-4">
-                  <h3 className="text-xl font-semibold flex items-center gap-2">
-                    <CheckCircle2 className="w-5 h-5 text-success" />
-                    Результат (74% совпадение)
-                  </h3>
-                  <div className="p-4 bg-success/10 border border-success/20 rounded-lg text-sm space-y-2">
-                    <p className="font-medium">✅ Совпадающие навыки: SQL, Python, управление backlog</p>
-                    <p className="font-medium text-warning">⚠️ Недостающие: A/B Testing, EdTech experience</p>
-                    <p className="font-medium text-primary">💡 Рекомендация: добавить примеры образовательных проектов</p>
-                  </div>
-                </div>
+                <HeroAnalysisPreview />
+                <ResumeInsightsCarousel />
               </div>
-            </Card>
+            </div>
           </div>
         </div>
       </section>
