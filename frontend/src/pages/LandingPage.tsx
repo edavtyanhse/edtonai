@@ -9,8 +9,12 @@ import { useTranslation } from 'react-i18next';
 
 export default function LandingPage() {
     const { i18n } = useTranslation();
-    // Sync state with i18next or just use local state for the landing visual text
-    const [lang, setLang] = useState<Language>((i18n.language as Language) || 'en');
+    // Normalize language: 'en-US' -> 'en', 'ru-RU' -> 'ru', fallback to 'en'
+    const getBaseLanguage = (): Language => {
+        const detected = i18n.language?.split('-')[0];
+        return (detected === 'en' || detected === 'ru') ? detected : 'en';
+    };
+    const [lang, setLang] = useState<Language>(getBaseLanguage());
 
     const toggleLang = () => {
         const newLang = lang === 'en' ? 'ru' : 'en';

@@ -1,4 +1,4 @@
-import { ToastType } from './Toast'
+import { type ToastType } from '@/context/ToastContext'
 
 // Global toast function for use outside React components
 let globalShowToast: ((type: ToastType, message: string) => void) | null = null

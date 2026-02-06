@@ -1,4 +1,4 @@
-import { useState, useCallback, ReactNode } from 'react'
+import { useState, useCallback, ReactNode, useContext } from 'react'
 import { X, CheckCircle, AlertCircle, Info } from 'lucide-react'
 import { ToastContext, type ToastType } from '@/context/ToastContext'
 
@@ -63,6 +63,14 @@ function ToastItem({ toast, onClose }: { toast: Toast; onClose: () => void }) {
       </button>
     </div>
   )
+}
+
+export function useToast() {
+  const context = useContext(ToastContext)
+  if (!context) {
+    throw new Error('useToast must be used within ToastProvider')
+  }
+  return context
 }
 
 // Standalone Toaster component that can be used without context

@@ -1,13 +1,8 @@
 import { useState } from 'react'
 import { useMutation } from '@tanstack/react-query'
-<<<<<<< HEAD
 import { Briefcase, Loader2, ArrowRight, ArrowLeft, Edit3, Save, Check, Link as LinkIcon } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import { useWizard } from '@/context/WizardContext'
-=======
-import { Briefcase, Loader2, ArrowRight, ArrowLeft, Edit3, Save, Check } from 'lucide-react'
 import { useWizard } from '@/hooks'
->>>>>>> 16a6e99ef33840da0c73c953b410d723f95cca74
 import { parseVacancy, updateVacancy } from '@/api'
 import { Button, TextAreaWithCounter } from '@/components'
 import VacancyEditor from '@/components/VacancyEditor'

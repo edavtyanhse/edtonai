@@ -1,12 +1,9 @@
 import { useMutation } from '@tanstack/react-query'
 import { BarChart2, Loader2, ArrowRight, ArrowLeft, AlertTriangle, CheckCircle, XCircle } from 'lucide-react'
-<<<<<<< HEAD
 import { useTranslation } from 'react-i18next'
-import { useWizard } from '@/context/WizardContext'
-=======
 import { useWizard } from '@/hooks'
->>>>>>> 16a6e99ef33840da0c73c953b410d723f95cca74
 import { analyzeMatch } from '@/api'
+import type { Gap, MatchAnalysis } from '@/api'
 import { Button } from '@/components'
 
 export default function Step3Analysis() {
@@ -178,10 +175,10 @@ export default function Step3Analysis() {
             <div className="bg-slate-800 border border-slate-700 rounded-lg p-4">
               <h3 className="font-medium text-white mb-3">{t('wizard.step3.required_skills')}</h3>
               <div className="space-y-2">
-                {analysis.matched_required_skills.map((skill) => (
+                {analysis.matched_required_skills.map((skill: string) => (
                   <SkillBadge key={skill} skill={skill} matched />
                 ))}
-                {analysis.missing_required_skills.map((skill) => (
+                {analysis.missing_required_skills.map((skill: string) => (
                   <SkillBadge key={skill} skill={skill} matched={false} />
                 ))}
                 {analysis.matched_required_skills.length === 0 &&
@@ -195,10 +192,10 @@ export default function Step3Analysis() {
             <div className="bg-slate-800 border border-slate-700 rounded-lg p-4">
               <h3 className="font-medium text-white mb-3">{t('wizard.step3.preferred_skills')}</h3>
               <div className="space-y-2">
-                {analysis.matched_preferred_skills.map((skill) => (
+                {analysis.matched_preferred_skills.map((skill: string) => (
                   <SkillBadge key={skill} skill={skill} matched />
                 ))}
-                {analysis.missing_preferred_skills.map((skill) => (
+                {analysis.missing_preferred_skills.map((skill: string) => (
                   <SkillBadge key={skill} skill={skill} matched={false} />
                 ))}
                 {analysis.matched_preferred_skills.length === 0 &&
@@ -216,7 +213,7 @@ export default function Step3Analysis() {
                 {t('wizard.step3.gaps')} ({analysis.gaps.length})
               </h3>
               <div className="space-y-3">
-                {analysis.gaps.map((gap) => (
+                {analysis.gaps.map((gap: Gap) => (
                   <div
                     key={gap.id}
                     className={`p-3 rounded-lg border ${gap.severity === 'high'

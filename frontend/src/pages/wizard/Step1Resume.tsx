@@ -1,14 +1,9 @@
 import { useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useMutation } from '@tanstack/react-query'
-<<<<<<< HEAD
 import { FileText, Loader2, ArrowRight, Edit3, Save, Check, UploadCloud, X } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import { useWizard } from '@/context/WizardContext'
-=======
-import { FileText, Loader2, ArrowRight, Edit3, Save, Check } from 'lucide-react'
 import { useWizard } from '@/hooks'
->>>>>>> 16a6e99ef33840da0c73c953b410d723f95cca74
 import { parseResume, updateResume } from '@/api'
 import { Button, TextAreaWithCounter } from '@/components'
 import ResumeEditor from '@/components/ResumeEditor'

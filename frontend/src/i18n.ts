@@ -23,8 +23,9 @@ i18n
                 translation: ru
             }
         },
-        fallbackLng: 'ru',
-        debug: true,
+        fallbackLng: 'en',
+        load: 'languageOnly', // Convert 'en-US' to 'en', 'ru-RU' to 'ru'
+        debug: false,
 
         interpolation: {
             escapeValue: false, // not needed for react as it escapes by default

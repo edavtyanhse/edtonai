@@ -1,14 +1,10 @@
 import { useState } from 'react'
 import { useMutation } from '@tanstack/react-query'
-<<<<<<< HEAD
 import { Sparkles, Loader2, ArrowLeft, Copy, RotateCcw, Check, X, AlertTriangle, CheckCircle, XCircle, TrendingUp, TrendingDown, Minus, Eye, DownloadCloud } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import { useWizard } from '@/context/WizardContext'
-=======
-import { Sparkles, Loader2, ArrowLeft, Copy, RotateCcw, Check, X, AlertTriangle, CheckCircle, XCircle, TrendingUp, TrendingDown, Minus } from 'lucide-react'
 import { useWizard } from '@/hooks'
->>>>>>> 16a6e99ef33840da0c73c953b410d723f95cca74
 import { adaptResume, createVersion, analyzeMatch } from '@/api'
+import type { Gap, CheckboxOption } from '@/api'
 import { Button, CheckboxList, ConfirmDialog } from '@/components'
 import PdfPreview from '@/components/pdf/PdfPreview'
 import type { ChangeLogEntry, SelectedImprovement } from '@/api'
@@ -46,8 +42,8 @@ export default function Step4Improvement() {
 
   // Build selected_improvements from checkboxes + user inputs
   const buildSelectedImprovements = (): SelectedImprovement[] => {
-    return state.selectedCheckboxes.map((checkboxId) => {
-      const option = checkboxOptions.find((o) => o.id === checkboxId)
+    return state.selectedCheckboxes.map((checkboxId: string) => {
+      const option = checkboxOptions.find((o: CheckboxOption) => o.id === checkboxId)
       const userInput = userInputs[checkboxId]
       const aiGenerate = aiGenerateFlags[checkboxId] || false
 
@@ -161,7 +157,7 @@ export default function Step4Improvement() {
 
   const handleSelectAll = () => {
     // Select all options (enabled field is deprecated, now all options are enabled)
-    const allIds = checkboxOptions.map((o) => o.id)
+    const allIds = checkboxOptions.map((o: CheckboxOption) => o.id)
     setSelectedCheckboxes(allIds)
   }
 
@@ -484,10 +480,10 @@ export default function Step4Improvement() {
               <div className="bg-slate-800 border border-slate-700 rounded-lg p-4">
                 <h3 className="font-medium text-white mb-3">{t('wizard.step3.required_skills')}</h3>
                 <div className="space-y-2">
-                  {analysis.matched_required_skills.map((skill) => (
+                  {analysis.matched_required_skills.map((skill: string) => (
                     <SkillBadge key={skill} skill={skill} matched />
                   ))}
-                  {analysis.missing_required_skills.map((skill) => (
+                  {analysis.missing_required_skills.map((skill: string) => (
                     <SkillBadge key={skill} skill={skill} matched={false} />
                   ))}
                   {analysis.matched_required_skills.length === 0 &&
@@ -501,10 +497,10 @@ export default function Step4Improvement() {
               <div className="bg-slate-800 border border-slate-700 rounded-lg p-4">
                 <h3 className="font-medium text-white mb-3">{t('wizard.step3.preferred_skills')}</h3>
                 <div className="space-y-2">
-                  {analysis.matched_preferred_skills.map((skill) => (
+                  {analysis.matched_preferred_skills.map((skill: string) => (
                     <SkillBadge key={skill} skill={skill} matched />
                   ))}
-                  {analysis.missing_preferred_skills.map((skill) => (
+                  {analysis.missing_preferred_skills.map((skill: string) => (
                     <SkillBadge key={skill} skill={skill} matched={false} />
                   ))}
                   {analysis.matched_preferred_skills.length === 0 &&
@@ -523,7 +519,7 @@ export default function Step4Improvement() {
                 {t('wizard.step3.gaps')} ({analysis.gaps.length})
               </h3>
               <div className="space-y-3">
-                {analysis.gaps.map((gap) => (
+                {analysis.gaps.map((gap: Gap) => (
                   <div
                     key={gap.id}
                     className={`p-3 rounded-lg border ${gap.severity === 'high'
