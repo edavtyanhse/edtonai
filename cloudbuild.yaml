@@ -97,3 +97,6 @@ substitutions:
   # _VITE_SUPABASE_URL
   # _VITE_SUPABASE_ANON_KEY
   # _BACKEND_URL (Should be https://edtonai-backend-985259530508.us-east1.run.app)
+
+options:
+  logging: CLOUD_LOGGING_ONLY
