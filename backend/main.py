@@ -53,7 +53,9 @@ async def health_check():
     try:
         async with AsyncSessionLocal() as session:
             await session.execute(text("SELECT 1"))
-    except Exception:
+    except Exception as e:
+        import logging
+        logging.error(f"Health check database error: {type(e).__name__}: {e}")
         db_status = "error"
 
     status = "ok" if db_status == "ok" else "degraded"

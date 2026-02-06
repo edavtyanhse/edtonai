@@ -11,7 +11,8 @@ async_engine = create_async_engine(
     echo=False,
     future=True,
     # Supabase Transaction Pooler (port 6543) does not support prepared statements
-    connect_args={"prepare_threshold": None},
+    # Use statement_cache_size=0 to disable prepared statement caching
+    connect_args={"statement_cache_size": 0},
 )
 
 AsyncSessionLocal = async_sessionmaker(
