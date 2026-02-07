@@ -28,7 +28,7 @@ const Header: React.FC<HeaderProps> = ({ lang, toggleLang }) => {
             howItWorks: 'How it Works',
             login: 'Log In',
             getStarted: 'Get Started',
-            workspace: 'Workspace',
+            history: 'History',
             logout: 'Log Out'
         },
         ru: {
@@ -36,7 +36,7 @@ const Header: React.FC<HeaderProps> = ({ lang, toggleLang }) => {
             howItWorks: 'Как это работает',
             login: 'Войти',
             getStarted: 'Начать',
-            workspace: 'Кабинет',
+            history: 'История версий',
             logout: 'Выйти'
         }
     };
@@ -80,8 +80,8 @@ const Header: React.FC<HeaderProps> = ({ lang, toggleLang }) => {
                                 <LogOut className="w-4 h-4" />
                                 {t.logout}
                             </button>
-                            <Link to="/workspace" className="bg-brand-600 hover:bg-brand-500 text-white px-5 py-2.5 rounded-lg text-sm font-bold transition-colors">
-                                {t.workspace}
+                            <Link to="/history" className="bg-brand-600 hover:bg-brand-500 text-white px-5 py-2.5 rounded-lg text-sm font-bold transition-colors">
+                                {t.history}
                             </Link>
                         </>
                     ) : (
@@ -121,8 +121,8 @@ const Header: React.FC<HeaderProps> = ({ lang, toggleLang }) => {
                     {user ? (
                         <>
                             <div className="flex flex-col gap-2 mt-4">
-                                <Link to="/workspace" onClick={() => setMobileMenuOpen(false)} className="bg-brand-600 text-white text-center py-3 rounded-lg font-bold flex items-center justify-center gap-2">
-                                    <UserIcon className="w-4 h-4" /> {t.workspace}
+                                <Link to="/history" onClick={() => setMobileMenuOpen(false)} className="bg-brand-600 text-white text-center py-3 rounded-lg font-bold flex items-center justify-center gap-2">
+                                    <UserIcon className="w-4 h-4" /> {t.history}
                                 </Link>
                                 <button onClick={handleLogout} className="text-slate-400 py-2 text-left flex items-center gap-2 justify-center">
                                     <LogOut className="w-4 h-4" /> {t.logout}

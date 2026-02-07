@@ -26,6 +26,13 @@ class UserVersion(Base):
         default=uuid.uuid4,
     )
 
+    # User ID from Supabase Auth (for per-user filtering)
+    user_id: Mapped[Optional[str]] = mapped_column(
+        String(255),
+        nullable=True,
+        index=True,
+    )
+
     # Type: 'adapt' or 'ideal'
     type: Mapped[str] = mapped_column(
         String(20),

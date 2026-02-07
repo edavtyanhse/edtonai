@@ -1,5 +1,5 @@
 import { NavLink, Outlet } from 'react-router-dom'
-import { FileText, History, GitCompare } from 'lucide-react'
+import { History, GitCompare } from 'lucide-react'
 import LanguageSwitcher from './LanguageSwitcher'
 
 export default function Layout() {
@@ -17,20 +17,6 @@ export default function Layout() {
           <div className="flex items-center gap-4">
             <LanguageSwitcher />
             <nav className="flex gap-1">
-              <NavLink
-                to="/workspace"
-                end
-                className={({ isActive }) =>
-                  `flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${isActive
-                    ? 'bg-brand-500/10 text-brand-400 border border-brand-500/20'
-                    : 'text-slate-400 hover:text-white hover:bg-slate-800'
-                  }`
-                }
-              >
-                <FileText className="w-4 h-4" />
-                Workspace
-              </NavLink>
-
               <NavLink
                 to="/history"
                 className={({ isActive }) =>

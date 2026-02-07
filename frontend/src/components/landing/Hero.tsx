@@ -11,7 +11,7 @@ interface HeroProps {
 const Hero: React.FC<HeroProps> = ({ lang }) => {
     const content = {
         en: {
-            badge: 'New: Gemini 2.0 Integration',
+
             title: <>Get Hired Faster with <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-400 to-indigo-400">AI-Adapted</span> Resumes</>,
             description: 'Stop guessing what recruiters want. Our AI analyzes job descriptions and instantly rewrites your resume to pass ATS filters and land more interviews.',
             ctaPrimary: 'Optimize My Resume',
@@ -19,7 +19,7 @@ const Hero: React.FC<HeroProps> = ({ lang }) => {
             matchScore: '98% Match'
         },
         ru: {
-            badge: 'Новинка: Интеграция Gemini 2.0',
+
             title: <>Найди работу быстрее с <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-400 to-indigo-400">AI-Резюме</span></>,
             description: 'Перестаньте гадать, чего хотят рекрутеры. Наш ИИ анализирует вакансии и мгновенно переписывает ваше резюме, чтобы пройти ATS фильтры и получить больше приглашений.',
             ctaPrimary: 'Оптимизировать резюме',
@@ -47,13 +47,7 @@ const Hero: React.FC<HeroProps> = ({ lang }) => {
                     transition={{ duration: 0.8 }}
                     className="text-center lg:text-left"
                 >
-                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-900/50 border border-brand-500/30 text-brand-300 text-sm font-medium mb-6">
-                        <span className="relative flex h-2 w-2">
-                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-400 opacity-75"></span>
-                            <span className="relative inline-flex rounded-full h-2 w-2 bg-brand-500"></span>
-                        </span>
-                        {t.badge}
-                    </div>
+
                     <h1 className="text-5xl lg:text-7xl font-extrabold tracking-tight text-white leading-tight mb-6">
                         {t.title}
                     </h1>

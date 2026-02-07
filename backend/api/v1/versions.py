@@ -1,12 +1,13 @@
 """API endpoints for version management (Stage 3)."""
 
 import logging
-from typing import Annotated
+from typing import Annotated, Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from backend.core.auth import get_current_user_id
 from backend.db import get_session
 from backend.repositories import UserVersionRepository
 from backend.schemas import (
@@ -29,11 +30,13 @@ logger = logging.getLogger(__name__)
 async def create_version(
     request: VersionCreateRequest,
     session: Annotated[AsyncSession, Depends(get_session)],
+    user_id: Annotated[Optional[str], Depends(get_current_user_id)],
 ) -> VersionDetailResponse:
     """Save a new version to history."""
     repo = UserVersionRepository(session)
 
     version = await repo.create(
+        user_id=user_id,
         type=request.type,
         title=request.title,
         resume_text=request.resume_text,
@@ -64,12 +67,15 @@ async def create_version(
 )
 async def list_versions(
     session: Annotated[AsyncSession, Depends(get_session)],
+    user_id: Annotated[Optional[str], Depends(get_current_user_id)],
     limit: int = Query(default=50, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
 ) -> VersionListResponse:
-    """Get paginated list of versions."""
+    """Get paginated list of versions for the current user."""
     repo = UserVersionRepository(session)
-    versions, total = await repo.list_versions(limit=limit, offset=offset)
+    versions, total = await repo.list_versions(
+        limit=limit, offset=offset, user_id=user_id
+    )
 
     return VersionListResponse(
         items=[
@@ -95,10 +101,11 @@ async def list_versions(
 async def get_version(
     version_id: UUID,
     session: Annotated[AsyncSession, Depends(get_session)],
+    user_id: Annotated[Optional[str], Depends(get_current_user_id)],
 ) -> VersionDetailResponse:
     """Get full details of a specific version."""
     repo = UserVersionRepository(session)
-    version = await repo.get_by_id(version_id)
+    version = await repo.get_by_id(version_id, user_id=user_id)
 
     if not version:
         raise HTTPException(
@@ -126,10 +133,11 @@ async def get_version(
 async def delete_version(
     version_id: UUID,
     session: Annotated[AsyncSession, Depends(get_session)],
+    user_id: Annotated[Optional[str], Depends(get_current_user_id)],
 ) -> None:
     """Delete a version from history."""
     repo = UserVersionRepository(session)
-    deleted = await repo.delete_by_id(version_id)
+    deleted = await repo.delete_by_id(version_id, user_id=user_id)
 
     if not deleted:
         raise HTTPException(

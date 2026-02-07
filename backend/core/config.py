@@ -59,5 +59,8 @@ class Settings(BaseSettings):
     # Logging
     log_level: str
 
+    # Supabase Auth
+    supabase_jwt_secret: str = ""  # JWT secret for token verification
+
 
 settings = Settings()
