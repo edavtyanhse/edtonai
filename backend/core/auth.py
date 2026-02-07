@@ -2,12 +2,13 @@
 
 import logging
 from typing import Annotated, Optional
+from functools import lru_cache
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 import jwt
-import base64
+from jwt import PyJWKClient
 
 from backend.core.config import settings
 
@@ -15,6 +16,23 @@ logger = logging.getLogger(__name__)
 
 # Bearer token security scheme
 security = HTTPBearer(auto_error=False)
+
+# JWKS client for fetching Supabase public keys
+# Cache the client to avoid re-fetching on every request
+@lru_cache(maxsize=1)
+def get_jwks_client() -> PyJWKClient:
+    """Get cached JWKS client for Supabase."""
+    # Supabase JWKS endpoint
+    supabase_url = settings.supabase_url if hasattr(settings, 'supabase_url') else None
+    if supabase_url:
+        jwks_url = f"{supabase_url}/auth/v1/.well-known/jwks.json"
+    else:
+        # Fallback: construct from project ref in JWT secret or use default
+        # Extract from SUPABASE_URL env var via frontend config
+        jwks_url = "https://qwxfmnhkgepyksdkibvw.supabase.co/auth/v1/.well-known/jwks.json"
+    
+    logger.info(f"Initializing JWKS client with URL: {jwks_url}")
+    return PyJWKClient(jwks_url, cache_keys=True, lifespan=3600)
 
 
 def get_current_user_id(
@@ -31,29 +49,40 @@ def get_current_user_id(
     token = credentials.credentials
     
     try:
-        # Decode JWT using Supabase JWT secret
-        # Try treating secret as raw string first, then as Base64 if signature fails
-        key = settings.supabase_jwt_secret
+        # Try JWKS verification first (for new ECC-signed tokens)
         try:
-             payload = jwt.decode(
+            jwks_client = get_jwks_client()
+            signing_key = jwks_client.get_signing_key_from_jwt(token)
+            payload = jwt.decode(
                 token,
-                key,
-                algorithms=["HS256"],
+                signing_key.key,
+                algorithms=["ES256", "RS256", "HS256"],
                 audience="authenticated",
             )
-        except jwt.InvalidSignatureError:
-            # If signature failed, try decoding the key as Base64 (common for Supabase)
+        except Exception as jwks_error:
+            logger.debug(f"JWKS verification failed, trying legacy HS256: {jwks_error}")
+            # Fallback to legacy HS256 with shared secret
+            import base64
+            key = settings.supabase_jwt_secret
             try:
-                decoded_key = base64.b64decode(key)
                 payload = jwt.decode(
                     token,
-                    decoded_key,
+                    key,
                     algorithms=["HS256"],
                     audience="authenticated",
                 )
-            except Exception:
-                # If both fail, raise the original error (or just let it propagate as invalid)
-                raise jwt.InvalidSignatureError("Signature verification failed")
+            except jwt.InvalidSignatureError:
+                # Try Base64-decoded key
+                try:
+                    decoded_key = base64.b64decode(key)
+                    payload = jwt.decode(
+                        token,
+                        decoded_key,
+                        algorithms=["HS256"],
+                        audience="authenticated",
+                    )
+                except Exception:
+                    raise jwt.InvalidSignatureError("Signature verification failed")
         
         # Extract user ID from 'sub' claim
         user_id = payload.get("sub")
