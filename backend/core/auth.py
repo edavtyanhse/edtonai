@@ -7,6 +7,7 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 import jwt
+import base64
 
 from backend.core.config import settings
 
@@ -31,12 +32,28 @@ def get_current_user_id(
     
     try:
         # Decode JWT using Supabase JWT secret
-        payload = jwt.decode(
-            token,
-            settings.supabase_jwt_secret,
-            algorithms=["HS256"],
-            audience="authenticated",
-        )
+        # Try treating secret as raw string first, then as Base64 if signature fails
+        key = settings.supabase_jwt_secret
+        try:
+             payload = jwt.decode(
+                token,
+                key,
+                algorithms=["HS256"],
+                audience="authenticated",
+            )
+        except jwt.InvalidSignatureError:
+            # If signature failed, try decoding the key as Base64 (common for Supabase)
+            try:
+                decoded_key = base64.b64decode(key)
+                payload = jwt.decode(
+                    token,
+                    decoded_key,
+                    algorithms=["HS256"],
+                    audience="authenticated",
+                )
+            except Exception:
+                # If both fail, raise the original error (or just let it propagate as invalid)
+                raise jwt.InvalidSignatureError("Signature verification failed")
         
         # Extract user ID from 'sub' claim
         user_id = payload.get("sub")
