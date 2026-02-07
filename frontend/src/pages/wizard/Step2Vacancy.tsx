@@ -89,7 +89,7 @@ export default function Step2Vacancy() {
           <p className="text-gray-500 mt-1">
             {mode === 'input'
               ? t('wizard.step2.description')
-              : t('wizard.step1.description')} {/* Using generic description or add specific if needed */}
+              : t('wizard.step2.description')}
           </p>
         </div>
         {mode === 'parsed' && (
@@ -125,18 +125,18 @@ export default function Step2Vacancy() {
               </div>
             </div>
             {localText.length > 0 && (
-              <p className="text-xs text-orange-500 mt-2">
-                * Очистите поле текста ниже, чтобы использовать ссылку
+              <p className="text-xs text-orange-400 mt-2">
+                * {t('wizard.step2.url_disabled_hint')}
               </p>
             )}
           </div>
 
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t border-gray-200" />
+              <span className="w-full border-t border-slate-700" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-white px-2 text-gray-500">{t('wizard.step1.text_tab')}</span>
+              <span className="bg-slate-900 px-2 text-slate-500">{t('wizard.step1.text_tab')}</span>
             </div>
           </div>
 

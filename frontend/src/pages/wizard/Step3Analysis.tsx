@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import { BarChart2, Loader2, ArrowRight, ArrowLeft, AlertTriangle, CheckCircle, XCircle } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
@@ -22,99 +23,80 @@ export default function Step3Analysis() {
     },
   })
 
-  const handleAnalyze = () => {
-    analyzeMutation.mutate()
-  }
+  // Auto-trigger analysis on mount if not already analyzed
+  useEffect(() => {
+    if (!state.analysis && !analyzeMutation.isPending && !analyzeMutation.isError) {
+      analyzeMutation.mutate()
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const analysis = state.analysis
   const hasAnalysis = !!analysis
+  const isLoading = analyzeMutation.isPending
 
+  // Show loading state while analyzing
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 min-h-[400px] space-y-6">
+        <div className="relative">
+          <div className="absolute inset-0 bg-blue-500/20 blur-xl rounded-full" />
+          <Loader2 className="w-16 h-16 text-blue-500 animate-spin relative z-10" />
+        </div>
+        <div className="text-center space-y-2">
+          <h3 className="text-xl font-medium text-white">
+            {t('wizard.step1.analyzing')}
+          </h3>
+          <p className="text-slate-400 max-w-md mx-auto">
+            {t('wizard.step3.description')}
+          </p>
+        </div>
+        <Button variant="outline" onClick={goToPrevStep}>
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          {t('wizard.step2.back')}
+        </Button>
+      </div>
+    )
+  }
+
+  // Show error state
+  if (analyzeMutation.isError && !hasAnalysis) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold text-white">{t('wizard.steps.analysis')}</h1>
+          <p className="text-slate-400 mt-1">{t('wizard.step3.description')}</p>
+        </div>
+        <div className="p-4 bg-red-900/20 border border-red-500/30 rounded-lg text-red-300">
+          {analyzeMutation.error instanceof Error
+            ? analyzeMutation.error.message
+            : t('common.error')}
+        </div>
+        <div className="flex gap-3">
+          <Button variant="outline" onClick={goToPrevStep}>
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            {t('wizard.step2.back')}
+          </Button>
+          <Button onClick={() => analyzeMutation.mutate()}>
+            <BarChart2 className="w-4 h-4 mr-2" />
+            {t('wizard.step2.analyze_button')}
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
+  // Show analysis results (skip the intermediate "preview cards" screen)
   return (
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">{t('wizard.steps.analysis')}</h1>
-        <p className="text-gray-500 mt-1">
-          {hasAnalysis
-            ? t('wizard.step3.description')
-            : t('wizard.step3.description')}
-        </p>
+        <h1 className="text-2xl font-bold text-white">{t('wizard.steps.analysis')}</h1>
+        <p className="text-slate-400 mt-1">{t('wizard.step3.description')}</p>
       </div>
 
-      {!hasAnalysis ? (
-        <div className="space-y-4">
-          {/* Preview cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="bg-white border border-gray-200 rounded-lg p-4">
-              <h3 className="font-medium text-gray-900 mb-2">{t('wizard.steps.resume')}</h3>
-              <p className="text-sm text-gray-600">
-                {state.parsedResume?.personal_info?.name || 'Кандидат'}
-                {state.parsedResume?.personal_info?.title && (
-                  <span className="text-gray-400">
-                    {' '}
-                    — {state.parsedResume.personal_info.title}
-                  </span>
-                )}
-              </p>
-              <p className="text-sm text-gray-500 mt-1">
-                {state.parsedResume?.skills?.length || 0} навыков,{' '}
-                {state.parsedResume?.work_experience?.length || 0} мест работы
-              </p>
-            </div>
-            <div className="bg-white border border-gray-200 rounded-lg p-4">
-              <h3 className="font-medium text-gray-900 mb-2">{t('wizard.steps.vacancy')}</h3>
-              <p className="text-sm text-gray-600">
-                {state.parsedVacancy?.job_title || 'Вакансия'}
-                {state.parsedVacancy?.company && (
-                  <span className="text-gray-400"> — {state.parsedVacancy.company}</span>
-                )}
-              </p>
-              <p className="text-sm text-gray-500 mt-1">
-                {state.parsedVacancy?.required_skills?.length || 0} обязательных навыков
-              </p>
-            </div>
-          </div>
-
-          {/* Analyze button */}
-          <div className="flex justify-center py-8">
-            <Button
-              onClick={handleAnalyze}
-              disabled={analyzeMutation.isPending}
-              className="min-w-[200px]"
-              size="lg"
-            >
-              {analyzeMutation.isPending ? (
-                <>
-                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                  {t('wizard.step1.analyzing')}
-                </>
-              ) : (
-                <>
-                  <BarChart2 className="w-5 h-5 mr-2" />
-                  {t('wizard.step2.analyze_button')}
-                </>
-              )}
-            </Button>
-          </div>
-
-          {analyzeMutation.isError && (
-            <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
-              {analyzeMutation.error instanceof Error
-                ? analyzeMutation.error.message
-                : t('common.error')}
-            </div>
-          )}
-
-          {/* Navigation */}
-          <div className="flex justify-start pt-4">
-            <Button variant="outline" onClick={goToPrevStep}>
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              {t('wizard.step2.back')}
-            </Button>
-          </div>
-        </div>
-      ) : (
+      {hasAnalysis && (
         <div className="space-y-6">
+
           {/* Score */}
           <div className="bg-slate-800 border border-slate-700 rounded-lg p-6">
             <div className="flex items-center justify-between mb-4">

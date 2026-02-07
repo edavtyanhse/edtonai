@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { Trash2, Eye, GitCompare, RotateCcw, FileText, Sparkles, Calendar } from 'lucide-react'
+import { Trash2, Eye, GitCompare, RotateCcw, FileText, Sparkles, Calendar, ArrowLeft } from 'lucide-react'
 import { Button, ConfirmDialog } from '@/components'
 import { getVersions, getVersion, deleteVersion, type VersionItem, type VersionDetail } from '@/api'
 
@@ -92,20 +92,27 @@ export default function History() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-gray-900">Version History</h1>
+      {/* Header with back button */}
+      <div className="flex items-center gap-4">
+        <Button variant="ghost" onClick={() => navigate('/')} className="text-slate-400 hover:text-white">
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Back
+        </Button>
+        <h1 className="text-2xl font-bold text-white">Version History</h1>
+      </div>
 
       {listError && (
-        <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+        <div className="p-4 bg-red-900/20 border border-red-500/30 rounded-lg text-red-300 text-sm">
           Failed to load versions: {(listError as Error).message}
         </div>
       )}
 
       {isLoadingList ? (
-        <div className="text-center py-12 text-gray-500">Loading...</div>
+        <div className="text-center py-12 text-slate-400">Loading...</div>
       ) : versions.length === 0 ? (
         <div className="text-center py-12">
-          <FileText className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-          <p className="text-gray-500 mb-4">No saved versions yet</p>
+          <FileText className="w-12 h-12 text-slate-600 mx-auto mb-4" />
+          <p className="text-slate-400 mb-4">No saved versions yet</p>
           <Button onClick={() => navigate('/')}>
             Create your first version
           </Button>
@@ -132,7 +139,7 @@ export default function History() {
           <div className="col-span-2">
             {selectedVersionId ? (
               isLoadingDetail ? (
-                <div className="bg-white rounded-xl border border-gray-200 p-8 text-center text-gray-500">
+                <div className="bg-slate-800 rounded-xl border border-slate-700 p-8 text-center text-slate-400">
                   Loading...
                 </div>
               ) : selectedVersion ? (
@@ -144,8 +151,8 @@ export default function History() {
                 />
               ) : null
             ) : (
-              <div className="bg-white rounded-xl border border-gray-200 p-8 text-center text-gray-500">
-                <Eye className="w-8 h-8 mx-auto mb-2 text-gray-300" />
+              <div className="bg-slate-800 rounded-xl border border-slate-700 p-8 text-center text-slate-400">
+                <Eye className="w-8 h-8 mx-auto mb-2 text-slate-600" />
                 Select a version to view details
               </div>
             )}
@@ -188,11 +195,10 @@ function VersionCard({
 }: VersionCardProps) {
   return (
     <div
-      className={`p-4 rounded-lg border cursor-pointer transition-colors ${
-        isSelected
+      className={`p-4 rounded-lg border cursor-pointer transition-colors ${isSelected
           ? 'border-primary-300 bg-primary-50'
           : 'border-gray-200 bg-white hover:border-gray-300'
-      }`}
+        }`}
       onClick={onView}
     >
       <div className="flex items-start justify-between mb-2">
@@ -207,11 +213,10 @@ function VersionCard({
           </span>
         </div>
         <span
-          className={`text-xs px-2 py-0.5 rounded ${
-            version.type === 'adapt'
+          className={`text-xs px-2 py-0.5 rounded ${version.type === 'adapt'
               ? 'bg-primary-100 text-primary-700'
               : 'bg-green-100 text-green-700'
-          }`}
+            }`}
         >
           {version.type}
         </span>
@@ -289,11 +294,10 @@ function VersionDetailPanel({ version, onRestore, onCompare, formatDate }: Versi
             {formatDate(version.created_at)}
           </span>
           <span
-            className={`px-2 py-0.5 rounded text-xs ${
-              version.type === 'adapt'
+            className={`px-2 py-0.5 rounded text-xs ${version.type === 'adapt'
                 ? 'bg-primary-100 text-primary-700'
                 : 'bg-green-100 text-green-700'
-            }`}
+              }`}
           >
             {version.type}
           </span>
@@ -304,33 +308,30 @@ function VersionDetailPanel({ version, onRestore, onCompare, formatDate }: Versi
       <div className="flex border-b border-gray-200">
         <button
           onClick={() => setActiveTab('result')}
-          className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-            activeTab === 'result'
+          className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'result'
               ? 'border-primary-500 text-primary-600'
               : 'border-transparent text-gray-500 hover:text-gray-700'
-          }`}
+            }`}
         >
           Result
         </button>
         {version.resume_text && (
           <button
             onClick={() => setActiveTab('resume')}
-            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-              activeTab === 'resume'
+            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'resume'
                 ? 'border-primary-500 text-primary-600'
                 : 'border-transparent text-gray-500 hover:text-gray-700'
-            }`}
+              }`}
           >
             Original Resume
           </button>
         )}
         <button
           onClick={() => setActiveTab('vacancy')}
-          className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-            activeTab === 'vacancy'
+          className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'vacancy'
               ? 'border-primary-500 text-primary-600'
               : 'border-transparent text-gray-500 hover:text-gray-700'
-          }`}
+            }`}
         >
           Vacancy
         </button>

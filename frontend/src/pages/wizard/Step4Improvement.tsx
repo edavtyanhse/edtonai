@@ -193,10 +193,10 @@ export default function Step4Improvement() {
         </div>
         <div className="text-center space-y-2">
           <h3 className="text-xl font-medium text-white">
-            {saveVersionMutation.isPending ? 'Применяем изменения...' : 'Анализируем результат...'}
+            {saveVersionMutation.isPending ? t('wizard.step4.applying') : t('wizard.step1.analyzing')}
           </h3>
           <p className="text-slate-400 max-w-md mx-auto">
-            Пожалуйста, подождите. Мы обновляем ваше резюме и проверяем его соответствие вакансии.
+            {t('wizard.step3.description')}
           </p>
         </div>
       </div>
@@ -400,7 +400,7 @@ export default function Step4Improvement() {
                 {/* Score comparison */}
                 {state.previousScore !== null && scoreDiff !== null && (
                   <div className="flex items-center gap-2 text-sm">
-                    <span className="text-gray-500">Было: {state.previousScore}</span>
+                    <span className="text-gray-500">{t('wizard.step4.before')}: {state.previousScore}</span>
                     <span className="text-gray-400">→</span>
                     {scoreDiff > 0 ? (
                       <span className="flex items-center text-green-600">
@@ -439,7 +439,7 @@ export default function Step4Improvement() {
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {analysis.score_breakdown.skill_fit && (
                   <ScoreCard
-                    label="Навыки"
+                    label={t('wizard.step3.score_skills')}
                     value={analysis.score_breakdown.skill_fit.value}
                     maxValue={50}
                     comment={analysis.score_breakdown.skill_fit.comment}
@@ -447,7 +447,7 @@ export default function Step4Improvement() {
                 )}
                 {analysis.score_breakdown.experience_fit && (
                   <ScoreCard
-                    label="Опыт"
+                    label={t('wizard.step3.score_experience')}
                     value={analysis.score_breakdown.experience_fit.value}
                     maxValue={25}
                     comment={analysis.score_breakdown.experience_fit.comment}
@@ -455,7 +455,7 @@ export default function Step4Improvement() {
                 )}
                 {analysis.score_breakdown.ats_fit && (
                   <ScoreCard
-                    label="ATS"
+                    label={t('wizard.step3.score_ats')}
                     value={analysis.score_breakdown.ats_fit.value}
                     maxValue={15}
                     comment={analysis.score_breakdown.ats_fit.comment}
@@ -463,7 +463,7 @@ export default function Step4Improvement() {
                 )}
                 {analysis.score_breakdown.clarity_evidence && (
                   <ScoreCard
-                    label="Четкость"
+                    label={t('wizard.step3.score_clarity')}
                     value={analysis.score_breakdown.clarity_evidence.value}
                     maxValue={10}
                     comment={analysis.score_breakdown.clarity_evidence.comment}
@@ -505,7 +505,7 @@ export default function Step4Improvement() {
                   ))}
                   {analysis.matched_preferred_skills.length === 0 &&
                     analysis.missing_preferred_skills.length === 0 && (
-                      <p className="text-sm text-gray-500">Нет данных</p>
+                      <p className="text-sm text-gray-500">{t('wizard.step3.no_data')}</p>
                     )}
                 </div>
               </div>
@@ -597,20 +597,11 @@ export default function Step4Improvement() {
         isOpen={showSaveDialog}
         title={t('wizard.step4.apply_final')}
         message={
-          <div className="space-y-3">
-            <p className="text-slate-300">
-              {t('wizard.step4.final_confirm_message', 'Применить подтверждённые изменения? Обновлённое резюме станет базовым для дальнейших улучшений.')}
-            </p>
-            <input
-              type="text"
-              className="w-full px-3 py-2 border border-slate-600 bg-slate-900 text-white rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent placeholder-slate-500"
-              placeholder={t('wizard.step4.version_placeholder', 'Название версии (опционально)')}
-              value={versionTitle}
-              onChange={(e) => setVersionTitle(e.target.value)}
-            />
-          </div>
+          <p className="text-slate-300">
+            {t('wizard.step4.final_confirm_message', 'Apply confirmed changes? The updated resume will become the base for further improvements.')}
+          </p>
         }
-        confirmText={saveVersionMutation.isPending || reanalyzeMutation.isPending ? 'Применение...' : 'Применить'}
+        confirmText={saveVersionMutation.isPending || reanalyzeMutation.isPending ? t('wizard.step4.applying') : t('wizard.step4.apply_final')}
         onConfirm={handleSaveAndAnalyze}
         onClose={() => setShowSaveDialog(false)}
       />

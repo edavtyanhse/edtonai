@@ -36,7 +36,10 @@
             "supports": "Supports PDF, DOCX (max 10MB)",
             "analyzing": "Analyzing file...",
             "manual_placeholder": "Paste your resume text here...",
-            "next": "Next: Vacancy"
+            "next": "Next: Vacancy",
+            "file_loaded": "File Loaded",
+            "characters": "characters",
+            "remove_file": "Remove File"
         },
         "step2": {
             "title": "Vacancy Description",
@@ -50,9 +53,10 @@
             "title": "Analysis Results",
             "description": "Here is how well your resume matches the vacancy right now.",
             "score": "Match Score",
-            "score_skills": "Skills Match",
+            "score_skills": "Skills",
             "score_experience": "Experience",
-            "score_ats": "ATS Format",
+            "score_ats": "ATS",
+            "score_clarity": "Clarity",
             "score_period": "Employment",
             "required_skills": "Required Skills",
             "preferred_skills": "Preferred Skills",
@@ -95,6 +99,9 @@
         "error": "Error",
         "success": "Success",
         "back": "Back",
+        "save": "Save",
+        "done": "Done",
+        "back_home": "Back to Home",
         "footer": "Powered by AI • Your data is not saved after session"
     }
 }

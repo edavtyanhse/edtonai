@@ -102,49 +102,79 @@ export default function Step1Resume() {
   }
 
   // Simple Drag & Drop Area
-  const FileUploadArea = () => (
-    <div
-      className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:bg-gray-50 transition-colors cursor-pointer relative"
-      onDragOver={(e) => e.preventDefault()}
-      onDrop={(e) => {
-        e.preventDefault()
-        onDrop(Array.from(e.dataTransfer.files))
-      }}
-      onClick={() => document.getElementById('file-input')?.click()}
-    >
-      <input
-        id="file-input"
-        type="file"
-        className="hidden"
-        accept=".pdf,.docx,.txt"
-        onChange={(e) => e.target.files && onDrop(Array.from(e.target.files))}
-      />
+  const FileUploadArea = () => {
+    const hasFile = localText.length > 50 // Consider file uploaded if we have substantial text
 
-      {isProcessingFile ? (
-        <div className="flex flex-col items-center justify-center py-4">
-          <Loader2 className="w-8 h-8 text-blue-500 animate-spin mb-2" />
-          <p className="text-sm text-gray-600">{t('wizard.step1.analyzing')}</p>
-        </div>
-      ) : (
-        <>
-          <div className="w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-3">
-            <UploadCloud className="w-6 h-6 text-blue-600" />
+    return (
+      <div
+        className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors cursor-pointer relative ${hasFile
+          ? 'border-green-500/50 bg-green-900/10'
+          : 'border-slate-600 hover:border-slate-500 hover:bg-slate-800/50'
+          }`}
+        onDragOver={(e) => e.preventDefault()}
+        onDrop={(e) => {
+          e.preventDefault()
+          onDrop(Array.from(e.dataTransfer.files))
+        }}
+        onClick={() => !hasFile && document.getElementById('file-input')?.click()}
+      >
+        <input
+          id="file-input"
+          type="file"
+          className="hidden"
+          accept=".pdf,.docx,.txt"
+          onChange={(e) => e.target.files && onDrop(Array.from(e.target.files))}
+        />
+
+        {isProcessingFile ? (
+          <div className="flex flex-col items-center justify-center py-4">
+            <Loader2 className="w-8 h-8 text-blue-500 animate-spin mb-2" />
+            <p className="text-sm text-slate-300">{t('wizard.step1.analyzing')}</p>
           </div>
-          <h3 className="text-sm font-medium text-gray-900">{t('wizard.step1.upload_tab')}</h3>
-          <p className="text-xs text-gray-500 mt-1">
-            {t('wizard.step1.supports')}
-          </p>
-        </>
-      )}
+        ) : hasFile ? (
+          <div className="flex flex-col items-center justify-center py-4">
+            <div className="w-12 h-12 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-3">
+              <FileText className="w-6 h-6 text-green-400" />
+            </div>
+            <h3 className="text-sm font-medium text-white">{t('wizard.step1.file_loaded')}</h3>
+            <p className="text-xs text-slate-400 mt-1">
+              {localText.length.toLocaleString()} {t('wizard.step1.characters')}
+            </p>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation()
+                setLocalText('')
+                setFileError(null)
+              }}
+              className="mt-3 flex items-center gap-1 text-xs text-red-400 hover:text-red-300 transition-colors"
+            >
+              <X className="w-3 h-3" />
+              {t('wizard.step1.remove_file')}
+            </button>
+          </div>
+        ) : (
+          <>
+            <div className="w-12 h-12 bg-blue-500/20 rounded-full flex items-center justify-center mx-auto mb-3">
+              <UploadCloud className="w-6 h-6 text-blue-400" />
+            </div>
+            <h3 className="text-sm font-medium text-white">{t('wizard.step1.upload_tab')}</h3>
+            <p className="text-xs text-slate-400 mt-1">
+              {t('wizard.step1.supports')}
+            </p>
+          </>
+        )}
 
-      {fileError && (
-        <div className="absolute inset-x-0 bottom-0 p-2 bg-red-50 text-red-600 text-xs rounded-b-lg border-t border-red-100 flex items-center justify-center">
-          <X className="w-3 h-3 mr-1" />
-          {fileError}
-        </div>
-      )}
-    </div>
-  )
+        {fileError && (
+          <div className="absolute inset-x-0 bottom-0 p-2 bg-red-900/50 text-red-300 text-xs rounded-b-lg border-t border-red-500/30 flex items-center justify-center">
+            <X className="w-3 h-3 mr-1" />
+            {fileError}
+          </div>
+        )}
+      </div>
+    )
+  }
+
 
   const isParseDisabled = localText.length < 10 || localText.length > MAX_CHARS
 
@@ -153,11 +183,9 @@ export default function Step1Resume() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">{t('wizard.step1.title')}</h1>
-          <p className="text-gray-500 mt-1">
-            {mode === 'input'
-              ? t('wizard.step1.description')
-              : t('wizard.step1.description')}
+          <h1 className="text-2xl font-bold text-white">{t('wizard.step1.title')}</h1>
+          <p className="text-slate-400 mt-1">
+            {t('wizard.step1.description')}
           </p>
         </div>
         {mode === 'parsed' && (
@@ -177,10 +205,10 @@ export default function Step1Resume() {
 
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t border-gray-200" />
+              <span className="w-full border-t border-slate-700" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-white px-2 text-gray-500">{t('wizard.step1.text_tab')}</span>
+              <span className="bg-slate-900 px-2 text-slate-500">{t('wizard.step1.text_tab')}</span>
             </div>
           </div>
 
