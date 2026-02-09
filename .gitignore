@@ -59,3 +59,8 @@ frontend/bun.lockb
 **/*.otf
 
 backend.env
+monitoring/setup_scripts/  
+  
+monitoring/setup_scripts/  
+.env  
+backend.env 

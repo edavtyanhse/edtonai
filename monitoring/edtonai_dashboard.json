@@ -1,0 +1,250 @@
+{
+    "displayName": "EdTon.ai Monitoring Dashboard",
+    "mosaicLayout": {
+        "columns": 12,
+        "tiles": [
+            {
+                "xPos": 0,
+                "yPos": 0,
+                "width": 12,
+                "height": 1,
+                "widget": {
+                    "title": "🎯 Parsing SLOs (Specific Endpoints)",
+                    "text": {
+                        "content": "**SLO Resume Parsing**: p95 < 50s (Metric: `resume_parsing_latency`) \n**SLO Vacancy Parsing**: p95 < 40s (Metric: `vacancy_parsing_latency`) \nMeasurements are based on specific endpoint calls extracted from logs.",
+                        "format": "MARKDOWN"
+                    }
+                }
+            },
+            {
+                "xPos": 0,
+                "yPos": 1,
+                "width": 6,
+                "height": 4,
+                "widget": {
+                    "title": "Resume Parsing Latency (p95)",
+                    "xyChart": {
+                        "dataSets": [
+                            {
+                                "timeSeriesQuery": {
+                                    "timeSeriesFilter": {
+                                        "filter": "metric.type=\"logging.googleapis.com/user/resume_parsing_latency\"",
+                                        "aggregation": {
+                                            "alignmentPeriod": "60s",
+                                            "perSeriesAligner": "ALIGN_PERCENTILE_95",
+                                            "crossSeriesReducer": "REDUCE_MEAN"
+                                        }
+                                    }
+                                },
+                                "plotType": "LINE",
+                                "legendTemplate": "p95"
+                            },
+                            {
+                                "timeSeriesQuery": {
+                                    "timeSeriesFilter": {
+                                        "filter": "metric.type=\"logging.googleapis.com/user/resume_parsing_latency\"",
+                                        "aggregation": {
+                                            "alignmentPeriod": "60s",
+                                            "perSeriesAligner": "ALIGN_PERCENTILE_50",
+                                            "crossSeriesReducer": "REDUCE_MEAN"
+                                        }
+                                    }
+                                },
+                                "plotType": "LINE",
+                                "legendTemplate": "p50"
+                            }
+                        ],
+                        "yAxis": {
+                            "scale": "LINEAR",
+                            "label": "ms"
+                        }
+                    }
+                }
+            },
+            {
+                "xPos": 6,
+                "yPos": 1,
+                "width": 6,
+                "height": 4,
+                "widget": {
+                    "title": "Vacancy Parsing Latency (p95)",
+                    "xyChart": {
+                        "dataSets": [
+                            {
+                                "timeSeriesQuery": {
+                                    "timeSeriesFilter": {
+                                        "filter": "metric.type=\"logging.googleapis.com/user/vacancy_parsing_latency\"",
+                                        "aggregation": {
+                                            "alignmentPeriod": "60s",
+                                            "perSeriesAligner": "ALIGN_PERCENTILE_95",
+                                            "crossSeriesReducer": "REDUCE_MEAN"
+                                        }
+                                    }
+                                },
+                                "plotType": "LINE",
+                                "legendTemplate": "p95"
+                            },
+                            {
+                                "timeSeriesQuery": {
+                                    "timeSeriesFilter": {
+                                        "filter": "metric.type=\"logging.googleapis.com/user/vacancy_parsing_latency\"",
+                                        "aggregation": {
+                                            "alignmentPeriod": "60s",
+                                            "perSeriesAligner": "ALIGN_PERCENTILE_50",
+                                            "crossSeriesReducer": "REDUCE_MEAN"
+                                        }
+                                    }
+                                },
+                                "plotType": "LINE",
+                                "legendTemplate": "p50"
+                            }
+                        ],
+                        "yAxis": {
+                            "scale": "LINEAR",
+                            "label": "ms"
+                        }
+                    }
+                }
+            },
+            {
+                "xPos": 0,
+                "yPos": 5,
+                "width": 12,
+                "height": 1,
+                "widget": {
+                    "title": "System Overview",
+                    "text": {
+                        "content": "General system health, errors, and resource usage",
+                        "format": "MARKDOWN"
+                    }
+                }
+            },
+            {
+                "xPos": 0,
+                "yPos": 6,
+                "width": 6,
+                "height": 4,
+                "widget": {
+                    "title": "Total Request Count",
+                    "xyChart": {
+                        "dataSets": [
+                            {
+                                "timeSeriesQuery": {
+                                    "timeSeriesFilter": {
+                                        "filter": "resource.type=\"cloud_run_revision\" AND metric.type=\"run.googleapis.com/request_count\"",
+                                        "aggregation": {
+                                            "alignmentPeriod": "60s",
+                                            "perSeriesAligner": "ALIGN_RATE",
+                                            "crossSeriesReducer": "REDUCE_SUM",
+                                            "groupByFields": [
+                                                "resource.labels.service_name"
+                                            ]
+                                        }
+                                    }
+                                },
+                                "plotType": "LINE"
+                            }
+                        ],
+                        "yAxis": {
+                            "scale": "LINEAR"
+                        }
+                    }
+                }
+            },
+            {
+                "xPos": 6,
+                "yPos": 6,
+                "width": 6,
+                "height": 4,
+                "widget": {
+                    "title": "Global Latency (All Endpoints)",
+                    "xyChart": {
+                        "dataSets": [
+                            {
+                                "timeSeriesQuery": {
+                                    "timeSeriesFilter": {
+                                        "filter": "resource.type=\"cloud_run_revision\" AND metric.type=\"run.googleapis.com/request_latencies\"",
+                                        "aggregation": {
+                                            "alignmentPeriod": "60s",
+                                            "perSeriesAligner": "ALIGN_PERCENTILE_95",
+                                            "crossSeriesReducer": "REDUCE_MEAN"
+                                        }
+                                    }
+                                },
+                                "plotType": "LINE",
+                                "legendTemplate": "p95"
+                            }
+                        ],
+                        "yAxis": {
+                            "scale": "LINEAR"
+                        }
+                    }
+                }
+            },
+            {
+                "xPos": 0,
+                "yPos": 10,
+                "width": 6,
+                "height": 4,
+                "widget": {
+                    "title": "Hardware: CPU Utilization",
+                    "xyChart": {
+                        "dataSets": [
+                            {
+                                "timeSeriesQuery": {
+                                    "timeSeriesFilter": {
+                                        "filter": "resource.type=\"cloud_run_revision\" AND metric.type=\"run.googleapis.com/container/cpu/utilizations\"",
+                                        "aggregation": {
+                                            "alignmentPeriod": "60s",
+                                            "perSeriesAligner": "ALIGN_PERCENTILE_99",
+                                            "crossSeriesReducer": "REDUCE_MEAN",
+                                            "groupByFields": [
+                                                "resource.labels.service_name"
+                                            ]
+                                        }
+                                    }
+                                },
+                                "plotType": "LINE"
+                            }
+                        ],
+                        "yAxis": {
+                            "scale": "LINEAR"
+                        }
+                    }
+                }
+            },
+            {
+                "xPos": 6,
+                "yPos": 10,
+                "width": 6,
+                "height": 4,
+                "widget": {
+                    "title": "Hardware: Memory Utilization",
+                    "xyChart": {
+                        "dataSets": [
+                            {
+                                "timeSeriesQuery": {
+                                    "timeSeriesFilter": {
+                                        "filter": "resource.type=\"cloud_run_revision\" AND metric.type=\"run.googleapis.com/container/memory/utilizations\"",
+                                        "aggregation": {
+                                            "alignmentPeriod": "60s",
+                                            "perSeriesAligner": "ALIGN_PERCENTILE_99",
+                                            "crossSeriesReducer": "REDUCE_MEAN",
+                                            "groupByFields": [
+                                                "resource.labels.service_name"
+                                            ]
+                                        }
+                                    }
+                                },
+                                "plotType": "LINE"
+                            }
+                        ],
+                        "yAxis": {
+                            "scale": "LINEAR"
+                        }
+                    }
+                }
+            }
+        ]
+    }
+}
