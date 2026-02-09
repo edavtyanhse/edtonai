@@ -29,10 +29,11 @@ export default function WizardLayout({ steps, currentStep, children }: WizardLay
             <div className="flex items-center gap-4">
               <button
                 onClick={() => navigate('/')}
-                className="p-2 hover:bg-slate-800 rounded-lg transition-colors text-slate-400 hover:text-white"
+                className="flex items-center gap-2 p-2 hover:bg-slate-800 rounded-lg transition-colors text-slate-400 hover:text-white group"
                 title={t('wizard.home_tooltip')}
               >
                 <Home className="w-5 h-5" />
+                <span className="text-sm font-medium group-hover:text-white transition-colors">{t('common.back_home')}</span>
               </button>
               <h1 className="text-lg font-semibold text-white">{t('wizard.page_title')}</h1>
             </div>

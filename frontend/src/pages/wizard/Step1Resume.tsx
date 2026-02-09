@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useMutation } from '@tanstack/react-query'
-import { FileText, Loader2, ArrowRight, Edit3, Save, Check, UploadCloud, X } from 'lucide-react'
+import { FileText, Loader2, ArrowRight, ArrowLeft, Edit3, Save, Check, UploadCloud, X } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useWizard } from '@/hooks'
 import { parseResume, updateResume } from '@/api'
@@ -189,9 +189,9 @@ export default function Step1Resume() {
           </p>
         </div>
         {mode === 'parsed' && (
-          <Button variant="outline" onClick={handleEditText}>
+          <Button variant="ghost" onClick={handleEditText} className="text-slate-400 hover:text-white">
             <Edit3 className="w-4 h-4 mr-2" />
-            {t('common.back')}
+            {t('common.back_to_step')} 1
           </Button>
         )}
       </div>
@@ -227,7 +227,8 @@ export default function Step1Resume() {
               onClick={() => navigate('/')}
               className="text-slate-400 hover:text-white"
             >
-              {t('common.back')}
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              {t('common.back_to_home')}
             </Button>
             <Button
               onClick={handleParse}
@@ -273,8 +274,9 @@ export default function Step1Resume() {
           )}
 
           <div className="flex justify-between gap-3">
-            <Button variant="outline" onClick={handleEditText}>
-              {t('common.back')}
+            <Button variant="ghost" onClick={handleEditText} className="text-slate-400 hover:text-white">
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              {t('common.back_to_step')} 1
             </Button>
 
             <div className="flex gap-3">

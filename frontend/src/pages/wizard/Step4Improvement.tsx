@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useMutation } from '@tanstack/react-query'
-import { Sparkles, Loader2, ArrowLeft, Copy, RotateCcw, Check, X, AlertTriangle, CheckCircle, XCircle, TrendingUp, TrendingDown, Minus, Eye, DownloadCloud } from 'lucide-react'
+import { Sparkles, Loader2, ArrowLeft, Copy, RotateCcw, Check, X, AlertTriangle, CheckCircle, XCircle, TrendingUp, TrendingDown, Minus, Eye, DownloadCloud, Home } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useWizard } from '@/hooks'
 import { adaptResume, createVersion, analyzeMatch } from '@/api'
@@ -267,9 +267,9 @@ export default function Step4Improvement() {
 
           {/* Navigation */}
           <div className="flex justify-between pt-4">
-            <Button variant="outline" onClick={goToPrevStep}>
+            <Button variant="ghost" onClick={goToPrevStep} className="text-slate-400 hover:text-white">
               <ArrowLeft className="w-4 h-4 mr-2" />
-              {t('wizard.step2.back')}
+              {t('common.back_to_step')} 3
             </Button>
             <Button
               onClick={handleApply}
@@ -375,7 +375,7 @@ export default function Step4Improvement() {
 
           {/* Actions */}
           <div className="flex justify-between pt-4">
-            <Button variant="outline" onClick={handleBackToCheckboxes}>
+            <Button variant="ghost" onClick={handleBackToCheckboxes} className="text-slate-400 hover:text-white">
               <ArrowLeft className="w-4 h-4 mr-2" />
               {t('wizard.step4.back_edit')}
             </Button>
@@ -574,8 +574,9 @@ export default function Step4Improvement() {
                 </Button>
               )}
               {/* Home button for explicit exit */}
-              <Button variant="secondary" onClick={() => window.location.href = '/'}>
-                {t('common.done', 'Готово')}
+              <Button onClick={() => window.location.href = '/'}>
+                <Home className="w-4 h-4 mr-2" />
+                {t('common.done')}
               </Button>
             </div>
           </div>

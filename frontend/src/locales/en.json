@@ -102,6 +102,9 @@
         "save": "Save",
         "done": "Done",
         "back_home": "Back to Home",
+        "back_to_home": "Back to Home",
+        "back_to_step": "Back to Step",
+        "next_to_step": "Next to Step",
         "footer": "Powered by AI • Your data is not saved after session"
     }
 }

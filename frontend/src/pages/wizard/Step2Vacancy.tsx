@@ -93,9 +93,9 @@ export default function Step2Vacancy() {
           </p>
         </div>
         {mode === 'parsed' && (
-          <Button variant="outline" onClick={handleEditText}>
+          <Button variant="ghost" onClick={handleEditText} className="text-slate-400 hover:text-white">
             <Edit3 className="w-4 h-4 mr-2" />
-            {t('common.back')}
+            {t('common.back_to_step')} 2
           </Button>
         )}
       </div>
@@ -199,8 +199,9 @@ export default function Step2Vacancy() {
               {t('wizard.step2.back')}
             </Button>
             <div className="flex gap-3">
-              <Button variant="outline" onClick={handleEditText}>
-                {t('common.back')}
+              <Button variant="ghost" onClick={handleEditText} className="text-slate-400 hover:text-white">
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                {t('common.back_to_step')} 2
               </Button>
 
               {/* Separate Save button */}

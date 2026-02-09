@@ -50,9 +50,9 @@ export default function Step3Analysis() {
             {t('wizard.step3.description')}
           </p>
         </div>
-        <Button variant="outline" onClick={goToPrevStep}>
+        <Button variant="ghost" onClick={goToPrevStep} className="text-slate-400 hover:text-white">
           <ArrowLeft className="w-4 h-4 mr-2" />
-          {t('wizard.step2.back')}
+          {t('common.back_to_step')} 2
         </Button>
       </div>
     )
@@ -72,9 +72,9 @@ export default function Step3Analysis() {
             : t('common.error')}
         </div>
         <div className="flex gap-3">
-          <Button variant="outline" onClick={goToPrevStep}>
+          <Button variant="ghost" onClick={goToPrevStep} className="text-slate-400 hover:text-white">
             <ArrowLeft className="w-4 h-4 mr-2" />
-            {t('wizard.step2.back')}
+            {t('common.back_to_step')} 2
           </Button>
           <Button onClick={() => analyzeMutation.mutate()}>
             <BarChart2 className="w-4 h-4 mr-2" />
@@ -232,9 +232,9 @@ export default function Step3Analysis() {
 
           {/* Navigation */}
           <div className="flex justify-between pt-4">
-            <Button variant="outline" onClick={goToPrevStep}>
+            <Button variant="ghost" onClick={goToPrevStep} className="text-slate-400 hover:text-white">
               <ArrowLeft className="w-4 h-4 mr-2" />
-              {t('wizard.step2.back')}
+              {t('common.back_to_step')} 2
             </Button>
             <Button onClick={goToNextStep} className="min-w-[150px]">
               {t('wizard.step3.improve_button')}
