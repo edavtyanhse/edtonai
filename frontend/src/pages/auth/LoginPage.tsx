@@ -25,8 +25,8 @@ export default function LoginPage() {
 
             if (error) throw error
             navigate('/')
-        } catch (err: any) {
-            setError(err.message || 'Error logging in')
+        } catch (err: unknown) {
+            setError(err instanceof Error ? err.message : 'Error logging in')
         } finally {
             setLoading(false)
         }

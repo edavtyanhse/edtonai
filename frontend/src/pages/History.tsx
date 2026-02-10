@@ -5,6 +5,14 @@ import { Trash2, Eye, GitCompare, RotateCcw, FileText, Sparkles, Calendar, Arrow
 import { Button, ConfirmDialog } from '@/components'
 import { getVersions, getVersion, deleteVersion, type VersionItem, type VersionDetail } from '@/api'
 
+interface RestoreVersionState {
+  restoreVersion: {
+    resumeText: string
+    vacancyText: string
+    resultText: string
+  }
+}
+
 export default function History() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
@@ -56,16 +64,15 @@ export default function History() {
   }
 
   const handleRestore = (version: VersionDetail) => {
-    // Store in sessionStorage and navigate to workspace
-    sessionStorage.setItem(
-      'restore_version',
-      JSON.stringify({
+    navigate('/', {
+      state: {
+        restoreVersion: {
         resumeText: version.resume_text || '',
         vacancyText: version.vacancy_text,
         resultText: version.result_text,
-      })
-    )
-    navigate('/')
+        },
+      } satisfies RestoreVersionState,
+    })
   }
 
   const handleDelete = (id: string) => {

@@ -5,6 +5,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from backend.api.dependencies import get_vacancy_service
 from backend.ai.errors import AIError
 from backend.db import get_db
 from backend.schemas import (
@@ -22,15 +23,13 @@ router = APIRouter(prefix="/vacancies", tags=["vacancies"])
 @router.post("/parse", response_model=VacancyParseResponse)
 async def parse_vacancy(
     request: VacancyParseRequest,
-    db: AsyncSession = Depends(get_db),
+    service: VacancyService = Depends(get_vacancy_service),
 ) -> VacancyParseResponse:
     """Parse vacancy text and return structured data.
 
     - Caches results by content hash
     - Returns cache_hit=true if result was from cache
     """
-    service = VacancyService(db)
-    
     text = request.vacancy_text
     if not text and request.url:
         from backend.services.scraper import WebScraper

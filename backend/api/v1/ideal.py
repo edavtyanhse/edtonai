@@ -1,10 +1,9 @@
 """Ideal resume generation endpoint (Stage 2)."""
 
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.ext.asyncio import AsyncSession
 
+from backend.api.dependencies import get_ideal_resume_service
 from backend.ai.errors import AIError
-from backend.db import get_db
 from backend.schemas import IdealResumeRequest, IdealResumeResponse, IdealResumeMetadata
 from backend.services import IdealResumeService
 
@@ -14,7 +13,7 @@ router = APIRouter(prefix="/resumes", tags=["resumes"])
 @router.post("/ideal", response_model=IdealResumeResponse)
 async def generate_ideal_resume(
     request: IdealResumeRequest,
-    db: AsyncSession = Depends(get_db),
+    service: IdealResumeService = Depends(get_ideal_resume_service),
 ) -> IdealResumeResponse:
     """Generate an ideal resume template for a vacancy.
 
@@ -35,8 +34,6 @@ async def generate_ideal_resume(
             status_code=400,
             detail="Either vacancy_text or vacancy_id must be provided",
         )
-
-    service = IdealResumeService(db)
 
     try:
         result = await service.generate_ideal(

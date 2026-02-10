@@ -28,8 +28,8 @@ export default function RegisterPage() {
 
             if (error) throw error
             setSuccess(true)
-        } catch (err: any) {
-            setError(err.message || 'Error registering')
+        } catch (err: unknown) {
+            setError(err instanceof Error ? err.message : 'Error registering')
         } finally {
             setLoading(false)
         }

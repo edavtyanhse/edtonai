@@ -45,8 +45,8 @@ export default function Step1Resume() {
         setLocalText(text)
         parseMutation.mutate(text)
       }
-    } catch (err: any) {
-      setFileError(err.message || t('common.error'))
+    } catch (err: unknown) {
+      setFileError(err instanceof Error ? err.message : t('common.error'))
     } finally {
       setIsProcessingFile(false)
     }

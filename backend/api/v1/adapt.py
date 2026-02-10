@@ -1,10 +1,9 @@
 """Resume adaptation endpoint (Stage 2)."""
 
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.ext.asyncio import AsyncSession
 
+from backend.api.dependencies import get_adapt_resume_service
 from backend.ai.errors import AIError
-from backend.db import get_db
 from backend.schemas import AdaptResumeRequest, AdaptResumeResponse, ChangeLogEntry
 from backend.services import AdaptResumeService
 from backend.services.adapt import SelectedImprovement
@@ -15,7 +14,7 @@ router = APIRouter(prefix="/resumes", tags=["resumes"])
 @router.post("/adapt", response_model=AdaptResumeResponse)
 async def adapt_resume(
     request: AdaptResumeRequest,
-    db: AsyncSession = Depends(get_db),
+    service: AdaptResumeService = Depends(get_adapt_resume_service),
 ) -> AdaptResumeResponse:
     """Adapt resume for a vacancy based on selected improvements.
 
@@ -52,8 +51,6 @@ async def adapt_resume(
             detail="At least one improvement must be selected (use selected_improvements or selected_checkbox_ids)",
         )
 
-    service = AdaptResumeService(db)
-    
     # Convert request improvements to service format
     selected_improvements = None
     if request.selected_improvements:

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { useMutation, useQuery } from '@tanstack/react-query'
+import { useLocation } from 'react-router-dom'
 import { Copy, Save, Sparkles, FileText, X, Eye, AlertCircle } from 'lucide-react'
 import { Button, TextAreaWithCounter, DiffViewer, CheckboxList, ConfirmDialog } from '@/components'
 import {
@@ -21,7 +22,16 @@ const DEFAULT_LIMITS: LimitsResponse = {
 
 type WorkspaceMode = 'input' | 'analysis' | 'result'
 
+interface RestoreVersionState {
+  restoreVersion?: {
+    resumeText: string
+    vacancyText: string
+    resultText: string
+  }
+}
+
 export default function Workspace() {
+  const location = useLocation()
   // Form state
   const [resumeText, setResumeText] = useState('')
   const [vacancyText, setVacancyText] = useState('')
@@ -57,26 +67,22 @@ export default function Workspace() {
     }
   }, [])
 
-  // Handle restored version from history
+  // Handle restored version passed via navigation state
   useEffect(() => {
-    const restoredData = sessionStorage.getItem('restore_version')
-    if (restoredData) {
-      try {
-        const data = JSON.parse(restoredData)
-        setResumeText(data.resumeText || '')
-        setVacancyText(data.vacancyText || '')
-        setResultText(data.resultText || '')
-        if (data.resultText) {
-          setOriginalResumeText(data.resumeText || '')
-          setMode('result')
-        }
-      } catch {
-        console.warn('Failed to parse restored version data')
-      } finally {
-        sessionStorage.removeItem('restore_version')
-      }
+    const restoreState = location.state as RestoreVersionState | null
+    const data = restoreState?.restoreVersion
+    if (!data) {
+      return
     }
-  }, [])
+
+    setResumeText(data.resumeText || '')
+    setVacancyText(data.vacancyText || '')
+    setResultText(data.resultText || '')
+    if (data.resultText) {
+      setOriginalResumeText(data.resumeText || '')
+      setMode('result')
+    }
+  }, [location.state])
 
   // Auto-save draft (debounced)
   const debouncedSaveDraft = useMemo(

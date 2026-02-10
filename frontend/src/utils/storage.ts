@@ -1,17 +1,20 @@
 const STORAGE_KEY = 'edtonai_draft'
+const DRAFT_TTL_MS = 7 * 24 * 60 * 60 * 1000
 
 export interface DraftData {
   resumeText: string
   vacancyText: string
   resultText: string
   savedAt: number
+  expiresAt: number
 }
 
-export function saveDraft(data: Omit<DraftData, 'savedAt'>): void {
+export function saveDraft(data: Omit<DraftData, 'savedAt' | 'expiresAt'>): void {
   try {
     const draft: DraftData = {
       ...data,
       savedAt: Date.now(),
+      expiresAt: Date.now() + DRAFT_TTL_MS,
     }
     localStorage.setItem(STORAGE_KEY, JSON.stringify(draft))
   } catch (e) {
@@ -30,8 +33,16 @@ export function loadDraft(): DraftData | null {
     if (
       typeof draft.resumeText !== 'string' ||
       typeof draft.vacancyText !== 'string' ||
-      typeof draft.resultText !== 'string'
+      typeof draft.resultText !== 'string' ||
+      typeof draft.savedAt !== 'number' ||
+      typeof draft.expiresAt !== 'number'
     ) {
+      clearDraft()
+      return null
+    }
+
+    if (Date.now() > draft.expiresAt) {
+      clearDraft()
       return null
     }
 

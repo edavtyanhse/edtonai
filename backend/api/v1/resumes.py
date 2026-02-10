@@ -5,6 +5,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from backend.api.dependencies import get_resume_service
 from backend.ai.errors import AIError
 from backend.db import get_db
 from backend.schemas import (
@@ -22,14 +23,13 @@ router = APIRouter(prefix="/resumes", tags=["resumes"])
 @router.post("/parse", response_model=ResumeParseResponse)
 async def parse_resume(
     request: ResumeParseRequest,
-    db: AsyncSession = Depends(get_db),
+    service: ResumeService = Depends(get_resume_service),
 ) -> ResumeParseResponse:
     """Parse resume text and return structured data.
 
     - Caches results by content hash
     - Returns cache_hit=true if result was from cache
     """
-    service = ResumeService(db)
     try:
         result = await service.parse_and_cache(request.resume_text)
     except AIError as e:

@@ -1,10 +1,9 @@
 """Match analysis endpoint."""
 
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.ext.asyncio import AsyncSession
 
+from backend.api.dependencies import get_orchestrator_service
 from backend.ai.errors import AIError
-from backend.db import get_db
 from backend.schemas import MatchAnalyzeRequest, MatchAnalyzeResponse
 from backend.services import OrchestratorService
 
@@ -14,7 +13,7 @@ router = APIRouter(prefix="/match", tags=["match"])
 @router.post("/analyze", response_model=MatchAnalyzeResponse)
 async def analyze_match(
     request: MatchAnalyzeRequest,
-    db: AsyncSession = Depends(get_db),
+    service: OrchestratorService = Depends(get_orchestrator_service),
 ) -> MatchAnalyzeResponse:
     """Analyze resume-vacancy match.
 
@@ -25,7 +24,6 @@ async def analyze_match(
 
     Returns cache_hit=true only if ALL steps were from cache.
     """
-    service = OrchestratorService(db)
     try:
         result = await service.run_analysis(request.resume_text, request.vacancy_text)
     except AIError as e:
