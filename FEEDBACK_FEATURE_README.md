@@ -49,17 +49,28 @@ VITE_FEEDBACK_ENABLED=false
    - `frontend/src/features/feedback/`
 
 2. Отредактировать `frontend/src/pages/LandingPage.tsx`:
-   - Удалить импорт:
+   - Удалить импорты:
      ```typescript
-     import { FeedbackBanner } from '@/features/feedback'
+     import { useAuth } from '@/context/AuthContext'
+     import { FeedbackBanner, FeedbackModal } from '@/features/feedback'
      ```
-   - Удалить импорт `useNavigate` из `react-router-dom` (если больше не используется)
+   - Удалить состояние: `const [showFeedbackModal, setShowFeedbackModal] = useState(false)`
+   - Удалить `const { user } = useAuth()`
+   - Удалить функцию `handleFeedbackClick`
    - Удалить блок с баннером:
      ```tsx
      {/* FEEDBACK FEATURE - remove this block to disable */}
      <div className="max-w-5xl mx-auto px-6 py-4">
-         <FeedbackBanner onClick={() => navigate('/login')} />
+         <FeedbackBanner onClick={handleFeedbackClick} />
      </div>
+     ```
+   - Удалить модал:
+     ```tsx
+     <FeedbackModal
+         isOpen={showFeedbackModal}
+         onClose={() => setShowFeedbackModal(false)}
+         source="manual"
+     />
      ```
 
 3. Отредактировать `frontend/src/pages/HomePage.tsx`:
@@ -77,6 +88,7 @@ VITE_FEEDBACK_ENABLED=false
      import { FeedbackModal, useFeedback } from '@/features/feedback'
      ```
    - Удалить хук: `const feedback = useFeedback()`
+   - Удалить `feedback.showFeedbackAuto()` из `reanalyzeMutation.onSuccess`
    - Удалить компонент `<FeedbackModal />` (в конце файла)
 
 5. Удалить этот файл:
