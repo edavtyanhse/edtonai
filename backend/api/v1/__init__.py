@@ -9,6 +9,7 @@ from .adapt import router as adapt_router
 from .ideal import router as ideal_router
 from .cover_letter import router as cover_letter_router
 from .versions import router as versions_router
+from .feedback import router as feedback_router  # FEEDBACK FEATURE - remove to disable
 
 router = APIRouter(prefix="/v1")
 
@@ -24,3 +25,7 @@ router.include_router(cover_letter_router)
 
 # Stage 3 routes
 router.include_router(versions_router)
+
+# Feedback feature (controlled by settings.feedback_collection_enabled)
+# TO REMOVE: Delete this line and backend/api/v1/feedback.py
+router.include_router(feedback_router)

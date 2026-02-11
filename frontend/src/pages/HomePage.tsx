@@ -2,10 +2,14 @@ import { useNavigate } from 'react-router-dom'
 import { FileText, Sparkles, ArrowRight } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import LanguageSwitcher from '@/components/LanguageSwitcher'
+// FEEDBACK FEATURE - remove these imports to disable
+import { FeedbackBanner, FeedbackModal, useFeedback } from '@/features/feedback'
 
 export default function HomePage() {
   const navigate = useNavigate()
   const { t } = useTranslation()
+  // FEEDBACK FEATURE - remove this hook to disable
+  const feedback = useFeedback()
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
@@ -22,6 +26,13 @@ export default function HomePage() {
             {t('home.subtitle')}
           </p>
         </div>
+
+        {/* FEEDBACK FEATURE - remove this banner to disable */}
+        {feedback.isEnabled && (
+          <div className="mb-6">
+            <FeedbackBanner onClick={feedback.showFeedback} />
+          </div>
+        )}
 
         {/* Mode Cards */}
         <div className="grid md:grid-cols-2 gap-6">
@@ -117,6 +128,15 @@ export default function HomePage() {
           {t('common.footer')}
         </p>
       </div>
+
+      {/* FEEDBACK FEATURE - remove this modal to disable */}
+      {feedback.isEnabled && (
+        <FeedbackModal
+          isOpen={feedback.isOpen}
+          onClose={feedback.closeFeedback}
+          source="manual"
+        />
+      )}
     </div>
   )
 }

@@ -8,6 +8,8 @@ import type { Gap, CheckboxOption, CoverLetterResponse } from '@/api'
 import { Button, CheckboxList, ConfirmDialog, CoverLetterModal } from '@/components'
 import PdfPreview from '@/components/pdf/PdfPreview'
 import type { ChangeLogEntry, SelectedImprovement } from '@/api'
+// FEEDBACK FEATURE - remove these imports to disable
+import { FeedbackModal, useFeedback } from '@/features/feedback'
 
 type Mode = 'checkboxes' | 'review' | 'analysis'
 
@@ -35,6 +37,8 @@ export default function Step4Improvement() {
   const [showCoverLetterModal, setShowCoverLetterModal] = useState(false)
   const [coverLetterData, setCoverLetterData] = useState<CoverLetterResponse | null>(null)
   const [currentVersionId, setCurrentVersionId] = useState<string | null>(null)
+  // FEEDBACK FEATURE - remove this hook to disable
+  const feedback = useFeedback()
 
   // User inputs for checkboxes that require_user_input
   const [userInputs, setUserInputs] = useState<Record<string, string>>({})
@@ -90,6 +94,8 @@ export default function Step4Improvement() {
     onSuccess: (data) => {
       setAnalysis(data.analysis_id, data.analysis)
       setMode('analysis')
+      // FEEDBACK FEATURE - show feedback modal after analysis completion
+      feedback.showFeedbackAuto()
     },
   })
 
@@ -660,6 +666,15 @@ export default function Step4Improvement() {
           structure={coverLetterData.structure}
           keyPoints={coverLetterData.key_points_used}
           alignmentNotes={coverLetterData.alignment_notes}
+        />
+      )}
+
+      {/* FEEDBACK FEATURE - remove this modal to disable auto-popup after analysis */}
+      {feedback.isEnabled && (
+        <FeedbackModal
+          isOpen={feedback.isOpen}
+          onClose={feedback.closeFeedback}
+          source="auto"
         />
       )}
     </div >

@@ -62,5 +62,10 @@ class Settings(BaseSettings):
     # Supabase Auth
     supabase_jwt_secret: str = ""  # JWT secret for token verification
 
+    # Feedback Collection Feature Flag
+    # Set to False to disable feedback collection entirely
+    # To remove feature: set to False and delete feedback-related files
+    feedback_collection_enabled: bool = True
+
 
 settings = Settings()
