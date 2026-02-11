@@ -1,4 +1,4 @@
-import { ReactNode } from 'react'
+import { ReactNode, cloneElement, isValidElement } from 'react'
 import { Loader2 } from 'lucide-react'
 
 interface ButtonProps {
@@ -55,9 +55,11 @@ export default function Button({
     >
       {loading ? (
         <Loader2 className="w-4 h-4 animate-spin" />
-      ) : icon ? (
-        <span className="w-4 h-4">{icon}</span>
-      ) : null}
+      ) : icon && isValidElement(icon) ? (
+        cloneElement(icon as React.ReactElement, {
+          className: 'w-4 h-4',
+        })
+      ) : icon}
       {children}
     </button>
   )
