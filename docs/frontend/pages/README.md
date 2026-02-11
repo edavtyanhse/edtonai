@@ -291,7 +291,7 @@ function SkillBadge({ skill, matched }) {
 │  • Score Breakdown                                               │
 │  • Skills Match                                                  │
 │  • Remaining Gaps                                                │
-│                [Начать заново] [Продолжить улучшение]            │
+│        [Начать заново] [Продолжить] [Сопр. письмо]          │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -323,6 +323,18 @@ const reanalyzeMutation = useMutation({
   onSuccess: (data) => {
     setAnalysis(data.analysis_id, data.analysis)
     setMode('analysis')
+  },
+})
+
+// Генерация сопроводительного письма
+const coverLetterMutation = useMutation({
+  mutationFn: () =>
+    generateCoverLetter({
+      resume_version_id: currentVersionId!,
+    }),
+  onSuccess: (data) => {
+    setCoverLetterData(data)
+    setShowCoverLetterModal(true)
   },
 })
 

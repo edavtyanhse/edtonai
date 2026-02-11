@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Header from '@/components/landing/Header';
 import Hero from '@/components/landing/Hero';
 import Features from '@/components/landing/Features';
@@ -6,9 +7,12 @@ import HowItWorks from '@/components/landing/HowItWorks';
 import Footer from '@/components/landing/Footer';
 import { Language } from '@/components/landing/types';
 import { useTranslation } from 'react-i18next';
+// FEEDBACK FEATURE - remove this import to disable
+import { FeedbackBanner } from '@/features/feedback';
 
 export default function LandingPage() {
     const { i18n } = useTranslation();
+    const navigate = useNavigate();
     // Normalize language: 'en-US' -> 'en', 'ru-RU' -> 'ru', fallback to 'en'
     const getBaseLanguage = (): Language => {
         const detected = i18n.language?.split('-')[0];
@@ -27,6 +31,10 @@ export default function LandingPage() {
             <Header lang={lang} toggleLang={toggleLang} />
             <main>
                 <Hero lang={lang} />
+                {/* FEEDBACK FEATURE - remove this block to disable */}
+                <div className="max-w-5xl mx-auto px-6 py-4">
+                    <FeedbackBanner onClick={() => navigate('/login')} />
+                </div>
                 <div id="features">
                     <Features lang={lang} />
                 </div>

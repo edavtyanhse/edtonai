@@ -19,6 +19,7 @@
 |---------|------|----------------|
 | `AdaptResumeService` | `services/adapt.py` | Адаптация резюме по checkbox_options |
 | `IdealResumeService` | `services/ideal.py` | Генерация идеального резюме |
+| `CoverLetterService` | `services/cover_letter.py` | Генерация сопроводительного письма |
 
 ## Детальные описания
 
@@ -28,6 +29,7 @@
 - [OrchestratorService](orchestrator_service.md)
 - [AdaptResumeService](adapt_service.md) — Stage 2
 - [IdealResumeService](ideal_service.md) — Stage 2
+- [CoverLetterService](cover_letter_service.md) — Stage 2
 - [Utils](utils.md)
 
 ## Общий паттерн
@@ -99,6 +101,17 @@ class SomeService:
 │       │         └──► DeepSeekProvider                           │
 │       │                                                         │
 │       └──► AnalysisRepository.link()                            │
+│                                                                 │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│                    CoverLetterService                           │
+│                                                                 │
+│  generate_cover_letter(resume_version_id)                        │
+│       │                                                         │
+│       ├──► ResumeVersionRepository                              │
+│       ├──► VacancyRepository                                    │
+│       ├──► AIResultRepository                                   │
+│       └──► DeepSeekProvider                                     │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 ```

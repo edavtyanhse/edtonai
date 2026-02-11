@@ -25,6 +25,7 @@ http://localhost:8000
 |--------|----------|-------------|
 | POST | `/v1/resumes/adapt` | Адаптация резюме по выбранным улучшениям |
 | POST | `/v1/resumes/ideal` | Генерация идеального резюме для вакансии |
+| POST | `/v1/cover-letter` | Генерация сопроводительного письма |
 
 ## Детальные спецификации
 
@@ -33,6 +34,7 @@ http://localhost:8000
 - [Match API](match.md) — анализ соответствия
 - [Adapt API](adapt.md) — адаптация резюме (Stage 2)
 - [Ideal API](ideal.md) — идеальное резюме (Stage 2)
+- [Cover Letter API](cover_letter.md) — сопроводительное письмо (Stage 2)
 
 ## Общие принципы
 

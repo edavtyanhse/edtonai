@@ -76,6 +76,7 @@ frontend/
 │   │   ├── Button.tsx
 │   │   ├── CheckboxList.tsx
 │   │   ├── ConfirmDialog.tsx
+│   │   ├── CoverLetterModal.tsx
 │   │   ├── DiffViewer.tsx
 │   │   ├── ErrorBoundary.tsx
 │   │   ├── Layout.tsx
@@ -310,6 +311,7 @@ checkboxes → Apply → review → Confirm → analysis
 1. `POST /v1/resumes/adapt` — применить улучшения
 2. `POST /v1/versions` — сохранить версию
 3. `POST /v1/match/analyze` — повторный анализ
+4. `POST /v1/cover-letter` — генерация сопроводительного письма
 
 **Ключевая логика:**
 - `applyImprovedResume()` — делает улучшенное резюме новым базовым
@@ -357,6 +359,7 @@ export class ApiClientError extends Error {
 | `analyzeMatch()` | POST | `/v1/match/analyze` | Analyze match |
 | `adaptResume()` | POST | `/v1/resumes/adapt` | Adapt resume |
 | `generateIdeal()` | POST | `/v1/resumes/ideal` | Generate ideal |
+| `generateCoverLetter()` | POST | `/v1/cover-letter` | Generate cover letter |
 | `createVersion()` | POST | `/v1/versions` | Create version |
 | `getVersions()` | GET | `/v1/versions` | List versions |
 | `getVersion()` | GET | `/v1/versions/{id}` | Get version |

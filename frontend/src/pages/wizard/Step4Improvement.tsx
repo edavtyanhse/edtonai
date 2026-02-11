@@ -94,8 +94,6 @@ export default function Step4Improvement() {
     onSuccess: (data) => {
       setAnalysis(data.analysis_id, data.analysis)
       setMode('analysis')
-      // FEEDBACK FEATURE - show feedback modal after analysis completion
-      feedback.showFeedbackAuto()
     },
   })
 

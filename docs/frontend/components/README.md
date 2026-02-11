@@ -9,6 +9,7 @@ frontend/src/components/
 ├── Button.tsx
 ├── CheckboxList.tsx
 ├── ConfirmDialog.tsx
+├── CoverLetterModal.tsx
 ├── DiffViewer.tsx
 ├── ErrorBoundary.tsx
 ├── Layout.tsx
@@ -414,6 +415,51 @@ import { ErrorBoundary } from '@/components'
 
 ---
 
+## CoverLetterModal
+
+Модальное окно отображения сгенерированного сопроводительного письма.
+
+### Props
+
+| Prop | Type | Required | Description |
+|------|------|----------|-------------|
+| `isOpen` | `boolean` | ✅ | Показать/скрыть |
+| `onClose` | `() => void` | ✅ | Callback закрытия |
+| `coverLetter` | `string` | ✅ | Полный текст письма |
+| `structure` | `CoverLetterStructure` | ❌ | Структура: opening, body, closing |
+| `keyPoints` | `string[]` | ❌ | Использованные факты из резюме |
+| `alignmentNotes` | `string[]` | ❌ | Соответствие вакансии |
+| `isLoading` | `boolean` | ❌ | Состояние загрузки |
+
+### Секции модала
+
+1. **Полный текст письма** — в блоке `pre` с сохранением форматирования
+2. **Структура письма** — три цветных карточки (вступление, основная часть, заключение)
+3. **Использованные факты** — список навыков и фактов из резюме
+4. **Соответствие вакансии** — как письмо адресует требования
+
+### Действия
+
+- **Копировать** — копирует текст в буфер обмена
+- **Скачать** — скачивает как `.txt` файл (`cover-letter-YYYY-MM-DD.txt`)
+
+### Использование
+
+```tsx
+import { CoverLetterModal } from '@/components'
+
+<CoverLetterModal
+  isOpen={showModal}
+  onClose={() => setShowModal(false)}
+  coverLetter={data.cover_letter_text}
+  structure={data.structure}
+  keyPoints={data.key_points_used}
+  alignmentNotes={data.alignment_notes}
+/>
+```
+
+---
+
 ## Index Re-exports
 
 ```typescript
@@ -429,6 +475,7 @@ export { default as ResumeEditor } from './ResumeEditor'
 export { default as VacancyEditor } from './VacancyEditor'
 export { ErrorBoundary } from './ErrorBoundary'
 export { Toaster, toast } from './Toast'
+export { CoverLetterModal } from './CoverLetterModal'
 ```
 
 ### Import

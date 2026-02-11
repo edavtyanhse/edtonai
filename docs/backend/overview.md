@@ -108,14 +108,23 @@ gcloud run deploy edtonai-backend \
 ```
 backend/
 ├── main.py              # Entry point
+├── prompts.py           # LLM prompts (parse, analyze, adapt, cover letter)
 ├── core/
 │   ├── auth.py          # JWT verification logic
 │   ├── config.py        # Environment variables
-├── api/v1/              # Endpoint controllers
-├── services/            # Business logic (Resume, Vacancy, Match)
+├── api/
+│   ├── dependencies.py  # FastAPI dependency injection
+│   └── v1/              # Endpoint controllers
+│       ├── cover_letter.py  # POST /v1/cover-letter
+│       └── ...
+├── services/            # Business logic
+│   ├── cover_letter.py  # CoverLetterService
+│   └── ...
+├── schemas/             # Pydantic schemas (DTO)
+│   ├── cover_letter.py  # CoverLetterRequest, CoverLetterResponse
+│   └── ...
 ├── repositories/        # Database access
 ├── models/              # SQLAlchemy models
-├── schemas/             # Pydantic schemas (DTO)
 ├── ai/                  # LLM integration (DeepSeek)
 └── db/                  # Database session & base
 ```

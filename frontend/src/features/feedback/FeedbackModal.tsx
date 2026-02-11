@@ -22,15 +22,16 @@ export function FeedbackModal({ isOpen, onClose, source = 'manual' }: FeedbackMo
   const [feedback, setFeedback] = useState('')
   const [submitted, setSubmitted] = useState(false)
 
+  const handleClose = () => {
+    setFeedback('')
+    setSubmitted(false)
+    onClose()
+  }
+
   const mutation = useMutation({
     mutationFn: submitFeedback,
     onSuccess: () => {
       setSubmitted(true)
-      setTimeout(() => {
-        onClose()
-        setFeedback('')
-        setSubmitted(false)
-      }, 2000)
     },
   })
 
@@ -45,6 +46,10 @@ export function FeedbackModal({ isOpen, onClose, source = 'manual' }: FeedbackMo
   const title = FEEDBACK_CONFIG.modalTitle[lang]
   const placeholder = FEEDBACK_CONFIG.placeholder[lang]
 
+  const description = lang === 'ru'
+    ? 'Мы активно развиваем продукт и ваше мнение очень важно для нас. Расскажите, что понравилось, что можно улучшить или какие функции хотелось бы видеть.'
+    : 'We are actively developing the product and your opinion is very important to us. Tell us what you liked, what could be improved, or what features you would like to see.'
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
       <div className="w-full max-w-lg bg-slate-900 rounded-lg shadow-xl flex flex-col mx-4 border border-slate-700">
@@ -52,7 +57,7 @@ export function FeedbackModal({ isOpen, onClose, source = 'manual' }: FeedbackMo
         <div className="flex items-center justify-between p-6 border-b border-slate-700">
           <h2 className="text-2xl font-bold text-white">{title}</h2>
           <button
-            onClick={onClose}
+            onClick={handleClose}
             className="p-2 text-slate-400 hover:text-white transition-colors rounded-lg hover:bg-slate-800"
             disabled={mutation.isPending}
           >
@@ -63,19 +68,21 @@ export function FeedbackModal({ isOpen, onClose, source = 'manual' }: FeedbackMo
         {/* Content */}
         <div className="p-6">
           {submitted ? (
-            <div className="flex flex-col items-center justify-center py-12 text-center">
+            <div className="flex flex-col items-center justify-center py-8 text-center">
               <CheckCircle className="w-16 h-16 text-green-500 mb-4" />
               <p className="text-xl font-semibold text-white mb-2">
-                {lang === 'ru' ? 'Спасибо за отзыв!' : 'Thank you for your feedback!'}
+                Спасибо за отзыв!
               </p>
-              <p className="text-slate-400">
-                {lang === 'ru' 
-                  ? 'Ваше мнение помогает нам становиться лучше' 
-                  : 'Your opinion helps us improve'}
+              <p className="text-slate-400 mb-6">
+                Ваше мнение помогает нам становиться лучше
               </p>
+              <Button variant="primary" onClick={handleClose}>
+                Закрыть
+              </Button>
             </div>
           ) : (
             <>
+              <p className="text-sm text-slate-400 mb-4">{description}</p>
               <textarea
                 value={feedback}
                 onChange={(e) => setFeedback(e.target.value)}
@@ -98,15 +105,15 @@ export function FeedbackModal({ isOpen, onClose, source = 'manual' }: FeedbackMo
         {/* Footer */}
         {!submitted && (
           <div className="flex items-center justify-end gap-3 p-6 border-t border-slate-700">
-            <Button variant="ghost" onClick={onClose} disabled={mutation.isPending}>
-              {lang === 'ru' ? 'Отмена' : 'Cancel'}
+            <Button variant="ghost" onClick={handleClose} disabled={mutation.isPending}>
+              {lang === 'ru' ? 'Отмена' : 'Отмена'}
             </Button>
             <Button
               onClick={handleSubmit}
               disabled={feedback.trim().length === 0 || mutation.isPending}
               icon={mutation.isPending ? <Loader2 className="animate-spin" /> : <Send />}
             >
-              {lang === 'ru' ? 'Отправить' : 'Send'}
+              {lang === 'ru' ? 'Отправить' : 'Отправить'}
             </Button>
           </div>
         )}
