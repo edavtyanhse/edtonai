@@ -3,7 +3,7 @@
  * TO REMOVE: Delete this file
  */
 
-import { api } from '@/api/client'
+import { apiClient } from '@/api/client'
 
 export interface FeedbackSubmit {
   feedback_text: string
@@ -17,6 +17,5 @@ export interface FeedbackResponse {
 }
 
 export async function submitFeedback(data: FeedbackSubmit): Promise<FeedbackResponse> {
-  const response = await api.post<FeedbackResponse>('/v1/feedback', data)
-  return response.data
+  return apiClient.post<FeedbackResponse>('/v1/feedback', data)
 }
