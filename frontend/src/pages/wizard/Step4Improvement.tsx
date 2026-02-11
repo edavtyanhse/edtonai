@@ -34,7 +34,7 @@ export default function Step4Improvement() {
   const [pendingChanges, setPendingChanges] = useState<PendingChange[]>([])
   const [showCoverLetterModal, setShowCoverLetterModal] = useState(false)
   const [coverLetterData, setCoverLetterData] = useState<CoverLetterResponse | null>(null)
-  const [currentVersionId, setCurrentVersionId] = useState<number | null>(null)
+  const [currentVersionId, setCurrentVersionId] = useState<string | null>(null)
 
   // User inputs for checkboxes that require_user_input
   const [userInputs, setUserInputs] = useState<Record<string, string>>({})
@@ -656,7 +656,10 @@ export default function Step4Improvement() {
         <CoverLetterModal
           isOpen={showCoverLetterModal}
           onClose={() => setShowCoverLetterModal(false)}
-          data={coverLetterData}
+          coverLetter={coverLetterData.cover_letter_text}
+          structure={coverLetterData.structure}
+          keyPoints={coverLetterData.key_points_used}
+          alignmentNotes={coverLetterData.alignment_notes}
         />
       )}
     </div >
