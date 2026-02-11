@@ -34,7 +34,7 @@ export default function Step4Improvement() {
   const [pendingChanges, setPendingChanges] = useState<PendingChange[]>([])
   const [showCoverLetterModal, setShowCoverLetterModal] = useState(false)
   const [coverLetterData, setCoverLetterData] = useState<CoverLetterResponse | null>(null)
-  const [currentVersionId, setCurrentVersionId] = useState<string | null>(null)
+  const [currentVersionId, setCurrentVersionId] = useState<number | null>(null)
 
   // User inputs for checkboxes that require_user_input
   const [userInputs, setUserInputs] = useState<Record<string, string>>({})
@@ -65,24 +65,15 @@ export default function Step4Improvement() {
         resume_text: state.resumeText,
         vacancy_text: state.vacancyText,
         selected_improvements: buildSelectedImprovements(),
-      setCurrentVersionId(data.version_id) // Save version_id for cover letter
+      }),
+    onSuccess: (data) => {
+      setResult(data.updated_resume_text, data.change_log)
+      setCurrentVersionId(data.version_id)
       // Initialize pending changes for review
       setPendingChanges(
         data.change_log.map((entry) => ({
           ...entry,
           status: 'pending' as const,
-        }))
-      )
-      setMode('review')
-    },
-  })
-
-  // Cover letter mutation
-  const coverLetterMutation = useMutation({
-    mutationFn: () => generateCoverLetter({ resume_version_id: currentVersionId! }),
-    onSuccess: (data) => {
-      setCoverLetterData(data)
-      setShowCoverLetterModal(trueding' as const,
         }))
       )
       setMode('review')
@@ -99,6 +90,18 @@ export default function Step4Improvement() {
     onSuccess: (data) => {
       setAnalysis(data.analysis_id, data.analysis)
       setMode('analysis')
+    },
+  })
+
+  // Cover letter mutation
+  const coverLetterMutation = useMutation({
+    mutationFn: () =>
+      generateCoverLetter({
+        resume_version_id: currentVersionId!,
+      }),
+    onSuccess: (data) => {
+      setCoverLetterData(data)
+      setShowCoverLetterModal(true)
     },
   })
 
@@ -153,6 +156,11 @@ export default function Step4Improvement() {
     setShowSaveDialog(true)
   }
 
+  const handleGenerateCoverLetter = () => {
+    if (!currentVersionId) return
+    coverLetterMutation.mutate()
+  }
+
   const handleSaveAndAnalyze = () => {
     saveVersionMutation.mutate(state.resultText)
   }
@@ -168,15 +176,7 @@ export default function Step4Improvement() {
     setPendingChanges([])
   }
 
-  c
-
-  const handleGenerateCoverLetter = () => {
-    if (!currentVersionId) {
-      alert('No version ID available. Please save the version first.')
-      return
-    }
-    coverLetterMutation.mutate()
-  }onst handleSelectAll = () => {
+  const handleSelectAll = () => {
     // Select all options (enabled field is deprecated, now all options are enabled)
     const allIds = checkboxOptions.map((o: CheckboxOption) => o.id)
     setSelectedCheckboxes(allIds)
@@ -241,10 +241,23 @@ export default function Step4Improvement() {
           </p>
         </div>
         {mode === 'analysis' && (
-          <Button onClick={() => setShowPdfPreview(true)}>
-            <Eye className="w-4 h-4 mr-2" />
-            {t('wizard.step4.preview_pdf')}
-          </Button>
+          <div className="flex gap-2">
+            <Button onClick={() => setShowPdfPreview(true)}>
+              <Eye className="w-4 h-4 mr-2" />
+              {t('wizard.step4.preview_pdf')}
+            </Button>
+            <Button
+              onClick={handleGenerateCoverLetter}
+              disabled={!currentVersionId || coverLetterMutation.isPending}
+            >
+              {coverLetterMutation.isPending ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Mail className="w-4 h-4 mr-2" />
+              )}
+              {t('wizard.step4.generate_cover_letter')}
+            </Button>
+          </div>
         )}
       </div>
 
@@ -568,25 +581,6 @@ export default function Step4Improvement() {
                           {gap.target_section}
                         </span>
                       </div>
-              {currentVersionId && (
-                <Button 
-                  variant="outline" 
-                  onClick={handleGenerateCoverLetter}
-                  disabled={coverLetterMutation.isPending}
-                >
-                  {coverLetterMutation.isPending ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Генерируем...
-                    </>
-                  ) : (
-                    <>
-                      <Mail className="w-4 h-4 mr-2" />
-                      Сопроводительное письмо
-                    </>
-                  )}
-                </Button>
-              )}
                     </div>
                   </div>
                 ))}
@@ -619,17 +613,6 @@ export default function Step4Improvement() {
                 {t('common.done')}
               </Button>
             </div>
-
-      {/* Cover Letter Modal */}
-      <CoverLetterModal
-        isOpen={showCoverLetterModal}
-        onClose={() => setShowCoverLetterModal(false)}
-        coverLetter={coverLetterData?.cover_letter_text || ''}
-        structure={coverLetterData?.structure}
-        keyPoints={coverLetterData?.key_points_used}
-        alignmentNotes={coverLetterData?.alignment_notes}
-        isLoading={coverLetterMutation.isPending}
-      />
           </div>
         </div>
       )}
@@ -667,6 +650,15 @@ export default function Step4Improvement() {
           />
         )
       }
+
+      {/* Cover Letter Modal */}
+      {showCoverLetterModal && coverLetterData && (
+        <CoverLetterModal
+          isOpen={showCoverLetterModal}
+          onClose={() => setShowCoverLetterModal(false)}
+          data={coverLetterData}
+        />
+      )}
     </div >
   )
 }
