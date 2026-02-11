@@ -323,3 +323,29 @@ export interface VersionListResponse {
   items: VersionItem[]
   total: number
 }
+
+// ========================================
+// Cover Letter Generation
+// ========================================
+
+export interface CoverLetterRequest {
+  resume_version_id: string
+  options?: Record<string, unknown>
+}
+
+export interface CoverLetterStructure {
+  opening: string
+  body: string
+  closing: string
+}
+
+export interface CoverLetterResponse {
+  cover_letter_id: string
+  resume_version_id: string
+  vacancy_id: string
+  cover_letter_text: string
+  structure: CoverLetterStructure
+  key_points_used: string[]
+  alignment_notes: string[]
+  cache_hit: boolean
+}

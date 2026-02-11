@@ -22,6 +22,13 @@ Content-Type: application/json
 {
   "resume_id": "uuid (или resume_text)",
   "vacancy_id": "uuid (или vacancy_text)",
+  "selected_improvements": [
+    {
+      "checkbox_id": "cb_1",
+      "user_input": "Optional text",
+      "ai_generate": false
+    }
+  ],
   "selected_checkbox_ids": ["cb_1", "cb_2"],
   "base_version_id": "uuid (опционально)",
   "options": {
@@ -37,13 +44,38 @@ Content-Type: application/json
 | `resume_text` | string | ✅* | Текст резюме (альтернатива resume_id) |
 | `vacancy_id` | UUID | ✅* | ID вакансии из БД |
 | `vacancy_text` | string | ✅* | Текст вакансии (альтернатива vacancy_id) |
-| `selected_checkbox_ids` | list[str] | ✅ | IDs улучшений из analyze_match |
+| `selected_improvements` | list[object] | ✅** | Список улучшений с опциональным user_input |
+| `selected_checkbox_ids` | list[str] | ✅** | DEPRECATED: IDs улучшений (для обратной совместимости) |
 | `base_version_id` | UUID | ❌ | ID родительской версии (для цепочки) |
 | `options` | object | ❌ | Настройки адаптации |
 
 *Требуется либо `*_id`, либо `*_text` для резюме и вакансии.
+**Требуется либо `selected_improvements`, либо `selected_checkbox_ids` (deprecated).
 
-### Пример минимального запроса
+> **Примечание:** `selected_checkbox_ids` поддерживается для обратной совместимости, но рекомендуется использовать `selected_improvements` для более гибкого управления улучшениями (с user_input и ai_generate флагами).
+
+### Пример минимального запроса (новый формат)
+
+```json
+{
+  "resume_id": "94367c01-d06c-46ea-99f8-293070552b69",
+  "vacancy_id": "b86a0150-35c8-40a5-a651-c9fdd720310f",
+  "selected_improvements": [
+    {
+      "checkbox_id": "detail_tech_exp",
+      "user_input": null,
+      "ai_generate": false
+    },
+    {
+      "checkbox_id": "add_ceremonies",
+      "user_input": "Участвовал в daily standup, sprint planning",
+      "ai_generate": false
+    }
+  ]
+}
+```
+
+### Пример запроса (legacy формат)
 
 ```json
 {
@@ -74,7 +106,6 @@ Content-Type: application/json
     }
   ],
   "applied_checkbox_ids": ["detail_tech_exp", "add_ceremonies"],
-  "safety_notes": [],
   "cache_hit": false
 }
 ```
@@ -90,7 +121,6 @@ Content-Type: application/json
 | `updated_resume_text` | string | Полный текст адаптированного резюме |
 | `change_log` | list | Список изменений с деталями |
 | `applied_checkbox_ids` | list[str] | IDs успешно применённых улучшений |
-| `safety_notes` | list[str] | Предупреждения о невозможных изменениях |
 | `cache_hit` | bool | True если результат из кеша |
 
 ### ChangeLogEntry Structure

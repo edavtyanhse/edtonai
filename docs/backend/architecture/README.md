@@ -63,17 +63,23 @@ main.py
     │
     ├── api/v1/
     │       │
-    │       ├── Depends(get_db) ──────────► db/session.py
+    │       ├── api/dependencies.py ──────► Services factories
+    │       │                                   │
+    │       │                                   ├── Depends(get_db) ──► db/session.py
+    │       │                                   │
+    │       │                                   └── Return Service instances
     │       │
-    │       └── Services ─────────────────► services/
+    │       └── Endpoints ────────────────► Depends(get_*_service)
     │                                           │
-    │                                           ├── Repositories ──► repositories/
-    │                                           │                         │
-    │                                           │                         └── Models ──► models/
-    │                                           │
-    │                                           └── AI Provider ──► ai/deepseek.py
-    │                                                                    │
-    │                                                                    └── Settings ──► core/config.py
+    │                                           └── Services ─────► services/
+    │                                                                   │
+    │                                                                   ├── Repositories ──► repositories/
+    │                                                                   │                         │
+    │                                                                   │                         └── Models ──► models/
+    │                                                                   │
+    │                                                                   └── AI Provider ──► ai/deepseek.py
+    │                                                                               │
+    │                                                                               └── Settings ──► core/config.py
     │
     └── core/
             ├── config.py (Settings)
@@ -84,15 +90,22 @@ main.py
 
 ### 1. Dependency Injection
 
-Зависимости инжектируются через FastAPI `Depends()`:
+Зависимости инжектируются через FastAPI `Depends()` и централизованы в `api/dependencies.py`:
 
 ```python
+# api/dependencies.py
+def get_resume_service(
+    db: AsyncSession = Depends(get_db),
+) -> ResumeService:
+    return ResumeService(db)
+
+# api/v1/resumes.py
 @router.post("/parse")
 async def parse_resume(
     request: ResumeParseRequest,
-    db: AsyncSession = Depends(get_db),  # ← DI
+    service: ResumeService = Depends(get_resume_service),  # ← DI
 ):
-    service = ResumeService(db)
+    result = await service.parse_and_cache(request.resume_text)
     ...
 ```
 

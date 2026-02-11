@@ -1,16 +1,18 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { useLocation } from 'react-router-dom'
-import { Copy, Save, Sparkles, FileText, X, Eye, AlertCircle } from 'lucide-react'
-import { Button, TextAreaWithCounter, DiffViewer, CheckboxList, ConfirmDialog } from '@/components'
+import { Copy, Save, Sparkles, FileText, X, Eye, AlertCircle, Mail } from 'lucide-react'
+import { Button, TextAreaWithCounter, DiffViewer, CheckboxList, ConfirmDialog, CoverLetterModal } from '@/components'
 import {
   analyzeMatch,
   adaptResume,
   generateIdeal,
+  generateCoverLetter,
   getLimits,
   createVersion,
   type CheckboxOption,
   type LimitsResponse,
+  type CoverLetterResponse,
 } from '@/api'
 import { saveDraft, loadDraft, debounce } from '@/utils'
 
@@ -46,6 +48,9 @@ export default function Workspace() {
   const [showSaveDialog, setShowSaveDialog] = useState(false)
   const [versionTitle, setVersionTitle] = useState('')
   const [operationType, setOperationType] = useState<'adapt' | 'ideal'>('adapt')
+  const [currentVersionId, setCurrentVersionId] = useState<string | null>(null)
+  const [showCoverLetterModal, setShowCoverLetterModal] = useState(false)
+  const [coverLetterData, setCoverLetterData] = useState<CoverLetterResponse | null>(null)
 
   // Abort controller for canceling requests
   const abortControllerRef = useRef<AbortController | null>(null)
@@ -124,6 +129,7 @@ export default function Workspace() {
       setResultText(data.updated_resume_text)
       setOriginalResumeText(resumeText)
       setOperationType('adapt')
+      setCurrentVersionId(data.version_id) // Save version_id for cover letter
       setMode('result')
     },
   })
@@ -136,6 +142,7 @@ export default function Workspace() {
       setResultText(data.ideal_resume_text)
       setOriginalResumeText('')
       setOperationType('ideal')
+      setCurrentVersionId(null) // Ideal doesn't create version
       setMode('result')
     },
   })
@@ -155,6 +162,16 @@ export default function Workspace() {
       setShowSaveDialog(false)
       setVersionTitle('')
       alert('Version saved successfully!')
+    },
+  })
+
+  // Cover letter mutation
+  const coverLetterMutation = useMutation({
+    mutationFn: (signal: AbortSignal) =>
+      generateCoverLetter({ resume_version_id: currentVersionId! }, signal),
+    onSuccess: (data) => {
+      setCoverLetterData(data)
+      setShowCoverLetterModal(true)
     },
   })
 
@@ -209,7 +226,19 @@ export default function Workspace() {
     setCheckboxOptions([])
     setSelectedCheckboxes([])
     setShowDiff(false)
+    setCurrentVersionId(null)
+    setCoverLetterData(null)
   }, [])
+
+  // Handle cover letter generation
+  const handleGenerateCoverLetter = useCallback(() => {
+    if (!currentVersionId) {
+      alert('No version ID available')
+      return
+    }
+    const controller = new AbortController()
+    coverLetterMutation.mutate(controller.signal)
+  }, [currentVersionId, coverLetterMutation])
 
   // Validation
   const canAnalyze = resumeText.length >= 10 && vacancyText.length >= 10
@@ -381,6 +410,17 @@ export default function Workspace() {
               <Button onClick={handleCopy} variant="secondary" icon={<Copy className="w-4 h-4" />}>
                 Copy Result
               </Button>
+              {currentVersionId && operationType === 'adapt' && (
+                <Button
+                  onClick={handleGenerateCoverLetter}
+                  variant="secondary"
+                  icon={<Mail className="w-4 h-4" />}
+                  loading={coverLetterMutation.isPending}
+                  disabled={coverLetterMutation.isPending}
+                >
+                  Cover Letter
+                </Button>
+              )}
               <Button
                 onClick={() => setShowSaveDialog(true)}
                 icon={<Save className="w-4 h-4" />}
@@ -418,6 +458,17 @@ export default function Workspace() {
         }
         confirmText="Save"
         variant="primary"
+      />
+
+      {/* Cover Letter Modal */}
+      <CoverLetterModal
+        isOpen={showCoverLetterModal}
+        onClose={() => setShowCoverLetterModal(false)}
+        coverLetter={coverLetterData?.cover_letter_text || ''}
+        structure={coverLetterData?.structure}
+        keyPoints={coverLetterData?.key_points_used}
+        alignmentNotes={coverLetterData?.alignment_notes}
+        isLoading={coverLetterMutation.isPending}
       />
     </div>
   )

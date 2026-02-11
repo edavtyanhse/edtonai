@@ -6,6 +6,8 @@ import type {
   AdaptResponse,
   IdealRequest,
   IdealResponse,
+  CoverLetterRequest,
+  CoverLetterResponse,
   MatchRequest,
   MatchResponse,
   VersionCreateRequest,
@@ -107,6 +109,14 @@ export async function generateIdeal(
   signal?: AbortSignal
 ): Promise<IdealResponse> {
   return apiClient.post<IdealResponse>('/v1/resumes/ideal', data, { signal })
+}
+
+// Cover Letter
+export async function generateCoverLetter(
+  data: CoverLetterRequest,
+  signal?: AbortSignal
+): Promise<CoverLetterResponse> {
+  return apiClient.post<CoverLetterResponse>('/v1/cover-letter', data, { signal })
 }
 
 // Versions CRUD

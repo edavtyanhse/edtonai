@@ -19,8 +19,8 @@ async def lifespan(app: FastAPI):
     setup_logging()
 
     # Create tables (for development; use Alembic in production)
-    # async with async_engine.begin() as conn:
-    #     await conn.run_sync(Base.metadata.create_all)
+    async with async_engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
 
     yield
 

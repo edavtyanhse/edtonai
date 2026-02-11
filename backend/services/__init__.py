@@ -7,6 +7,7 @@ from .orchestrator import OrchestratorService
 from .utils import normalize_text, compute_hash
 from .adapt import AdaptResumeService
 from .ideal import IdealResumeService
+from .cover_letter import CoverLetterService
 
 __all__ = [
     # Stage 1
@@ -19,4 +20,5 @@ __all__ = [
     # Stage 2
     "AdaptResumeService",
     "IdealResumeService",
+    "CoverLetterService",
 ]

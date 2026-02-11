@@ -62,7 +62,6 @@ interface WizardState {
   selectedCheckboxes: string[]    // IDs выбранных улучшений
   resultText: string              // Текст улучшенного резюме
   changeLog: ChangeLogEntry[]     // Лог изменений
-  safetyNotes: string[]           // Предупреждения от AI
 }
 ```
 

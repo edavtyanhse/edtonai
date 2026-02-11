@@ -25,6 +25,11 @@ from .ideal import (
     IdealResumeOptions,
     IdealResumeMetadata,
 )
+from .cover_letter import (
+    CoverLetterRequest,
+    CoverLetterResponse,
+    CoverLetterStructure,
+)
 from .version import (
     VersionCreateRequest,
     VersionItemResponse,
@@ -53,6 +58,9 @@ __all__ = [
     "IdealResumeResponse",
     "IdealResumeOptions",
     "IdealResumeMetadata",
+    "CoverLetterRequest",
+    "CoverLetterResponse",
+    "CoverLetterStructure",
     # Stage 3 - Versions
     "VersionCreateRequest",
     "VersionItemResponse",

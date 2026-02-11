@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from backend.db import get_db
 from backend.services import (
     AdaptResumeService,
+    CoverLetterService,
     IdealResumeService,
     OrchestratorService,
     ResumeService,
@@ -46,3 +47,10 @@ def get_ideal_resume_service(
 ) -> IdealResumeService:
     """Provide IdealResumeService bound to the request DB session."""
     return IdealResumeService(db)
+
+
+def get_cover_letter_service(
+    db: AsyncSession = Depends(get_db),
+) -> CoverLetterService:
+    """Provide CoverLetterService bound to the request DB session."""
+    return CoverLetterService(db)
