@@ -37,6 +37,7 @@ export default function Step4Improvement() {
   const [showCoverLetterModal, setShowCoverLetterModal] = useState(false)
   const [coverLetterData, setCoverLetterData] = useState<CoverLetterResponse | null>(null)
   const [currentVersionId, setCurrentVersionId] = useState<string | null>(null)
+  const [navigateAfterFeedback, setNavigateAfterFeedback] = useState(false)
   // FEEDBACK FEATURE - remove this hook to disable
   const feedback = useFeedback()
 
@@ -94,8 +95,6 @@ export default function Step4Improvement() {
     onSuccess: (data) => {
       setAnalysis(data.analysis_id, data.analysis)
       setMode('analysis')
-      // FEEDBACK FEATURE - show feedback modal after analysis completion
-      feedback.showFeedbackAuto()
     },
   })
 
@@ -613,8 +612,15 @@ export default function Step4Improvement() {
                   {t('wizard.step4.continue')}
                 </Button>
               )}
-              {/* Home button for explicit exit */}
-              <Button onClick={() => window.location.href = '/'}>
+              {/* Home button for explicit exit - also triggers feedback */}
+              <Button onClick={() => {
+                const shown = feedback.showFeedbackAuto()
+                if (shown) {
+                  setNavigateAfterFeedback(true)
+                } else {
+                  window.location.href = '/'
+                }
+              }}>
                 <Home className="w-4 h-4 mr-2" />
                 {t('common.done')}
               </Button>
@@ -673,7 +679,12 @@ export default function Step4Improvement() {
       {feedback.isEnabled && (
         <FeedbackModal
           isOpen={feedback.isOpen}
-          onClose={feedback.closeFeedback}
+          onClose={() => {
+            feedback.closeFeedback()
+            if (navigateAfterFeedback) {
+              window.location.href = '/'
+            }
+          }}
           source="auto"
         />
       )}

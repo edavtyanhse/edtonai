@@ -20,13 +20,14 @@ export function useFeedback() {
     setIsOpen(true)
   }
 
-  const showFeedbackAuto = () => {
-    if (!FEEDBACK_CONFIG.enabled || !FEEDBACK_CONFIG.showAfterAnalysis) return
-    if (hasShownAuto) return
+  const showFeedbackAuto = (): boolean => {
+    if (!FEEDBACK_CONFIG.enabled || !FEEDBACK_CONFIG.showAfterAnalysis) return false
+    if (hasShownAuto) return false
     
     setIsOpen(true)
     setHasShownAuto(true)
     localStorage.setItem(FEEDBACK_SHOWN_KEY, 'true')
+    return true
   }
 
   const closeFeedback = () => {
