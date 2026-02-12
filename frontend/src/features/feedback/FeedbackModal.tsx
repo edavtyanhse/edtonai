@@ -42,13 +42,13 @@ export function FeedbackModal({ isOpen, onClose, source = 'manual' }: FeedbackMo
 
   if (!isOpen) return null
 
-  const lang = i18n.language as 'ru' | 'en'
-  const title = FEEDBACK_CONFIG.modalTitle[lang]
-  const placeholder = FEEDBACK_CONFIG.placeholder[lang]
+  const lang = (i18n.language?.split('-')[0] || 'ru') as 'ru' | 'en'
+  const title = lang === 'ru' ? 'Оставьте отзыв' : 'Leave feedback'
+  const placeholder = FEEDBACK_CONFIG.placeholder[lang] || FEEDBACK_CONFIG.placeholder['ru']
 
-  const description = lang === 'ru'
-    ? 'Мы активно развиваем продукт и ваше мнение очень важно для нас. Расскажите, что понравилось, что можно улучшить или какие функции хотелось бы видеть.'
-    : 'We are actively developing the product and your opinion is very important to us. Tell us what you liked, what could be improved, or what features you would like to see.'
+  const description = lang === 'en'
+    ? 'We are actively developing the product and your opinion is very important to us. Tell us what you liked, what could be improved, or what features you would like to see.'
+    : 'Мы активно развиваем продукт и ваше мнение очень важно для нас. Расскажите, что понравилось, что можно улучшить или какие функции хотелось бы видеть.'
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
