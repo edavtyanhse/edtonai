@@ -37,7 +37,11 @@ class VacancyService:
         self.ai_provider = get_ai_provider()
         self.logger = logging.getLogger(__name__)
 
-    async def parse_and_cache(self, vacancy_text: str) -> VacancyParseResult:
+    async def parse_and_cache(
+        self,
+        vacancy_text: str,
+        source_url: str | None = None,
+    ) -> VacancyParseResult:
         """Parse vacancy and cache result.
 
         1. Compute hash of normalized text
@@ -51,8 +55,14 @@ class VacancyService:
         # Get or create vacancy record
         vacancy = await self.vacancy_repo.get_by_hash(content_hash)
         if vacancy is None:
-            vacancy = await self.vacancy_repo.create(vacancy_text, content_hash)
+            vacancy = await self.vacancy_repo.create(
+                vacancy_text, content_hash, source_url=source_url,
+            )
             self.logger.info("Created new vacancy record: %s", vacancy.id)
+        elif source_url and not vacancy.source_url:
+            # Backfill source_url if missing
+            vacancy.source_url = source_url
+            await self.session.flush()
 
         # Check cache
         cached_result = await self.ai_result_repo.get(self.OPERATION, content_hash)

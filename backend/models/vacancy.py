@@ -38,6 +38,12 @@ class VacancyRaw(Base):
         nullable=False,
     )
     
+    # URL the vacancy was fetched from (if any)
+    source_url: Mapped[Optional[str]] = mapped_column(
+        String(2048),
+        nullable=True,
+    )
+    
     # ============ PARSED DATA COLUMNS ============
     
     # Job title

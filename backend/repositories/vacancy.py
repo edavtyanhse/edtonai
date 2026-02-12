@@ -28,9 +28,18 @@ class VacancyRepository:
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
 
-    async def create(self, source_text: str, content_hash: str) -> VacancyRaw:
+    async def create(
+        self,
+        source_text: str,
+        content_hash: str,
+        source_url: Optional[str] = None,
+    ) -> VacancyRaw:
         """Create new vacancy record."""
-        vacancy = VacancyRaw(source_text=source_text, content_hash=content_hash)
+        vacancy = VacancyRaw(
+            source_text=source_text,
+            content_hash=content_hash,
+            source_url=source_url,
+        )
         self.session.add(vacancy)
         await self.session.flush()
         return vacancy

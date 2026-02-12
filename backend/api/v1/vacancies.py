@@ -31,10 +31,11 @@ async def parse_vacancy(
     - Returns cache_hit=true if result was from cache
     """
     text = request.vacancy_text
-    if not text and request.url:
+    source_url = request.url
+    if not text and source_url:
         from backend.services.scraper import WebScraper
         try:
-            text = await WebScraper.fetch_text(request.url)
+            text = await WebScraper.fetch_text(source_url)
         except ValueError as e:
             raise HTTPException(status_code=422, detail=str(e))
             
@@ -42,7 +43,7 @@ async def parse_vacancy(
         raise HTTPException(status_code=422, detail="Vacancy text is empty or too short")
 
     try:
-        result = await service.parse_and_cache(text)
+        result = await service.parse_and_cache(text, source_url=source_url)
     except AIError as e:
         raise HTTPException(status_code=502, detail=f"AI provider error: {e}")
 
