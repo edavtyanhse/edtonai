@@ -12,9 +12,30 @@
 
 ---
 
-## 🏗️ Архитектура и Структура
+## 📚 Документация (Artifacts)
 
-Проект построен как монорепозиторий, разделенный на Frontend и Backend.
+Для защиты и изучения проекта подготовлены следующие документы:
+
+*   **[Архитектура (C4 Model)](docs/ARCHITECTURE.md)**: Диаграммы Context, Container, Deployment.
+*   **[User Story Map](docs/USER_STORY_MAP.md)**: Планы MVP/MUP, сценарии использования.
+*   **[Материалы для презентации](docs/MVP_PRESENTATION_CONTENT.md)**: Структура и контент для слайдов защиты.
+
+---
+
+## 🏗️ Архитектура
+
+Подробная документация архитектуры (C4 Model, Deployment) доступна здесь: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+
+### Общая схема (System Context)
+
+```mermaid
+graph LR
+    User[Job Seeker] -- HTTPS --> Web[EdTon.ai Web App]
+    Web -- JSON/HTTPS --> API[Backend API]
+    API -- SQL --> DB[(Supabase / PostgreSQL)]
+    API -- REST --> AI1[DeepSeek (Reasoning)]
+    API -- REST --> AI2[Groq (Parsing)]
+```
 
 ### 📂 Структура репозитория
 
