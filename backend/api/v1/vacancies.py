@@ -52,6 +52,7 @@ async def parse_vacancy(
         vacancy_hash=result.vacancy_hash,
         parsed_vacancy=result.parsed_vacancy,
         cache_hit=result.cache_hit,
+        raw_text=text,
     )
 
 

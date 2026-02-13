@@ -140,6 +140,7 @@ export interface VacancyParseResponse {
   vacancy_hash: string
   parsed_vacancy: ParsedVacancy
   cache_hit: boolean
+  raw_text: string
 }
 
 export interface VacancyDetailResponse {

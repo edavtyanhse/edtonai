@@ -32,7 +32,8 @@ export default function Step2Vacancy() {
   const parseMutation = useMutation({
     mutationFn: () => parseVacancy({ vacancy_text: localText, url: url || undefined }),
     onSuccess: (data) => {
-      setVacancyText(localText || `(Vacancy parsed from: ${url})`)
+      setVacancyText(data.raw_text)
+      setLocalText(data.raw_text)
       setVacancyData(data.vacancy_id, data.parsed_vacancy)
       setMode('parsed')
       setHasUnsavedChanges(false)
