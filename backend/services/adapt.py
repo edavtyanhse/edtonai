@@ -65,7 +65,7 @@ class AdaptResumeService:
         self.resume_service = ResumeService(session)
         self.vacancy_service = VacancyService(session)
         self.match_service = MatchService(session)
-        self.ai_provider = get_ai_provider()
+        self.ai_provider = get_ai_provider(task_type="reasoning")
         self.logger = logging.getLogger(__name__)
 
     def _compute_adapt_hash(

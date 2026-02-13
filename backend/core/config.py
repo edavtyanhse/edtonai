@@ -47,14 +47,27 @@ class Settings(BaseSettings):
         )
 
     # AI provider
-    ai_provider: str = "deepseek"
-    deepseek_api_key: str
-    deepseek_base_url: str
-    ai_model: str
-    ai_timeout_seconds: int
-    ai_max_retries: int
-    ai_temperature: float
-    ai_max_tokens: int
+    ai_provider: str = "deepseek"  # Deprecated, kept for backward compatibility if needed
+    
+    # Hybrid AI Strategy
+    ai_provider_parsing: str = "groq"
+    ai_provider_reasoning: str = "groq"
+
+    # DeepSeek
+    deepseek_api_key: str | None = None
+    deepseek_base_url: str = "https://api.deepseek.com"
+    
+    # Groq (Llama 3)
+    groq_api_key: str | None = None
+    groq_model_parsing: str = "llama-3.1-8b-instant"
+    groq_model_reasoning: str = "llama-3.3-70b-versatile"
+
+    # General AI config
+    ai_model: str = "deepseek-chat" # Default model
+    ai_timeout_seconds: int = 60
+    ai_max_retries: int = 3
+    ai_temperature: float = 0.0
+    ai_max_tokens: int = 4096
 
     # Logging
     log_level: str

@@ -32,7 +32,7 @@ class MatchService:
     def __init__(self, session: AsyncSession) -> None:
         self.session = session
         self.ai_result_repo = AIResultRepository(session)
-        self.ai_provider = get_ai_provider()
+        self.ai_provider = get_ai_provider(task_type="reasoning")
         self.logger = logging.getLogger(__name__)
 
     def _compute_match_hash(

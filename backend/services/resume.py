@@ -34,7 +34,7 @@ class ResumeService:
         self.session = session
         self.resume_repo = ResumeRepository(session)
         self.ai_result_repo = AIResultRepository(session)
-        self.ai_provider = get_ai_provider()
+        self.ai_provider = get_ai_provider(task_type="parsing")
         self.logger = logging.getLogger(__name__)
 
     async def parse_and_cache(self, resume_text: str) -> ResumeParseResult:

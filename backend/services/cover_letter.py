@@ -50,7 +50,7 @@ class CoverLetterService:
         self.ai_result_repo = AIResultRepository(session)
         self.version_repo = ResumeVersionRepository(session)
         self.vacancy_repo = VacancyRepository(session)
-        self.ai_provider = get_ai_provider()
+        self.ai_provider = get_ai_provider(task_type="reasoning")
         self.logger = logging.getLogger(__name__)
 
     def _compute_cover_letter_hash(

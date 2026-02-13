@@ -45,7 +45,7 @@ class IdealResumeService:
         self.vacancy_repo = VacancyRepository(session)
         self.ideal_repo = IdealResumeRepository(session)
         self.vacancy_service = VacancyService(session)
-        self.ai_provider = get_ai_provider()
+        self.ai_provider = get_ai_provider(task_type="reasoning")
         self.logger = logging.getLogger(__name__)
 
     def _compute_ideal_hash(
