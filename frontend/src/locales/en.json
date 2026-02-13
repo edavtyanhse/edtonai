@@ -47,7 +47,8 @@
             "description": "Found a dream job? Paste the full vacancy description here so the AI knows what to target.",
             "placeholder": "Paste vacancy text here (responsibilities, requirements, etc.)...",
             "back": "Back",
-            "analyze_button": "Analyze Match"
+            "analyze_button": "Analyze Match",
+            "url_disabled_hint": "Clear the text field to use a URL"
         },
         "step3": {
             "title": "Analysis Results",
@@ -60,9 +61,11 @@
             "score_period": "Employment",
             "required_skills": "Required Skills",
             "preferred_skills": "Preferred Skills",
-            "gaps": "Critical Gaps found",
+            "gaps": "Gaps Found",
+            "improvements": "What Improved",
             "no_data": "No data available",
-            "improve_button": "Improve Resume"
+            "improve_button": "Improve Resume",
+            "analyzing_warning": "Deep analysis may take up to 60 seconds..."
         },
         "step4": {
             "title": "Resume Improvement",
@@ -78,13 +81,13 @@
             "pending": "Pending",
             "confirm_all": "Confirm All",
             "changes_review": "Review Changes:",
-            "before": "Before:",
-            "after": "After:",
+            "before": "Before",
+            "after": "After",
             "change_confirmed": "Confirmed",
             "change_rejected": "Rejected",
             "back_edit": "Change Selection",
-            "apply_final": "Finalize",
-            "score_new": "New Match Score",
+            "apply_final": "Apply",
+            "score_new": "Match Score",
             "download_docx": "DOCX",
             "preview_pdf": "PDF Preview",
             "generate_cover_letter": "Generate Cover Letter",
@@ -92,7 +95,13 @@
             "start_over": "Start Over",
             "copy": "Copy Resume",
             "copied": "Copied!",
-            "continue": "Continue Improving"
+            "continue": "Continue Improving",
+            "applying_warning": "Generation takes about a minute, please wait...",
+            "optimization_result": "Optimized Resume",
+            "general_improvements": "General improvements have been applied",
+            "gaps_remaining_message": "Some gaps remain. Click \"Continue Improving\" to address them.",
+            "final_confirm_message": "Apply confirmed changes? The updated resume will become the base for further improvements.",
+            "current_resume": "Your current resume"
         }
     },
     "common": {
@@ -106,6 +115,7 @@
         "back_to_home": "Back to Home",
         "back_to_step": "Back to Step",
         "next_to_step": "Next to Step",
+        "more": "more",
         "footer": "Powered by AI • Your data is not saved after session"
     }
 }

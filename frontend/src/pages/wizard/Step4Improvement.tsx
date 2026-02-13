@@ -515,7 +515,10 @@ export default function Step4Improvement() {
             <div className="lg:col-span-2">
               <h3 className="text-base font-semibold text-white flex items-center gap-2 mb-3">
                 <Sparkles className="w-4 h-4 text-blue-400" />
-                {t('wizard.step4.optimization_result', 'Optimization Result')}
+                {state.previousResumeText
+                  ? t('wizard.step4.optimization_result')
+                  : t('wizard.step4.current_resume')
+                }
               </h3>
               <div className="bg-slate-800 border border-slate-700 rounded-lg overflow-hidden">
                 <ResumeDiffViewer
@@ -750,32 +753,74 @@ function ScoreCard({
 }
 
 function ResumeDiffViewer({ oldText, newText }: { oldText: string, newText: string }) {
+  const hasDiff = oldText !== newText
+
+  // Resume section heading patterns
+  const sectionPattern = /^(EDUCATION|EXPERIENCE|WORK EXPERIENCE|SKILLS|SUMMARY|ABOUT|CONTACT|CONTACTS|PERSONAL|PROJECTS|CERTIFICATIONS|LANGUAGES|AWARDS|PUBLICATIONS|INTERESTS|OBJECTIVE|ПРОФИЛЬ|ОПЫТ|ОПЫТ РАБОТЫ|ОБРАЗОВАНИЕ|НАВЫКИ|ПРОЕКТЫ|СЕРТИФИКАТЫ|ЯЗЫКИ|О СЕБЕ|КОНТАКТЫ|ДОСТИЖЕНИЯ)\s*$/i
+
+  const isSectionHeading = (line: string) => sectionPattern.test(line.trim())
+
+  const renderLine = (line: string, key: string, variant: 'added' | 'removed' | 'unchanged') => {
+    const isHeading = isSectionHeading(line)
+    const isEmpty = line.trim() === ''
+
+    if (isEmpty) {
+      return <div key={key} className="h-2" />
+    }
+
+    if (isHeading) {
+      return (
+        <div key={key} className={`mt-4 mb-1 pb-1 border-b border-slate-600 ${variant === 'added' ? 'border-green-500/40' : variant === 'removed' ? 'border-red-500/40' : ''
+          }`}>
+          <span className={`text-xs font-bold uppercase tracking-wider ${variant === 'added' ? 'text-green-400' : variant === 'removed' ? 'text-red-400' : 'text-blue-400'
+            }`}>
+            {line}
+          </span>
+        </div>
+      )
+    }
+
+    if (variant === 'added') {
+      return (
+        <div key={key} className="border-l-3 border-green-500 bg-green-900/20 pl-3 py-0.5 my-0.5 rounded-r">
+          <span className="text-green-300 text-[13px]">{line}</span>
+        </div>
+      )
+    }
+    if (variant === 'removed') {
+      return (
+        <div key={key} className="border-l-3 border-red-500 bg-red-900/20 pl-3 py-0.5 my-0.5 rounded-r opacity-60">
+          <span className="text-red-300 line-through text-[13px]">{line}</span>
+        </div>
+      )
+    }
+    return (
+      <div key={key} className="pl-3 py-0.5">
+        <span className="text-slate-400 text-[13px]">{line}</span>
+      </div>
+    )
+  }
+
+  if (!hasDiff) {
+    // No diff available — show current resume formatted nicely
+    const lines = newText.split('\n')
+    return (
+      <div className="bg-slate-900 p-4 overflow-auto max-h-[600px] custom-scrollbar">
+        {lines.map((line, i) => renderLine(line, `line-${i}`, 'unchanged'))}
+      </div>
+    )
+  }
+
+  // Has diff — show line-by-line comparison
   const diffs = diffLines(oldText, newText)
 
   return (
-    <div className="bg-slate-900 p-4 text-sm overflow-auto max-h-[600px] custom-scrollbar">
+    <div className="bg-slate-900 p-4 overflow-auto max-h-[600px] custom-scrollbar">
       {diffs.map((part, index) => {
-        const lines = part.value.split('\n').filter((line, i, arr) => !(i === arr.length - 1 && line === ''))
-        return lines.map((line, lineIdx) => {
-          if (part.added) {
-            return (
-              <div key={`${index}-${lineIdx}`} className="border-l-3 border-green-500 bg-green-900/20 pl-3 py-0.5 my-0.5 rounded-r">
-                <span className="text-green-300">{line || ' '}</span>
-              </div>
-            )
-          }
-          if (part.removed) {
-            return (
-              <div key={`${index}-${lineIdx}`} className="border-l-3 border-red-500 bg-red-900/20 pl-3 py-0.5 my-0.5 rounded-r opacity-70">
-                <span className="text-red-300 line-through">{line || ' '}</span>
-              </div>
-            )
-          }
-          return (
-            <div key={`${index}-${lineIdx}`} className="pl-3 py-0.5 my-0.5">
-              <span className="text-slate-400">{line || ' '}</span>
-            </div>
-          )
+        const lines = part.value.split('\n').filter((line: string, i: number, arr: string[]) => !(i === arr.length - 1 && line === ''))
+        return lines.map((line: string, lineIdx: number) => {
+          const variant = part.added ? 'added' : part.removed ? 'removed' : 'unchanged'
+          return renderLine(line, `${index}-${lineIdx}`, variant)
         })
       })}
     </div>

@@ -81,22 +81,27 @@
             "pending": "Ожидает",
             "confirm_all": "Подтвердить все",
             "changes_review": "Изменения для подтверждения:",
-            "before": "Было:",
-            "after": "Стало:",
+            "before": "Было",
+            "after": "Стало",
             "change_confirmed": "Подтверждено",
             "change_rejected": "Отклонено",
             "back_edit": "Изменить выбор",
             "apply_final": "Применить",
-            "score_new": "Новый балл соответствия",
+            "score_new": "Балл соответствия",
             "download_docx": "DOCX",
-            "preview_pdf": "PDF Preview",
+            "preview_pdf": "PDF просмотр",
             "generate_cover_letter": "Сгенерировать сопроводительное письмо",
             "hh_export": "HH.ru",
             "start_over": "Начать заново",
             "copy": "Копировать резюме",
             "copied": "Скопировано!",
             "continue": "Продолжить улучшение",
-            "applying_warning": "Генерация занимает около минуты, подождите..."
+            "applying_warning": "Генерация занимает около минуты, подождите...",
+            "optimization_result": "Оптимизированное резюме",
+            "general_improvements": "Общие улучшения были применены",
+            "gaps_remaining_message": "Остались некоторые пробелы. Нажмите «Продолжить улучшение», чтобы исправить их.",
+            "final_confirm_message": "Применить подтверждённые изменения? Обновлённое резюме станет основой для дальнейших улучшений.",
+            "current_resume": "Ваше текущее резюме"
         }
     },
     "common": {
@@ -110,6 +115,7 @@
         "back_to_home": "Вернуться на главную",
         "back_to_step": "Назад к шагу",
         "next_to_step": "Далее к шагу",
+        "more": "ещё",
         "footer": "Powered by AI • Ваши данные не сохраняются после сессии"
     }
 }
