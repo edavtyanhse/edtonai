@@ -44,6 +44,7 @@ async def create_version(
         result_text=request.result_text,
         change_log=request.change_log,
         selected_checkbox_ids=request.selected_checkbox_ids,
+        analysis_id=request.analysis_id,
     )
 
     await session.commit()

@@ -27,6 +27,7 @@ class UserVersionRepository:
         title: Optional[str] = None,
         change_log: list[dict] = None,
         selected_checkbox_ids: list[str] = None,
+        analysis_id: Optional[UUID] = None,
     ) -> UserVersion:
         """Create a new user version."""
         version = UserVersion(
@@ -38,6 +39,7 @@ class UserVersionRepository:
             result_text=result_text,
             change_log=change_log or [],
             selected_checkbox_ids=selected_checkbox_ids or [],
+            analysis_id=analysis_id,
         )
         self.session.add(version)
         await self.session.flush()

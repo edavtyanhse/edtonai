@@ -105,39 +105,59 @@ class CoverLetterService:
         """
         options = options or {}
 
-        # Step 1: Get resume version
+        # Step 1: Get version (try ResumeVersion first, then UserVersion)
         resume_version = await self.version_repo.get_by_id(resume_version_id)
+        is_user_version = False
+        
         if not resume_version:
-            raise ValueError(f"Resume version not found: {resume_version_id}")
+            # Try finding in UserVersion
+            from backend.repositories import UserVersionRepository
+            user_version_repo = UserVersionRepository(self.session)
+            resume_version = await user_version_repo.get_by_id(resume_version_id)
+            is_user_version = True
 
-        # Step 2: Get vacancy
-        vacancy = await self.vacancy_repo.get_by_id(resume_version.vacancy_id)
-        if not vacancy:
-            raise ValueError(
-                f"Vacancy not found: {resume_version.vacancy_id}"
-            )
+        if not resume_version:
+             raise ValueError(f"Resume version not found: {resume_version_id}")
 
-        # Step 3: Get match analysis
-        if not resume_version.analysis_id:
-            raise ValueError(
-                f"Resume version {resume_version_id} has no analysis_id. "
+        # Step 2: Prepare data (vacancy text and analysis ID)
+        vacancy_text = ""
+        analysis_id = None
+        vacancy_id = None # Initialize vacancy_id for CoverLetterResult
+
+        if is_user_version:
+            # UserVersion path
+            vacancy_text = resume_version.vacancy_text
+            analysis_id = resume_version.analysis_id
+            # UserVersion does not have a direct vacancy_id, so we'll use None or a placeholder
+            vacancy_id = None 
+        else:
+            # ResumeVersion path
+            vacancy = await self.vacancy_repo.get_by_id(resume_version.vacancy_id)
+            if not vacancy:
+                raise ValueError(f"Vacancy not found: {resume_version.vacancy_id}")
+            vacancy_text = vacancy.source_text
+            analysis_id = resume_version.analysis_id
+            vacancy_id = vacancy.id
+
+        if not analysis_id:
+             raise ValueError(
+                f"Version {resume_version_id} has no analysis_id. "
                 "Cannot generate cover letter without match analysis."
             )
 
-        analysis_result = await self.ai_result_repo.get_by_id(
-            resume_version.analysis_id
-        )
+        # Step 3: Get match analysis
+        analysis_result = await self.ai_result_repo.get_by_id(analysis_id)
         if not analysis_result:
-            raise ValueError(
-                f"Analysis not found: {resume_version.analysis_id}"
-            )
-
+            raise ValueError(f"Analysis not found: {analysis_id}")
+        
         match_analysis = analysis_result.output_json
 
         # Step 4: Compute hash
+        resume_text = resume_version.resume_text if is_user_version else resume_version.text
+        
         input_hash = self._compute_cover_letter_hash(
-            resume_version_text=resume_version.text,
-            vacancy_text=vacancy.source_text,
+            resume_version_text=resume_text,
+            vacancy_text=vacancy_text,
             match_analysis=match_analysis,
         )
 
@@ -161,9 +181,9 @@ class CoverLetterService:
 
         # Step 6: Build prompt
         prompt = COVER_LETTER_PROMPT.replace(
-            "{{RESUME_TEXT}}", resume_version.text
+            "{{RESUME_TEXT}}", resume_text
         ).replace(
-            "{{VACANCY_TEXT}}", vacancy.source_text
+            "{{VACANCY_TEXT}}", vacancy_text
         ).replace(
             "{{MATCH_ANALYSIS_JSON}}",
             json.dumps(match_analysis, ensure_ascii=False, indent=2),

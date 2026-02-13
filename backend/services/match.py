@@ -79,6 +79,27 @@ class MatchService:
         # Call LLM
         analysis_json = await self.ai_provider.generate_json(prompt, prompt_name=self.OPERATION)
 
+        # Bug fix: Clamp scores to max values to prevent 12/10 capability
+        if "score_breakdown" in analysis_json:
+            sb = analysis_json["score_breakdown"]
+            # Max values: skill_fit=50, experience_fit=25, ats_fit=15, clarity_evidence=10
+            if "skill_fit" in sb and isinstance(sb["skill_fit"], dict):
+                sb["skill_fit"]["value"] = min(sb["skill_fit"].get("value", 0), 50)
+            if "experience_fit" in sb and isinstance(sb["experience_fit"], dict):
+                sb["experience_fit"]["value"] = min(sb["experience_fit"].get("value", 0), 25)
+            if "ats_fit" in sb and isinstance(sb["ats_fit"], dict):
+                sb["ats_fit"]["value"] = min(sb["ats_fit"].get("value", 0), 15)
+            if "clarity_evidence" in sb and isinstance(sb["clarity_evidence"], dict):
+                sb["clarity_evidence"]["value"] = min(sb["clarity_evidence"].get("value", 0), 10)
+            
+            # Recalculate total score to be safe
+            total_score = 0
+            total_score += sb.get("skill_fit", {}).get("value", 0)
+            total_score += sb.get("experience_fit", {}).get("value", 0)
+            total_score += sb.get("ats_fit", {}).get("value", 0)
+            total_score += sb.get("clarity_evidence", {}).get("value", 0)
+            analysis_json["score"] = total_score
+
         # Save to cache
         ai_result = await self.ai_result_repo.save(
             operation=self.OPERATION,

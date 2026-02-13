@@ -21,6 +21,7 @@ class VersionCreateRequest(BaseModel):
     selected_checkbox_ids: list[str] = Field(
         default_factory=list, description="Selected checkbox IDs"
     )
+    analysis_id: Optional[UUID] = Field(None, description="ID of the analysis used for adaptation")
 
 
 class VersionItemResponse(BaseModel):

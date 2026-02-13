@@ -4,9 +4,9 @@ import uuid
 from datetime import datetime
 from typing import Any, Optional
 
-from sqlalchemy import Text, String, DateTime
+from sqlalchemy import Text, String, DateTime, ForeignKey
 from sqlalchemy.dialects.postgresql import UUID, JSONB
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from backend.db.base import Base
 
@@ -37,6 +37,14 @@ class UserVersion(Base):
     type: Mapped[str] = mapped_column(
         String(20),
         nullable=False,
+    )
+
+    # Reference to analysis result (for cover letter generation)
+    analysis_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("ai_result.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
     )
 
     # User-friendly title
@@ -88,3 +96,6 @@ class UserVersion(Base):
         onupdate=datetime.utcnow,
         nullable=False,
     )
+
+    # Relationships
+    analysis = relationship("backend.models.ai_result.AIResult", foreign_keys=[analysis_id])
