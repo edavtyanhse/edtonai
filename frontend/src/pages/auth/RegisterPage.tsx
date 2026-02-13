@@ -37,18 +37,18 @@ export default function RegisterPage() {
 
     if (success) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-                <div className="max-w-md w-full bg-white p-8 rounded-xl shadow-sm border border-gray-200 text-center space-y-4">
-                    <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto">
-                        <UserPlus className="w-6 h-6 text-green-600" />
+            <div className="min-h-screen flex items-center justify-center bg-slate-900 px-4">
+                <div className="max-w-md w-full bg-slate-800 p-8 rounded-xl shadow-lg border border-slate-700 text-center space-y-4">
+                    <div className="w-16 h-16 bg-green-900/30 rounded-full flex items-center justify-center mx-auto border border-green-500/30">
+                        <UserPlus className="w-8 h-8 text-green-400" />
                     </div>
-                    <h2 className="text-2xl font-bold text-gray-900">Registration Successful</h2>
-                    <p className="text-gray-600">
+                    <h2 className="text-2xl font-bold text-white">Registration Successful</h2>
+                    <p className="text-slate-400">
                         Please check your email to confirm your account before signing in.
                     </p>
                     <div className="pt-4">
                         <Link to="/login">
-                            <Button variant="outline" className="w-full">
+                            <Button className="w-full">
                                 Go to Login
                             </Button>
                         </Link>
@@ -59,23 +59,26 @@ export default function RegisterPage() {
     }
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-            <div className="max-w-md w-full space-y-8 bg-white p-8 rounded-xl shadow-sm border border-gray-200">
+        <div className="min-h-screen flex items-center justify-center bg-slate-900 px-4">
+            <div className="max-w-md w-full space-y-8 bg-slate-800 p-8 rounded-xl shadow-lg border border-slate-700">
                 <div className="text-center">
-                    <h2 className="text-3xl font-bold text-gray-900">Create Account</h2>
-                    <p className="mt-2 text-gray-600">Start creating better resumes today</p>
+                    <div className="w-16 h-16 bg-gradient-to-tr from-brand-600 to-indigo-500 rounded-xl flex items-center justify-center shadow-lg shadow-brand-500/20 mx-auto mb-4">
+                        <span className="text-white font-bold text-2xl">E</span>
+                    </div>
+                    <h2 className="text-3xl font-bold text-white">Create Account</h2>
+                    <p className="mt-2 text-slate-400">Start creating better resumes today</p>
                 </div>
 
                 <form className="mt-8 space-y-6" onSubmit={handleRegister}>
                     {error && (
-                        <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm">
+                        <div className="bg-red-900/30 text-red-300 p-3 rounded-lg text-sm border border-red-500/30">
                             {error}
                         </div>
                     )}
 
                     <div className="space-y-4">
                         <div>
-                            <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+                            <label htmlFor="email" className="block text-sm font-medium text-slate-300">
                                 Email
                             </label>
                             <input
@@ -84,11 +87,11 @@ export default function RegisterPage() {
                                 required
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
-                                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-gray-900"
+                                className="mt-1 block w-full px-3 py-2 border border-slate-600 rounded-lg bg-slate-900 text-white placeholder-slate-500 focus:ring-brand-500 focus:border-brand-500"
                             />
                         </div>
                         <div>
-                            <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                            <label htmlFor="password" className="block text-sm font-medium text-slate-300">
                                 Password
                             </label>
                             <input
@@ -98,9 +101,9 @@ export default function RegisterPage() {
                                 minLength={6}
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
-                                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-gray-900"
+                                className="mt-1 block w-full px-3 py-2 border border-slate-600 rounded-lg bg-slate-900 text-white placeholder-slate-500 focus:ring-brand-500 focus:border-brand-500"
                             />
-                            <p className="text-xs text-gray-500 mt-1">Min. 6 characters</p>
+                            <p className="text-xs text-slate-500 mt-1">Min. 6 characters</p>
                         </div>
                     </div>
 
@@ -109,9 +112,9 @@ export default function RegisterPage() {
                         Sign Up
                     </Button>
 
-                    <p className="text-center text-sm text-gray-600">
+                    <p className="text-center text-sm text-slate-400">
                         Already have an account?{' '}
-                        <Link to="/login" className="font-medium text-blue-600 hover:text-blue-500">
+                        <Link to="/login" className="font-medium text-brand-400 hover:text-brand-300">
                             Sign in
                         </Link>
                     </p>
