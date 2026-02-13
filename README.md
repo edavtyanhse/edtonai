@@ -1,140 +1,124 @@
 # EdTon.ai — AI Resume Adapter Service 🚀
 
-**EdtonAI** — это веб-сервис для адаптации резюме под конкретные вакансии с использованием искусственного интеллекта (DeepSeek LLM).
+**EdtonAI** — это веб-сервис для умной адаптации резюме под конкретные вакансии с использованием искусственного интеллекта. Проект помогает кандидатам повысить шансы на прохождение ATS (Applicant Tracking Systems) и рекрутерского скрининга, генерируя оптимизированные версии резюме и сопроводительные письма.
 
-> 📚 **Detailed Documentation**:
-> - [Backend Overview](docs/backend/overview.md)
-> - [Frontend Overview](docs/frontend/overview.md)
-> - [Frontend Development Guide](frontend/DEVELOPMENT.md)
+## ✨ Основные возможности
 
-Проект включает в себя парсинг резюме/вакансий, анализ соответствия, генерацию улучшений и управление историей версий.
+*   **Умный парсинг**: Извлечение данных из резюме (PDF/DOCX/TXT) и вакансий (URL/Text) с помощью AI (Groq/Llama 3.1).
+*   **Gap Analysis**: Детальный анализ соответствия резюме требованиям вакансии с выявлением недостающих навыков и ключевых слов (DeepSeek/Llama 3.3).
+*   **AI Адаптация**: Автоматическое переписывание summary и bullet points опыта работы для закрытия найденных гэпов.
+*   **Генерация Cover Letter**: Создание персонализированных сопроводительных писем под вакансию.
+*   **История версий**: Полный контроль над версиями резюме, возможность отката и сравнения.
+
+---
+
+## 🏗️ Архитектура и Структура
+
+Проект построен как монорепозиторий, разделенный на Frontend и Backend.
+
+### 📂 Структура репозитория
+
+```
+edtonai/
+├── backend/                # FastAPI приложение
+│   ├── ai/                 # Логика работы с LLM (DeepSeek, Groq)
+│   ├── core/               # Конфигурация, БД, логирование
+│   ├── services/           # Бизнес-логика (Resume, Vacancy, Match)
+│   └── main.py             # Точка входа
+├── frontend/               # React (Vite) приложение
+│   ├── src/
+│   │   ├── api/            # Типы и клиенты API
+│   │   ├── components/     # UI компоненты
+│   │   ├── pages/          # Страницы приложения (Wizard, History)
+│   │   └── hooks/          # React hooks
+├── cloudbuild.yaml         # Google Cloud Build пайплайн
+├── docker-compose.yml      # Локальный запуск
+└── README.md               # Этот файл
+```
+
+---
 
 ## 🛠️ Технологический стек
 
-### Frontend
-- **React 18** + **TypeScript** + **Vite**
-- **Tailwind CSS** (стилизация)
-- **TanStack Query** (управление состоянием API)
-- **Supabase Auth** (аутентификация пользователей)
-- **React Router**
-- **Nginx** (в Docker контейнере)
-
 ### Backend
-- **FastAPI** (Python 3.11+)
-- **SQLAlchemy 2.0** + **AsyncPG** (работа с БД)
-- **PostgreSQL** (управляемая Supabase база данных)
-- **DeepSeek API** (LLM провайдер)
-- **PyJWT** (верификация токенов Supabase)
+*   **Язык**: Python 3.11+
+*   **Фреймворк**: FastAPI
+*   **БД**: PostgreSQL 15+ (via Supabase)
+*   **ORM**: SQLAlchemy 2.0 (Async)
+*   **AI**: DeepSeek V3, Groq (Llama 3.1, Llama 3.3)
+*   **Инфра**: Docker, Google Cloud Run
 
-### Infrastructure
-- **Google Cloud Run** (бессерверный деплой)
-- **Cloud Build** (CI/CD пайплайны)
-- **Docker** (контейнеризация)
+### Frontend
+*   **Язык**: TypeScript
+*   **Фреймворк**: React 18, Vite
+*   **State**: TanStack Query (React Query)
+*   **UI**: Tailwind CSS, Lucide Icons
+*   **Auth**: Supabase Auth
 
 ---
 
-## 🚀 Быстрый старт (Локально)
+## 🚀 Инструкция по запуску
 
-### Требования
-- **Docker** и **Docker Compose** (рекомендуется)
-- Или: **Python 3.11+**, **Node.js 18+**
-- **Supabase** проект (URL и Anon Key)
-- **DeepSeek API Key**
+### Предварительные требования
+*   **Docker & Docker Compose** (рекомендуемый способ).
+*   **Supabase Account**: нужен URL и API ключи.
+*   **API Keys**: DeepSeek API Key, Groq API Key.
 
-### Установка и запуск
+### Шаг 1: Клонирование
+```bash
+git clone https://github.com/edavtyanhse/edtonai.git
+cd edtonai
+```
 
-1. **Клонируй репозиторий:**
-   ```bash
-   git clone <repo-url>
-   cd edtonai
-   ```
+### Шаг 2: Настройка окружения
+Создайте файл `.env` в корне проекта на основе примера.
+**Обязательные переменные:**
 
-2. **Настрой переменные окружения:**
-   Создай `.env` файл в корне проекта (скопируй из `.env.example`):
-   ```bash
-   cp .env.example .env
-   ```
-   **Важно:** Укажи в `.env`:
-   - `DEEPSEEK_API_KEY`: Твой ключ от DeepSeek.
-   - `VITE_SUPABASE_URL`: URL твоего Supabase проекта.
-   - `VITE_SUPABASE_ANON_KEY`: Anon ключ Supabase.
-   - `SUPABASE_JWT_SECRET`: JWT Secret из настроек API Supabase (для backend auth).
-   - `POSTGRES_PASSWORD`: Пароль от базы данных.
+```ini
+# Database
+DATABASE_URL=postgresql+asyncpg://postgres:[YOUR-PASSWORD]@db.supabase.co:5432/postgres
 
-3. **Запусти через Docker Compose (Backend + Frontend):**
-   ```bash
-   docker-compose up -d --build
-   ```
+# Auth (Supabase)
+VITE_SUPABASE_URL=https://[YOUR-PROJECT].supabase.co
+VITE_SUPABASE_ANON_KEY=[YOUR-ANON-KEY]
+SUPABASE_JWT_SECRET=[YOUR-JWT-SECRET]
 
-4. **Открой приложение:**
-   - **Frontend:** [http://localhost:3000](http://localhost:3000)
-   - **Backend API Docs:** [http://localhost:8000/docs](http://localhost:8000/docs)
+# AI Providers
+DEEPSEEK_API_KEY=[YOUR-KEY]
+GROQ_API_KEY=[YOUR-KEY]
 
-### Запуск вручную (для разработки)
+# Config
+AI_PROVIDER_PARSING=groq
+AI_PROVIDER_REASONING=groq
+```
 
-#### Backend
+### Шаг 3: Запуск (Docker Compose)
+Запустите полный стек (фронтенд + бэкенд) одной командой:
+
+```bash
+docker-compose up -d --build
+```
+
+После запуска приложение доступно по адресам:
+*   **Frontend**: http://localhost:3000
+*   **Backend Swagger**: http://localhost:8000/docs
+
+### 🧪 Запуск тестов (Backend)
 ```bash
 cd backend
-python -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
-pip install -r requirements.txt
-# Убедись, что переменные из .env доступны (или создай backend/.env)
-python main.py
-```
-
-#### Frontend
-```bash
-cd frontend
-npm install
-npm run dev
+pytest
 ```
 
 ---
 
-## ☁️ Деплой (Google Cloud Run)
+## ☁️ Деплой (Google Cloud)
 
-Проект настроен на автоматический деплой через **Google Cloud Build** при пуше в ветку `main`.
+Проект настроен на CI/CD через **Google Cloud Build**.
+При пуше в ветку `main` автоматически собираются Docker-образы и деплоятся в **Cloud Run**.
 
-### CI/CD Setup
-В настройках триггера Cloud Build должна быть добавлена переменная:
-- `_SUPABASE_JWT_SECRET`: (Твой реальный JWT секрет)
-
-### Ручной деплой
-```bash
-# Backend
-gcloud run deploy edtonai-backend --source . --env-vars-file backend.env
-
-# Frontend
-gcloud run deploy edtonai-frontend --source . --update-env-vars "BACKEND_URL=https://your-backend-url"
-```
+**Требования к Cloud Build Trigger:**
+Необходимо прописать Substitution variables (начинаются с `_`) в настройках триггера, соответствующие переменным из `.env` (например, `_GROQ_API_KEY`, `_DATABASE_URL` и т.д.).
 
 ---
 
-## 🔒 Безопасность и База Данных
-
-- **Аутентификация:** Используется Supabase Auth (Frontend).
-- **Авторизация (Backend):** JWT токены проверяются на бэкенде.
-- **Изоляция данных:** Включена **Row Level Security (RLS)** в PostgreSQL. Каждый пользователь имеет доступ только к своей истории (`user_id`).
-
-### Миграции
-Для применения схемы базы данных используйте SQL скрипт:
-- [`docs/supabase_migration.sql`](docs/supabase_migration.sql) — создание таблиц, индексов и политик безопасности.
-
----
-
-## ✨ Основные функции
-
-1. **Workspace**:
-   - Парсинг текста резюме и вакансии.
-   - Анализ соответствия (Match Score).
-   - Выбор улучшений (чекбоксы).
-   - Адаптация (Rewrite) резюме.
-
-2. **История версий**:
-   - Автоматическое сохранение версий.
-   - Просмотр деталей.
-   - Сравнение (Diff) версий.
-
-3. **Экспорт**:
-   - Генерация PDF (в планах).
-   - Копирование текста.
+### Разработано для Edton.ai
