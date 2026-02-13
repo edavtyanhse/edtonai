@@ -580,19 +580,24 @@ export default function Step4Improvement() {
                     </div>
                   </div>
                 </div>
-                {/* Remaining gaps count */}
-                {analysis.gaps.length > 0 && (
-                  <div className="p-3 rounded-lg border bg-slate-800 border-slate-700">
-                    <div className="flex items-start gap-2">
-                      <AlertTriangle className="w-4 h-4 mt-0.5 text-yellow-400" />
-                      <div>
-                        <p className="text-sm text-slate-300">
-                          Осталось пробелов: {analysis.gaps.length}. Нажмите «Продолжить улучшение» для дальнейшей адаптации.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                )}
+
+              </div>
+            </div>
+          )}
+
+          {/* Remaining gaps notification (moved to bottom) */}
+          {analysis && state.previousScore !== null && scoreDiff !== null && scoreDiff > 0 && analysis.gaps.length > 0 && (
+            <div className="bg-slate-800 border border-slate-700 rounded-lg p-4 mt-4">
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="w-5 h-5 mt-0.5 text-yellow-400 flex-shrink-0" />
+                <div>
+                  <h3 className="font-medium text-white">
+                    {t('wizard.step3.gaps')} ({analysis.gaps.length})
+                  </h3>
+                  <p className="text-sm text-slate-300 mt-1">
+                    Осталось пробелов: {analysis.gaps.length}. Нажмите «Продолжить улучшение» для дальнейшей адаптации.
+                  </p>
+                </div>
               </div>
             </div>
           )}
