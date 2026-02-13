@@ -531,7 +531,7 @@ export default function Step4Improvement() {
             {/* Right: Improvements List */}
             <div className="space-y-4">
               {/* Improvements - what got better */}
-              {analysis && state.previousScore !== null && scoreDiff !== null && scoreDiff > 0 && (
+              {lastAppliedChanges.length > 0 && (
                 <div className="bg-green-900/20 border border-green-500/30 rounded-lg p-4">
                   <h3 className="font-medium text-green-400 mb-3 flex items-center gap-2">
                     <TrendingUp className="w-4 h-4" />
