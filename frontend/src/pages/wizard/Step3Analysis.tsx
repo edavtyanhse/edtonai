@@ -46,8 +46,8 @@ export default function Step3Analysis() {
           <h3 className="text-xl font-medium text-white">
             {t('wizard.step1.analyzing')}
           </h3>
-          <p className="text-slate-400 max-w-md mx-auto">
-            {t('wizard.step3.description')}
+          <p className="text-yellow-400 max-w-md mx-auto text-sm">
+            ⏳ {t('wizard.step3.analyzing_warning')}
           </p>
         </div>
         <Button variant="ghost" onClick={goToPrevStep} className="text-slate-400 hover:text-white">

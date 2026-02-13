@@ -120,9 +120,11 @@ export default function Step4Improvement() {
         result_text: resumeText,
         selected_checkbox_ids: state.selectedCheckboxes,
       }),
-    onSuccess: (_, resumeText) => {
+    onSuccess: (data, resumeText) => {
       setShowSaveDialog(false)
       setVersionTitle('')
+      // Update version ID so cover letter uses the improved resume
+      if (data?.id) setCurrentVersionId(data.id)
       // Apply improved resume as new base
       applyImprovedResume(resumeText)
       // Run re-analysis with new text
@@ -214,8 +216,8 @@ export default function Step4Improvement() {
           <h3 className="text-xl font-medium text-white">
             {saveVersionMutation.isPending ? t('wizard.step4.applying') : t('wizard.step1.analyzing')}
           </h3>
-          <p className="text-slate-400 max-w-md mx-auto">
-            {t('wizard.step3.description')}
+          <p className="text-yellow-400 max-w-md mx-auto text-sm">
+            ⏳ {t('wizard.step4.applying_warning')}
           </p>
         </div>
       </div>
@@ -544,10 +546,60 @@ export default function Step4Improvement() {
             </div>
           )}
 
-          {/* Gaps */}
-          {analysis && analysis.gaps.length > 0 && (
+          {/* Improvements - what got better */}
+          {analysis && state.previousScore !== null && scoreDiff !== null && scoreDiff > 0 && (
+            <div className="bg-green-900/20 border border-green-500/30 rounded-lg p-4">
+              <h3 className="font-medium text-green-400 mb-3 flex items-center gap-2">
+                <CheckCircle className="w-5 h-5" />
+                {t('wizard.step3.improvements')}
+              </h3>
+              <div className="space-y-3">
+                {/* Show matched skills that were previously missing (now fixed) */}
+                {analysis.matched_required_skills.length > 0 && (
+                  <div className="p-3 rounded-lg border bg-green-900/10 border-green-500/20">
+                    <div className="flex items-start gap-2">
+                      <TrendingUp className="w-4 h-4 mt-0.5 text-green-400" />
+                      <div>
+                        <p className="text-sm font-medium text-green-300">
+                          Навыки теперь соответствуют: {analysis.matched_required_skills.length} обязательных
+                          {analysis.matched_preferred_skills.length > 0 && `, ${analysis.matched_preferred_skills.length} желательных`}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                {/* Score improvement */}
+                <div className="p-3 rounded-lg border bg-green-900/10 border-green-500/20">
+                  <div className="flex items-start gap-2">
+                    <TrendingUp className="w-4 h-4 mt-0.5 text-green-400" />
+                    <div>
+                      <p className="text-sm font-medium text-green-300">
+                        Балл соответствия вырос на +{scoreDiff} (с {state.previousScore} до {analysis.score})
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                {/* Remaining gaps count */}
+                {analysis.gaps.length > 0 && (
+                  <div className="p-3 rounded-lg border bg-slate-800 border-slate-700">
+                    <div className="flex items-start gap-2">
+                      <AlertTriangle className="w-4 h-4 mt-0.5 text-yellow-400" />
+                      <div>
+                        <p className="text-sm text-slate-300">
+                          Осталось пробелов: {analysis.gaps.length}. Нажмите «Продолжить улучшение» для дальнейшей адаптации.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Show gaps only if this is NOT an improvement (first analysis) */}
+          {analysis && (state.previousScore === null || scoreDiff === null || scoreDiff <= 0) && analysis.gaps.length > 0 && (
             <div className="bg-slate-800 border border-slate-700 rounded-lg p-4">
-              <h3 className="font-medium text-gray-900 mb-3">
+              <h3 className="font-medium text-white mb-3">
                 {t('wizard.step3.gaps')} ({analysis.gaps.length})
               </h3>
               <div className="space-y-3">

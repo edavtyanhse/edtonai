@@ -51,7 +51,7 @@ class Settings(BaseSettings):
     
     # AI Configuration
     ai_provider_parsing: str = "groq"
-    ai_provider_reasoning: str = "groq"
+    ai_provider_reasoning: str = "deepseek"
     
     # DeepSeek
     deepseek_api_key: str | None = None
