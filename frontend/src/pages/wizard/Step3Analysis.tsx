@@ -4,7 +4,7 @@ import { BarChart2, Loader2, ArrowRight, ArrowLeft, AlertTriangle, CheckCircle, 
 import { useTranslation } from 'react-i18next'
 import { useWizard } from '@/hooks'
 import { analyzeMatch } from '@/api'
-import type { Gap, MatchAnalysis } from '@/api'
+import type { Gap } from '@/api'
 import { Button } from '@/components'
 
 export default function Step3Analysis() {

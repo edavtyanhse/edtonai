@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Menu, X, Globe, User as UserIcon, LogOut } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
+import { Link } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { Language } from './types';
 
@@ -14,7 +13,6 @@ const Header: React.FC<HeaderProps> = ({ lang, toggleLang }) => {
     const [isScrolled, setIsScrolled] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const { user, signOut } = useAuth();
-    const navigate = useNavigate();
 
     useEffect(() => {
         const handleScroll = () => setIsScrolled(window.scrollY > 20);

@@ -1,4 +1,4 @@
-﻿name: CI/CD
+﻿name: CI
 
 on:
   push:
@@ -16,7 +16,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
       
       - name: Install dependencies
         run: cd frontend && npm install
@@ -42,40 +42,3 @@ jobs:
       
       - name: Run Pylint
         run: cd backend && python -m pylint --disable=all --enable=E,F backend/ || true
-
-  deploy:
-    name: Deploy with Ansible
-    runs-on: ubuntu-latest
-    needs: [ lint-frontend, lint-backend ]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Setup Ansible
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y ansible
-      
-      - name: Setup SSH key
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.DEPLOY_SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
-          chmod 600 ~/.ssh/deploy_key
-          ssh-keyscan -H ${{ secrets.DEPLOY_HOST }} >> ~/.ssh/known_hosts 2>/dev/null || true
-      
-      - name: Create Ansible inventory
-        run: |
-          cat > inventory.ini <<EOF
-          [deploy]
-          ${{ secrets.DEPLOY_HOST }} ansible_user=${{ secrets.DEPLOY_USER }} ansible_ssh_private_key_file=~/.ssh/deploy_key
-          EOF
-      
-      - name: Run Ansible playbook
-        working-directory: /home/runner/work/edtonai/edtonai
-        run: |
-          ansible-playbook -i inventory.ini deploy.yml -v
-      
-      - name: Cleanup SSH key
-        if: always()
-        run: rm -f ~/.ssh/deploy_key

@@ -17,7 +17,7 @@ interface FeedbackModalProps {
   source?: 'auto' | 'manual' // auto = after analysis, manual = clicked banner
 }
 
-export function FeedbackModal({ isOpen, onClose, source = 'manual' }: FeedbackModalProps) {
+export function FeedbackModal({ isOpen, onClose, source: _source = 'manual' }: FeedbackModalProps) {
   const { i18n } = useTranslation()
   const [feedback, setFeedback] = useState('')
   const [submitted, setSubmitted] = useState(false)

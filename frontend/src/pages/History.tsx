@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { Trash2, Eye, GitCompare, RotateCcw, FileText, Sparkles, Calendar, ArrowLeft } from 'lucide-react'
+import { Trash2, Eye, RotateCcw, FileText, Sparkles, Calendar, ArrowLeft } from 'lucide-react'
 import { Button, ConfirmDialog } from '@/components'
 import { getVersions, getVersion, deleteVersion, type VersionItem, type VersionDetail } from '@/api'
 

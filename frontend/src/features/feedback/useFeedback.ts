@@ -3,7 +3,7 @@
  * TO REMOVE: Delete this file
  */
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { FEEDBACK_CONFIG } from './config'
 
 const FEEDBACK_SHOWN_KEY = 'feedback_modal_shown'

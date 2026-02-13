@@ -50,7 +50,7 @@ export default function Step1Resume() {
     } finally {
       setIsProcessingFile(false)
     }
-  }, [t])
+  }, [t]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Parse mutation
   const parseMutation = useMutation({

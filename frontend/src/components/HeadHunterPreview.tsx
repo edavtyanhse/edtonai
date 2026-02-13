@@ -21,7 +21,7 @@ export default function HeadHunterPreview({ data, onClose }: Props) {
         setTimeout(() => setCopiedId(null), 2000)
     }
 
-    const { work_experience, skills, summary, personal_info } = data
+    const { work_experience, skills, summary } = data
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">

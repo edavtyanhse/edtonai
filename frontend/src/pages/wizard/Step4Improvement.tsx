@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useMutation } from '@tanstack/react-query'
-import { Sparkles, Loader2, ArrowLeft, Copy, RotateCcw, Check, X, AlertTriangle, CheckCircle, XCircle, TrendingUp, TrendingDown, Minus, Eye, DownloadCloud, Home, Mail } from 'lucide-react'
+import { Sparkles, Loader2, ArrowLeft, RotateCcw, Check, X, AlertTriangle, CheckCircle, XCircle, TrendingUp, TrendingDown, Minus, Eye, Home, Mail } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useWizard } from '@/hooks'
 import { adaptResume, createVersion, analyzeMatch, generateCoverLetter } from '@/api'
@@ -32,7 +32,6 @@ export default function Step4Improvement() {
   const [showSaveDialog, setShowSaveDialog] = useState(false)
   const [showPdfPreview, setShowPdfPreview] = useState(false)
   const [versionTitle, setVersionTitle] = useState('')
-  const [copied, setCopied] = useState(false)
   const [pendingChanges, setPendingChanges] = useState<PendingChange[]>([])
   const [showCoverLetterModal, setShowCoverLetterModal] = useState(false)
   const [coverLetterData, setCoverLetterData] = useState<CoverLetterResponse | null>(null)
@@ -168,12 +167,6 @@ export default function Step4Improvement() {
 
   const handleSaveAndAnalyze = () => {
     saveVersionMutation.mutate(state.resultText)
-  }
-
-  const handleCopy = async () => {
-    await navigator.clipboard.writeText(state.resumeText)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
   }
 
   const handleBackToCheckboxes = () => {

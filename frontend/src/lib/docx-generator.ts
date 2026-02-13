@@ -4,15 +4,10 @@ import {
     Packer,
     Paragraph,
     TextRun,
-    HeadingLevel,
     BorderStyle,
     AlignmentType,
     TabStopType,
     TabStopPosition,
-    Table,
-    TableRow,
-    TableCell,
-    WidthType,
 } from 'docx'
 import { saveAs } from 'file-saver'
 import type { ParsedResume } from '@/api'
