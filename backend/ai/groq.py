@@ -19,6 +19,7 @@ class GroqProvider(AIProvider):
         
         self.client = AsyncGroq(api_key=settings.groq_api_key)
         self.model = model
+        self.provider_name = "groq"
 
     async def generate_json(self, prompt: str, prompt_name: Optional[str] = None) -> dict[str, Any]:
         """Generate a JSON dictionary using Groq."""
