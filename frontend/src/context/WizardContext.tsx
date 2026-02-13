@@ -27,6 +27,7 @@ interface WizardState {
   selectedCheckboxes: string[]
   resultText: string
   changeLog: ChangeLogEntry[]
+  previousResumeText: string | null
 }
 
 const initialState: WizardState = initialWizardState
@@ -80,6 +81,7 @@ export function WizardProvider({ children }: { children: ReactNode }) {
       selectedCheckboxes: analysis.checkbox_options
         .filter((o) => o.enabled && (o.priority ?? 0) >= 2)
         .map((o) => o.id),
+      previousResumeText: null, // Reset previous on new analysis
     }))
   }, [])
 
@@ -113,6 +115,7 @@ export function WizardProvider({ children }: { children: ReactNode }) {
     setState((prev) => ({
       ...prev,
       resumeText: newResumeText,  // New base resume text
+      previousResumeText: prev.resumeText, // Save previous resume text for diff
       resultText: '',              // Clear result
       changeLog: [],               // Clear change log
       selectedCheckboxes: [],      // Clear selections

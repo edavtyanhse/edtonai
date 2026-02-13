@@ -17,6 +17,8 @@ interface PendingChange extends ChangeLogEntry {
   status: 'pending' | 'confirmed' | 'rejected'
 }
 
+import { diffWords } from 'diff'
+
 export default function Step4Improvement() {
   const { t } = useTranslation()
   const {
@@ -433,266 +435,200 @@ export default function Step4Improvement() {
         </div>
       ) : (
         /* mode === 'analysis' - Full analysis view like Step3 */
-        <div className="space-y-6">
-          {/* Score with comparison */}
-          <div className="bg-slate-800 border border-slate-700 rounded-lg p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold">{t('wizard.step4.score_new')}</h2>
-              <div className="flex items-center gap-4">
-                {/* Score comparison */}
-                {state.previousScore !== null && scoreDiff !== null && (
-                  <div className="flex items-center gap-2 text-sm">
-                    <span className="text-gray-500">{t('wizard.step4.before')}: {state.previousScore}</span>
-                    <span className="text-gray-400">→</span>
-                    {scoreDiff > 0 ? (
-                      <span className="flex items-center text-green-600">
-                        <TrendingUp className="w-4 h-4 mr-1" />
-                        +{scoreDiff}
-                      </span>
-                    ) : scoreDiff < 0 ? (
-                      <span className="flex items-center text-red-600">
-                        <TrendingDown className="w-4 h-4 mr-1" />
-                        {scoreDiff}
-                      </span>
-                    ) : (
-                      <span className="flex items-center text-gray-500">
-                        <Minus className="w-4 h-4 mr-1" />
-                        0
-                      </span>
-                    )}
-                  </div>
-                )}
-                <div
-                  className={`text-4xl font-bold ${analysis && analysis.score >= 70
-                    ? 'text-green-600'
-                    : analysis && analysis.score >= 50
-                      ? 'text-yellow-600'
-                      : 'text-red-600'
-                    }`}
-                >
-                  {analysis?.score || 0}
-                  <span className="text-lg text-gray-400">/100</span>
-                </div>
+        /* mode === 'analysis' - Full analysis view like Step3 */
+        <div className="space-y-8">
+
+          {/* Main Content Areas - Split View */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+            {/* Left Column: Resume Diff (2/3) */}
+            <div className="lg:col-span-2 space-y-4">
+              <h2 className="text-lg font-semibold text-white flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-blue-400" />
+                {t('wizard.step4.optimization_result', 'Optimization Result')}
+              </h2>
+              <div className="bg-slate-800 border border-slate-700 rounded-lg p-1">
+                <ResumeDiffViewer
+                  oldText={state.previousResumeText || state.resumeText}
+                  newText={state.resumeText}
+                />
               </div>
             </div>
 
-            {/* Score breakdown */}
-            {analysis && (
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {analysis.score_breakdown.skill_fit && (
-                  <ScoreCard
-                    label={t('wizard.step3.score_skills')}
-                    value={analysis.score_breakdown.skill_fit.value}
-                    maxValue={50}
-                    comment={analysis.score_breakdown.skill_fit.comment}
-                  />
-                )}
-                {analysis.score_breakdown.experience_fit && (
-                  <ScoreCard
-                    label={t('wizard.step3.score_experience')}
-                    value={analysis.score_breakdown.experience_fit.value}
-                    maxValue={25}
-                    comment={analysis.score_breakdown.experience_fit.comment}
-                  />
-                )}
-                {analysis.score_breakdown.ats_fit && (
-                  <ScoreCard
-                    label={t('wizard.step3.score_ats')}
-                    value={analysis.score_breakdown.ats_fit.value}
-                    maxValue={15}
-                    comment={analysis.score_breakdown.ats_fit.comment}
-                  />
-                )}
-                {analysis.score_breakdown.clarity_evidence && (
-                  <ScoreCard
-                    label={t('wizard.step3.score_clarity')}
-                    value={analysis.score_breakdown.clarity_evidence.value}
-                    maxValue={10}
-                    comment={analysis.score_breakdown.clarity_evidence.comment}
-                  />
+            {/* Right Column: Score & Improvements (1/3) */}
+            <div className="space-y-6">
+
+              {/* Score Card */}
+              <div className="bg-slate-800 border border-slate-700 rounded-lg p-5">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-lg font-semibold">{t('wizard.step4.score_new')}</h2>
+                  <div className="flex items-center gap-2">
+                    {state.previousScore !== null && scoreDiff !== null && (
+                      <div className="flex items-center text-sm mr-2">
+                        <span className="text-gray-500 mr-2">{t('wizard.step4.before')}: {state.previousScore}</span>
+                        {scoreDiff > 0 ? (
+                          <span className="text-green-500 text-xs font-bold px-1.5 py-0.5 bg-green-500/10 rounded">+{scoreDiff}</span>
+                        ) : scoreDiff < 0 ? (
+                          <span className="text-red-500 text-xs font-bold px-1.5 py-0.5 bg-red-500/10 rounded">{scoreDiff}</span>
+                        ) : null}
+                      </div>
+                    )}
+                    <div className={`text-3xl font-bold ${analysis && analysis.score >= 70 ? 'text-green-500' : analysis && analysis.score >= 50 ? 'text-yellow-500' : 'text-red-500'}`}>
+                      {analysis?.score || 0}
+                      <span className="text-sm text-gray-500 ml-1">/100</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Mini Score breakdown */}
+                {analysis && (
+                  <div className="space-y-3">
+                    {analysis.score_breakdown.skill_fit && (
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-gray-400">{t('wizard.step3.score_skills')}</span>
+                        <span className="font-medium">{analysis.score_breakdown.skill_fit.value}/50</span>
+                      </div>
+                    )}
+                    {analysis.score_breakdown.experience_fit && (
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-gray-400">{t('wizard.step3.score_experience')}</span>
+                        <span className="font-medium">{analysis.score_breakdown.experience_fit.value}/25</span>
+                      </div>
+                    )}
+                    {analysis.score_breakdown.ats_fit && (
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-gray-400">{t('wizard.step3.score_ats')}</span>
+                        <span className="font-medium">{analysis.score_breakdown.ats_fit.value}/15</span>
+                      </div>
+                    )}
+                    {analysis.score_breakdown.clarity_evidence && (
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-gray-400">{t('wizard.step3.score_clarity')}</span>
+                        <span className="font-medium">{analysis.score_breakdown.clarity_evidence.value}/10</span>
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
-            )}
+
+              {/* Improvements */}
+              {analysis && state.previousScore !== null && scoreDiff !== null && scoreDiff > 0 && (
+                <div className="bg-green-900/20 border border-green-500/30 rounded-lg p-4">
+                  <h3 className="font-medium text-green-400 mb-3 flex items-center gap-2">
+                    <TrendingUp className="w-4 h-4" />
+                    {t('wizard.step3.improvements')}
+                  </h3>
+                  {lastAppliedChanges.length > 0 ? (
+                    <div className="space-y-2">
+                      {lastAppliedChanges.map((change, idx) => (
+                        <div key={idx} className="flex gap-2 text-sm text-green-200">
+                          <Check className="w-4 h-4 mt-0.5 text-green-500 flex-shrink-0" />
+                          <span>{change.what_changed}</span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-green-300/70 italic">{t('wizard.step4.general_improvements')}</p>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
 
-          {/* Skills match */}
-          {analysis && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Required skills */}
-              <div className="bg-slate-800 border border-slate-700 rounded-lg p-4">
-                <h3 className="font-medium text-white mb-3">{t('wizard.step3.required_skills')}</h3>
-                <div className="space-y-2">
-                  {analysis.matched_required_skills.map((skill: string) => (
-                    <SkillBadge key={skill} skill={skill} matched />
-                  ))}
-                  {analysis.missing_required_skills.map((skill: string) => (
-                    <SkillBadge key={skill} skill={skill} matched={false} />
-                  ))}
-                  {analysis.matched_required_skills.length === 0 &&
-                    analysis.missing_required_skills.length === 0 && (
-                      <p className="text-sm text-gray-500">{t('wizard.step3.no_data')}</p>
-                    )}
-                </div>
-              </div>
-
-              {/* Preferred skills */}
-              <div className="bg-slate-800 border border-slate-700 rounded-lg p-4">
-                <h3 className="font-medium text-white mb-3">{t('wizard.step3.preferred_skills')}</h3>
-                <div className="space-y-2">
-                  {analysis.matched_preferred_skills.map((skill: string) => (
-                    <SkillBadge key={skill} skill={skill} matched />
-                  ))}
-                  {analysis.missing_preferred_skills.map((skill: string) => (
-                    <SkillBadge key={skill} skill={skill} matched={false} />
-                  ))}
-                  {analysis.matched_preferred_skills.length === 0 &&
-                    analysis.missing_preferred_skills.length === 0 && (
-                      <p className="text-sm text-gray-500">{t('wizard.step3.no_data')}</p>
-                    )}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Improvements - what got better */}
-          {analysis && state.previousScore !== null && scoreDiff !== null && scoreDiff > 0 && (
-            <div className="bg-green-900/20 border border-green-500/30 rounded-lg p-4">
-              <h3 className="font-medium text-green-400 mb-3 flex items-center gap-2">
-                <CheckCircle className="w-5 h-5" />
-                {t('wizard.step3.improvements')}
+          {/* Skills Section */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Required skills */}
+            <div className="bg-slate-800 border border-slate-700 rounded-lg p-5">
+              <h3 className="font-medium text-white mb-4 flex items-center gap-2">
+                <CheckCircle className="w-4 h-4 text-blue-400" />
+                {t('wizard.step3.required_skills')}
               </h3>
-              <div className="space-y-3">
-                {/* Score improvement */}
-                <div className="p-3 rounded-lg border bg-green-900/10 border-green-500/20">
-                  <div className="flex items-start gap-2">
-                    <TrendingUp className="w-4 h-5 mt-0.5 text-green-400" />
-                    <div>
-                      <p className="text-sm font-medium text-green-300">
-                        Балл соответствия вырос на +{scoreDiff} (с {state.previousScore} до {analysis.score})
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Specific Changes List */}
-                {lastAppliedChanges.length > 0 ? (
-                  <div className="space-y-2 mt-3">
-                    <p className="text-xs uppercase text-green-500/70 font-semibold tracking-wider px-1">
-                      Внесенные изменения:
-                    </p>
-                    {lastAppliedChanges.map((change, idx) => (
-                      <div key={idx} className="flex gap-2 p-2 rounded bg-green-900/10 border border-green-500/10">
-                        <Check className="w-4 h-4 mt-0.5 text-green-400 flex-shrink-0" />
-                        <span className="text-sm text-green-200">{change.what_changed}</span>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  // Fallback if no specific changes tracked (e.g. page refresh)
-                  analysis.matched_required_skills.length > 0 && (
-                    <div className="p-3 rounded-lg border bg-green-900/10 border-green-500/20">
-                      <div className="flex items-start gap-2">
-                        <TrendingUp className="w-4 h-4 mt-0.5 text-green-400" />
-                        <div>
-                          <p className="text-sm font-medium text-green-300">
-                            Навыки теперь соответствуют: {analysis.matched_required_skills.length} обязательных
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  )
+              <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+                {analysis?.matched_required_skills.map((skill: string) => (
+                  <SkillBadge key={skill} skill={skill} matched />
+                ))}
+                {analysis?.missing_required_skills.map((skill: string) => (
+                  <SkillBadge key={skill} skill={skill} matched={false} />
+                ))}
+                {analysis?.matched_required_skills.length === 0 && analysis?.missing_required_skills.length === 0 && (
+                  <p className="text-sm text-gray-500">{t('wizard.step3.no_data')}</p>
                 )}
               </div>
             </div>
-          )}
 
-          {/* Remaining gaps notification (moved to bottom) */}
-          {analysis && state.previousScore !== null && scoreDiff !== null && scoreDiff > 0 && analysis.gaps.length > 0 && (
-            <div className="bg-slate-800 border border-slate-700 rounded-lg p-4 mt-4">
-              <div className="flex items-start gap-3">
-                <AlertTriangle className="w-5 h-5 mt-0.5 text-yellow-400 flex-shrink-0" />
-                <div>
-                  <h3 className="font-medium text-white">
-                    {t('wizard.step3.gaps')} ({analysis.gaps.length})
-                  </h3>
-                  <p className="text-sm text-slate-300 mt-1">
-                    Осталось пробелов: {analysis.gaps.length}. Нажмите «Продолжить улучшение» для дальнейшей адаптации.
-                  </p>
+            {/* Preferred skills & Gaps */}
+            <div className="space-y-6">
+              <div className="bg-slate-800 border border-slate-700 rounded-lg p-5">
+                <h3 className="font-medium text-white mb-4 flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-yellow-500" />
+                  {t('wizard.step3.preferred_skills')}
+                </h3>
+                <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+                  {analysis?.matched_preferred_skills.map((skill: string) => (
+                    <SkillBadge key={skill} skill={skill} matched />
+                  ))}
+                  {analysis?.missing_preferred_skills.map((skill: string) => (
+                    <SkillBadge key={skill} skill={skill} matched={false} />
+                  ))}
+                  {analysis?.matched_preferred_skills.length === 0 && analysis?.missing_preferred_skills.length === 0 && (
+                    <p className="text-sm text-gray-400 italic">Нет данных</p>
+                  )}
                 </div>
               </div>
-            </div>
-          )}
 
-          {/* Show gaps only if this is NOT an improvement (first analysis) */}
-          {analysis && (state.previousScore === null || scoreDiff === null || scoreDiff <= 0) && analysis.gaps.length > 0 && (
-            <div className="bg-slate-800 border border-slate-700 rounded-lg p-4">
-              <h3 className="font-medium text-white mb-3">
-                {t('wizard.step3.gaps')} ({analysis.gaps.length})
-              </h3>
-              <div className="space-y-3">
-                {analysis.gaps.map((gap: Gap) => (
-                  <div
-                    key={gap.id}
-                    className={`p-3 rounded-lg border ${gap.severity === 'high'
-                      ? 'bg-red-900/20 border-red-500/30'
-                      : gap.severity === 'medium'
-                        ? 'bg-yellow-900/20 border-yellow-500/30'
-                        : 'bg-blue-900/20 border-blue-500/30'
-                      }`}
-                  >
-                    <div className="flex items-start gap-2">
-                      <AlertTriangle
-                        className={`w-4 h-4 mt-0.5 ${gap.severity === 'high'
-                          ? 'text-red-400'
-                          : gap.severity === 'medium'
-                            ? 'text-yellow-400'
-                            : 'text-blue-400'
-                          }`}
-                      />
-                      <div>
-                        <p className="text-sm font-medium text-white">{gap.message}</p>
-                        {gap.suggestion && (
-                          <p className="text-sm text-slate-300 mt-1">{gap.suggestion}</p>
-                        )}
-                        <span className="inline-block mt-1 text-xs text-gray-400">
-                          {gap.target_section}
-                        </span>
+              {/* Gaps (if any remain) */}
+              {analysis && analysis.gaps.length > 0 && (
+                <div className="bg-slate-800 border border-slate-700 rounded-lg p-5">
+                  <h3 className="font-medium text-white mb-3 flex items-center gap-2">
+                    <AlertTriangle className="w-4 h-4 text-yellow-500" />
+                    {t('wizard.step3.gaps')} ({analysis.gaps.length})
+                  </h3>
+                  <p className="text-sm text-slate-400 mb-3">
+                    {t('wizard.step4.gaps_remaining_message', 'Some gaps still remain. Click "Continue Improving" to address them.')}
+                  </p>
+                  <div className="space-y-2">
+                    {analysis.gaps.slice(0, 3).map((gap: Gap, i) => (
+                      <div key={i} className="flex gap-2 text-sm text-slate-300">
+                        <div className="w-1.5 h-1.5 rounded-full bg-yellow-500 mt-2 flex-shrink-0" />
+                        <span>{gap.message}</span>
                       </div>
-                    </div>
+                    ))}
+                    {analysis.gaps.length > 3 && (
+                      <p className="text-xs text-slate-500 pl-3.5">+{analysis.gaps.length - 3} {t('common.more')}</p>
+                    )}
                   </div>
-                ))}
-              </div>
+                </div>
+              )}
             </div>
-          )}
+          </div>
 
-          {/* Actions */}
-          <div className="flex justify-between pt-4">
+
+          {/* Actions Footer */}
+          <div className="flex justify-between items-center pt-6 border-t border-slate-800">
             <div className="flex gap-2">
-              <Button variant="outline" onClick={reset}>
+              <Button variant="outline" onClick={reset} className="text-slate-400 hover:text-white border-slate-700 hover:bg-slate-800">
                 <RotateCcw className="w-4 h-4 mr-2" />
                 {t('wizard.step4.start_over')}
               </Button>
-              <Button variant="outline" onClick={() => setShowPdfPreview(true)}>
-                <Eye className="w-4 h-4 mr-2" />
-                {t('wizard.step4.preview_pdf')}
-              </Button>
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-3">
               {analysis && analysis.checkbox_options.length > 0 && (
-                <Button onClick={handleContinueImproving}>
+                <Button onClick={handleContinueImproving} className="bg-blue-600 hover:bg-blue-700">
                   <Sparkles className="w-4 h-4 mr-2" />
                   {t('wizard.step4.continue')}
                 </Button>
               )}
-              {/* Home button for explicit exit - also triggers feedback */}
-              <Button onClick={() => {
-                const shown = feedback.showFeedbackAuto()
-                if (shown) {
-                  setNavigateAfterFeedback(true)
-                } else {
-                  window.location.href = '/'
-                }
-              }}>
+              <Button
+                onClick={() => {
+                  const shown = feedback.showFeedbackAuto()
+                  if (shown) {
+                    setNavigateAfterFeedback(true)
+                  } else {
+                    window.location.href = '/'
+                  }
+                }}
+                className="bg-slate-700 hover:bg-slate-600"
+              >
                 <Home className="w-4 h-4 mr-2" />
                 {t('common.done')}
               </Button>
@@ -763,8 +699,6 @@ export default function Step4Improvement() {
     </div >
   )
 }
-
-
 // ========================================
 // Helper Components
 // ========================================
@@ -802,18 +736,40 @@ function ScoreCard({
   )
 }
 
-function SkillBadge({ skill, matched }: { skill: string; matched: boolean }) {
+function ResumeDiffViewer({ oldText, newText }: { oldText: string, newText: string }) {
+  const diff = diffWords(oldText, newText)
+
   return (
-    <div
-      className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm ${matched ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'
-        }`}
-    >
-      {matched ? (
-        <CheckCircle className="w-4 h-4 text-green-500" />
-      ) : (
-        <XCircle className="w-4 h-4 text-red-500" />
-      )}
-      {skill}
+    <div className="bg-slate-900 rounded-lg p-4 font-mono text-sm overflow-auto max-h-[600px] whitespace-pre-wrap border border-slate-700">
+      {diff.map((part, index) => {
+        const color = part.added ? 'text-green-400 bg-green-900/30' :
+          part.removed ? 'text-red-400 bg-red-900/30 line-through decoration-red-500/50' :
+            'text-slate-300'
+        return (
+          <span key={index} className={color}>
+            {part.value}
+          </span>
+        )
+      })}
     </div>
   )
 }
+
+function SkillBadge({ skill, matched }: { skill: string; matched: boolean }) {
+  return (
+    <div
+      className={`px-3 py-2 rounded-lg border flex items-center gap-2 ${matched
+        ? 'bg-green-900/20 border-green-500/30 text-green-200'
+        : 'bg-red-900/20 border-red-500/30 text-red-200'
+        }`}
+    >
+      {matched ? (
+        <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
+      ) : (
+        <XCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
+      )}
+      <span className="text-sm font-medium">{skill}</span>
+    </div>
+  )
+}
+
