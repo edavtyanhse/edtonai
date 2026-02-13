@@ -132,7 +132,6 @@ export default function History() {
                 version={version}
                 isSelected={selectedVersionId === version.id}
                 onView={() => handleView(version.id)}
-                // onCompare={() => handleCompare(version.id)}
                 onDelete={() => handleDelete(version.id)}
                 formatDate={formatDate}
                 truncate={truncate}
@@ -151,7 +150,6 @@ export default function History() {
                 <VersionDetailPanel
                   version={selectedVersion}
                   onRestore={() => handleRestore(selectedVersion)}
-                  // onCompare={() => handleCompare(selectedVersion.id)}
                   formatDate={formatDate}
                 />
               ) : null
@@ -183,7 +181,6 @@ interface VersionCardProps {
   version: VersionItem
   isSelected: boolean
   onView: () => void
-  // onCompare: () => void
   onDelete: () => void
   formatDate: (date: string) => string
   truncate: (text: string, length: number) => string
@@ -193,7 +190,6 @@ function VersionCard({
   version,
   isSelected,
   onView,
-  // onCompare,
   onDelete,
   formatDate,
   truncate,
@@ -258,7 +254,6 @@ function VersionCard({
 interface VersionDetailPanelProps {
   version: VersionDetail
   onRestore: () => void
-  // onCompare: () => void
   formatDate: (date: string) => string
 }
 
