@@ -1,12 +1,11 @@
 """Cover Letter generation endpoints."""
 
 import logging
-from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from backend.api.dependencies import get_cover_letter_service
-from backend.core.auth import get_current_user_id
+from backend.core.auth import require_auth
 from backend.schemas.cover_letter import (
     CoverLetterRequest,
     CoverLetterResponse,
@@ -40,7 +39,7 @@ Results are cached by (resume_version_text, vacancy_text, match_analysis).
 )
 async def generate_cover_letter(
     request: CoverLetterRequest,
-    _user_id: str = Depends(get_current_user_id),
+    user_id: str = Depends(require_auth),
     cover_letter_service: CoverLetterService = Depends(get_cover_letter_service),
 ) -> CoverLetterResponse:
     """Generate cover letter for resume version.
@@ -48,25 +47,28 @@ async def generate_cover_letter(
     Requires:
     - resume_version_id must exist
     - resume_version must have analysis_id (match analysis)
-    - vacancy must exist
+    - vacancy must exist (or be embedded in UserVersion)
+    - authenticated user must own the resume version
 
     Returns generated cover letter with structure breakdown.
     """
     try:
         result = await cover_letter_service.generate_cover_letter(
             resume_version_id=request.resume_version_id,
+            user_id=user_id,
             options=request.options or {},
         )
 
+        structure = result.structure or {}
         return CoverLetterResponse(
             cover_letter_id=result.cover_letter_id,
             resume_version_id=result.resume_version_id,
             vacancy_id=result.vacancy_id,
             cover_letter_text=result.cover_letter_text,
             structure=CoverLetterStructure(
-                opening=result.structure["opening"],
-                body=result.structure["body"],
-                closing=result.structure["closing"],
+                opening=structure.get("opening", ""),
+                body=structure.get("body", ""),
+                closing=structure.get("closing", ""),
             ),
             key_points_used=result.key_points_used,
             alignment_notes=result.alignment_notes,
@@ -75,9 +77,17 @@ async def generate_cover_letter(
 
     except ValueError as e:
         logger.warning("Cover letter generation failed: %s", str(e))
+        msg = str(e)
+        msg_l = msg.lower()
+        if "not found" in msg_l:
+            status_code = status.HTTP_404_NOT_FOUND
+        elif "access denied" in msg_l:
+            status_code = status.HTTP_403_FORBIDDEN
+        else:
+            status_code = status.HTTP_400_BAD_REQUEST
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e),
+            status_code=status_code,
+            detail=msg,
         ) from e
 
     except Exception as e:

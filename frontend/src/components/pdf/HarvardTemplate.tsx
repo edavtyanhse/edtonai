@@ -188,7 +188,10 @@ export default function HarvardTemplate({ data }: Props) {
                             <View style={styles.skillLine}>
                                 <Text>
                                     <Text style={styles.skillCategory}>Languages: </Text>
-                                    {languages.map(l => `${l.language} (${l.proficiency || ''})`).join(', ')}
+                                    {languages.map(l => {
+                                        if (typeof l === 'string') return l;
+                                        return `${l.language} (${l.proficiency || ''})`
+                                    }).join(', ')}
                                 </Text>
                             </View>
                         )}

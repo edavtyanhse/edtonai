@@ -37,9 +37,9 @@ class CoverLetterResponse(BaseModel):
         ...,
         description="ID of the resume version used",
     )
-    vacancy_id: UUID = Field(
-        ...,
-        description="ID of the vacancy",
+    vacancy_id: UUID | None = Field(
+        None,
+        description="ID of the vacancy (if linked)",
     )
     cover_letter_text: str = Field(
         ...,

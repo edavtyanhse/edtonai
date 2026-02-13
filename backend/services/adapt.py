@@ -21,6 +21,11 @@ from backend.repositories import (
 from backend.services.resume import ResumeService
 from backend.services.vacancy import VacancyService
 from backend.services.match import MatchService
+from backend.services.utils import (
+    get_model_name,
+    get_provider_name,
+    prompt_template_sha256,
+)
 
 
 @dataclass
@@ -114,6 +119,11 @@ class AdaptResumeService:
             "selected_improvements": improvements_data,
             "template": options.get("template"),
             "language": options.get("language"),
+            "provider": get_provider_name(self.ai_provider),
+            "model": get_model_name(self.ai_provider, fallback=settings.ai_model),
+            "prompt_template_sha256": prompt_template_sha256(GENERATE_UPDATED_RESUME_PROMPT),
+            "temperature": settings.ai_temperature,
+            "max_tokens": settings.ai_max_tokens,
         }
         return hashlib.sha256(
             json.dumps(data, sort_keys=True).encode("utf-8")
@@ -230,7 +240,7 @@ class AdaptResumeService:
                 analysis_id=analysis_id,
                 parent_version_id=base_version_id,
                 provider=self.ai_provider.provider_name,
-                model=settings.ai_model,
+                model=get_model_name(self.ai_provider, fallback=settings.ai_model),
             )
             await self.session.commit()
 
@@ -264,7 +274,7 @@ class AdaptResumeService:
             input_hash=input_hash,
             output_json=adapt_output,
             provider=self.ai_provider.provider_name,
-            model=settings.ai_model,
+            model=get_model_name(self.ai_provider, fallback=settings.ai_model),
         )
         self.logger.info("Saved adapt_resume to cache: %s", input_hash[:16])
 
@@ -278,7 +288,7 @@ class AdaptResumeService:
             analysis_id=analysis_id,
             parent_version_id=base_version_id,
             provider=self.ai_provider.provider_name,
-            model=settings.ai_model,
+            model=get_model_name(self.ai_provider, fallback=settings.ai_model),
         )
         await self.session.commit()
 

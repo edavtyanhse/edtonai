@@ -71,7 +71,7 @@ education (массив объектов):
 - end_year
 
 certifications: массив строк (название + год если есть)
-languages: массив строк (например "English B2")
+languages: массив объектов {"language": "English", "proficiency": "B2"} (proficiency может быть null)
 raw_sections: объект "название секции" -> "текст секции", может быть пустым объектом
 
 Верни JSON строго в структуре:

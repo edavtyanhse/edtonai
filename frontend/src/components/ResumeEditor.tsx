@@ -221,6 +221,19 @@ export default function ResumeEditor({ data, onChange, readonly = false }: Resum
           )}
         </div>
       </Section>
+
+      {/* Languages */}
+      <Section
+        title={`Языки (${data.languages?.length || 0})`}
+        expanded={expandedSections.languages}
+        onToggle={() => toggleSection('languages')}
+      >
+        <LanguageEditor
+          languages={data.languages || []}
+          onChange={(langs) => onChange({ ...data, languages: langs })}
+          readonly={readonly}
+        />
+      </Section>
     </div>
   )
 }
@@ -568,6 +581,83 @@ function EducationItem({
           </button>
         )}
       </div>
+    </div>
+  )
+}
+
+function LanguageEditor({
+  languages,
+  onChange,
+  readonly = false,
+}: {
+  languages: any[] // Accept string or object for compatibility
+  onChange: (languages: any[]) => void
+  readonly?: boolean
+}) {
+  const [input, setInput] = useState('')
+  const [proficiency, setProficiency] = useState('')
+
+  const handleAdd = () => {
+    if (input.trim()) {
+      // Always add as object now
+      const newLang = { language: input.trim(), proficiency: proficiency.trim() || undefined }
+      onChange([...languages, newLang])
+      setInput('')
+      setProficiency('')
+    }
+  }
+
+  const handleRemove = (index: number) => {
+    const newLangs = [...languages]
+    newLangs.splice(index, 1)
+    onChange(newLangs)
+  }
+
+  return (
+    <div className="space-y-3">
+      <div className="space-y-2">
+        {languages.map((l, index) => {
+          const displayText = typeof l === 'string'
+            ? l
+            : `${l.language}${l.proficiency ? ` (${l.proficiency})` : ''}`
+
+          return (
+            <div key={index} className="flex items-center justify-between bg-slate-800 p-2 rounded border border-slate-700">
+              <span className="text-white">{displayText}</span>
+              {!readonly && (
+                <button onClick={() => handleRemove(index)} className="text-red-400 hover:text-red-300">
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+          )
+        })}
+      </div>
+
+      {!readonly && (
+        <div className="flex gap-2">
+          <input
+            type="text"
+            className="flex-1 px-3 py-2 border border-slate-700 bg-slate-900 text-white rounded-lg"
+            placeholder="Язык (English)"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+          />
+          <input
+            type="text"
+            className="w-1/3 px-3 py-2 border border-slate-700 bg-slate-900 text-white rounded-lg"
+            placeholder="Уровень (B2)"
+            value={proficiency}
+            onChange={(e) => setProficiency(e.target.value)}
+          />
+          <button
+            onClick={handleAdd}
+            className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          >
+            <Plus className="w-4 h-4" />
+          </button>
+        </div>
+      )}
     </div>
   )
 }

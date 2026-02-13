@@ -297,6 +297,7 @@ export interface VersionCreateRequest {
   result_text: string
   change_log?: ChangeLogEntry[]
   selected_checkbox_ids?: string[]
+  analysis_id?: string
 }
 
 export interface VersionItem {
@@ -343,7 +344,7 @@ export interface CoverLetterStructure {
 export interface CoverLetterResponse {
   cover_letter_id: string
   resume_version_id: string
-  vacancy_id: string
+  vacancy_id: string | null
   cover_letter_text: string
   structure: CoverLetterStructure
   key_points_used: string[]

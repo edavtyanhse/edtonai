@@ -12,7 +12,13 @@ from backend.ai.factory import get_ai_provider
 from backend.core.config import settings
 from backend.prompts import PARSE_VACANCY_PROMPT
 from backend.repositories import VacancyRepository, AIResultRepository
-from backend.services.utils import compute_hash
+from backend.services.utils import (
+    compute_ai_cache_key,
+    compute_hash,
+    get_model_name,
+    get_provider_name,
+    prompt_template_sha256,
+)
 
 
 @dataclass
@@ -51,6 +57,20 @@ class VacancyService:
         5. Save parsed data to individual columns
         """
         content_hash = compute_hash(vacancy_text)
+        provider_name = get_provider_name(self.ai_provider)
+        model_name = get_model_name(self.ai_provider, fallback=settings.ai_model)
+        prompt_sha = prompt_template_sha256(PARSE_VACANCY_PROMPT)
+        ai_input_hash = compute_ai_cache_key(
+            self.OPERATION,
+            {
+                "content_hash": content_hash,
+                "provider": provider_name,
+                "model": model_name,
+                "prompt_sha256": prompt_sha,
+                "temperature": settings.ai_temperature,
+                "max_tokens": settings.ai_max_tokens,
+            },
+        )
 
         # Get or create vacancy record
         vacancy = await self.vacancy_repo.get_by_hash(content_hash)
@@ -65,9 +85,9 @@ class VacancyService:
             await self.session.flush()
 
         # Check cache
-        cached_result = await self.ai_result_repo.get(self.OPERATION, content_hash)
+        cached_result = await self.ai_result_repo.get(self.OPERATION, ai_input_hash)
         if cached_result is not None:
-            self.logger.info("Cache hit for vacancy parsing: %s", content_hash[:16])
+            self.logger.info("Cache hit for vacancy parsing: %s", ai_input_hash[:16])
             
             # Update parsed columns if not set (e.g., migrated data)
             if vacancy.parsed_at is None:
@@ -89,12 +109,12 @@ class VacancyService:
         # Save to cache
         await self.ai_result_repo.save(
             operation=self.OPERATION,
-            input_hash=content_hash,
+            input_hash=ai_input_hash,
             output_json=parsed_json,
-            provider=self.ai_provider.provider_name,
-            model=settings.ai_model,
+            provider=provider_name,
+            model=model_name,
         )
-        self.logger.info("Saved parsed vacancy to cache: %s", content_hash[:16])
+        self.logger.info("Saved parsed vacancy to cache: %s", ai_input_hash[:16])
 
         # Save parsed data to individual columns
         vacancy.set_parsed_data(parsed_json)

@@ -119,6 +119,7 @@ export default function Step4Improvement() {
         vacancy_text: state.vacancyText,
         result_text: resumeText,
         selected_checkbox_ids: state.selectedCheckboxes,
+        analysis_id: state.analysisId || undefined,
       }),
     onSuccess: (data, resumeText) => {
       setShowSaveDialog(false)

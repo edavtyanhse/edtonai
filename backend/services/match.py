@@ -13,6 +13,12 @@ from backend.ai.factory import get_ai_provider
 from backend.core.config import settings
 from backend.prompts import ANALYZE_MATCH_PROMPT
 from backend.repositories import AIResultRepository
+from backend.services.utils import (
+    compute_ai_cache_key,
+    get_model_name,
+    get_provider_name,
+    prompt_template_sha256,
+)
 
 
 @dataclass
@@ -57,7 +63,21 @@ class MatchService:
         2. Check AIResult cache
         3. If not cached, call LLM and save result
         """
-        input_hash = self._compute_match_hash(parsed_resume, parsed_vacancy)
+        base_hash = self._compute_match_hash(parsed_resume, parsed_vacancy)
+        provider_name = get_provider_name(self.ai_provider)
+        model_name = get_model_name(self.ai_provider, fallback=settings.ai_model)
+        prompt_sha = prompt_template_sha256(ANALYZE_MATCH_PROMPT)
+        input_hash = compute_ai_cache_key(
+            self.OPERATION,
+            {
+                "base_hash": base_hash,
+                "provider": provider_name,
+                "model": model_name,
+                "prompt_sha256": prompt_sha,
+                "temperature": settings.ai_temperature,
+                "max_tokens": settings.ai_max_tokens,
+            },
+        )
 
         # Check cache
         cached_result = await self.ai_result_repo.get(self.OPERATION, input_hash)
@@ -105,8 +125,8 @@ class MatchService:
             operation=self.OPERATION,
             input_hash=input_hash,
             output_json=analysis_json,
-            provider=self.ai_provider.provider_name,
-            model=settings.ai_model,
+            provider=provider_name,
+            model=model_name,
         )
         self.logger.info("Saved match analysis to cache: %s", input_hash[:16])
 
