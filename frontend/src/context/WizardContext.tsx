@@ -1,4 +1,4 @@
-import { useState, ReactNode, useCallback } from 'react'
+import { useEffect, useState, ReactNode, useCallback } from 'react'
 import type {
   ParsedResume,
   ParsedVacancy,
@@ -12,17 +12,17 @@ interface WizardState {
   resumeText: string
   resumeId: string | null
   parsedResume: ParsedResume | null
-  
+
   // Step 2 - Vacancy
   vacancyText: string
   vacancyId: string | null
   parsedVacancy: ParsedVacancy | null
-  
+
   // Step 3 - Analysis
   analysis: MatchAnalysis | null
   analysisId: string | null
   previousScore: number | null
-  
+
   // Step 4 - Improvement
   selectedCheckboxes: string[]
   resultText: string
@@ -30,10 +30,50 @@ interface WizardState {
 }
 
 const initialState: WizardState = initialWizardState
+const STORAGE_KEY = 'wizard_state_v1'
 
 export function WizardProvider({ children }: { children: ReactNode }) {
-  const [state, setState] = useState<WizardState>(initialState)
-  const [currentStep, setCurrentStep] = useState(1)
+  const [state, setState] = useState<WizardState>(() => {
+    // Try to load from localStorage on init
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY)
+      if (saved) {
+        const parsed = JSON.parse(saved)
+        // Backward compatibility: previously we stored only `state`
+        if (parsed && typeof parsed === 'object' && 'state' in parsed) {
+          return (parsed as { state: WizardState }).state
+        }
+        return parsed as WizardState
+      }
+    } catch (e) {
+      console.error('Failed to load wizard state', e)
+    }
+    return initialState
+  })
+
+  const [currentStep, setCurrentStep] = useState(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY)
+      if (!saved) return 1
+      const parsed = JSON.parse(saved)
+      if (parsed && typeof parsed === "object" && "currentStep" in parsed) {
+        const step = Number((parsed as { currentStep: unknown }).currentStep)
+        return Number.isFinite(step) && step >= 1 && step <= 4 ? step : 1
+      }
+    } catch {
+      // Ignore and fallback to default
+    }
+    return 1
+  })
+
+  // Save to localStorage on change
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ state, currentStep }))
+    } catch (e) {
+      console.error('Failed to save wizard state', e)
+    }
+  }, [state, currentStep])
 
   // Step 1 actions
   const setResumeText = useCallback((text: string) => {
@@ -155,6 +195,11 @@ export function WizardProvider({ children }: { children: ReactNode }) {
   const reset = useCallback(() => {
     setState(initialState)
     setCurrentStep(1)
+    try {
+      localStorage.removeItem(STORAGE_KEY)
+    } catch {
+      // Ignore storage failures
+    }
   }, [])
 
   const value: WizardContextType = {
