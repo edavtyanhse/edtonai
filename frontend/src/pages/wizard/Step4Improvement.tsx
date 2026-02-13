@@ -33,6 +33,7 @@ export default function Step4Improvement() {
   const [showPdfPreview, setShowPdfPreview] = useState(false)
   const [versionTitle, setVersionTitle] = useState('')
   const [pendingChanges, setPendingChanges] = useState<PendingChange[]>([])
+  const [lastAppliedChanges, setLastAppliedChanges] = useState<ChangeLogEntry[]>([])
   const [showCoverLetterModal, setShowCoverLetterModal] = useState(false)
   const [coverLetterData, setCoverLetterData] = useState<CoverLetterResponse | null>(null)
   const [currentVersionId, setCurrentVersionId] = useState<string | null>(null)
@@ -126,6 +127,12 @@ export default function Step4Improvement() {
       setVersionTitle('')
       // Update version ID so cover letter uses the improved resume
       if (data?.id) setCurrentVersionId(data.id)
+
+      // Save the changes we just applied to show them in the UI
+      // Filter only confirmed or pending (effectively confirmed) changes
+      const applied = pendingChanges.filter(c => c.status !== 'rejected')
+      setLastAppliedChanges(applied)
+
       // Apply improved resume as new base
       applyImprovedResume(resumeText)
       // Run re-analysis with new text
@@ -555,24 +562,10 @@ export default function Step4Improvement() {
                 {t('wizard.step3.improvements')}
               </h3>
               <div className="space-y-3">
-                {/* Show matched skills that were previously missing (now fixed) */}
-                {analysis.matched_required_skills.length > 0 && (
-                  <div className="p-3 rounded-lg border bg-green-900/10 border-green-500/20">
-                    <div className="flex items-start gap-2">
-                      <TrendingUp className="w-4 h-4 mt-0.5 text-green-400" />
-                      <div>
-                        <p className="text-sm font-medium text-green-300">
-                          Навыки теперь соответствуют: {analysis.matched_required_skills.length} обязательных
-                          {analysis.matched_preferred_skills.length > 0 && `, ${analysis.matched_preferred_skills.length} желательных`}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                )}
                 {/* Score improvement */}
                 <div className="p-3 rounded-lg border bg-green-900/10 border-green-500/20">
                   <div className="flex items-start gap-2">
-                    <TrendingUp className="w-4 h-4 mt-0.5 text-green-400" />
+                    <TrendingUp className="w-4 h-5 mt-0.5 text-green-400" />
                     <div>
                       <p className="text-sm font-medium text-green-300">
                         Балл соответствия вырос на +{scoreDiff} (с {state.previousScore} до {analysis.score})
@@ -581,6 +574,34 @@ export default function Step4Improvement() {
                   </div>
                 </div>
 
+                {/* Specific Changes List */}
+                {lastAppliedChanges.length > 0 ? (
+                  <div className="space-y-2 mt-3">
+                    <p className="text-xs uppercase text-green-500/70 font-semibold tracking-wider px-1">
+                      Внесенные изменения:
+                    </p>
+                    {lastAppliedChanges.map((change, idx) => (
+                      <div key={idx} className="flex gap-2 p-2 rounded bg-green-900/10 border border-green-500/10">
+                        <Check className="w-4 h-4 mt-0.5 text-green-400 flex-shrink-0" />
+                        <span className="text-sm text-green-200">{change.what_changed}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  // Fallback if no specific changes tracked (e.g. page refresh)
+                  analysis.matched_required_skills.length > 0 && (
+                    <div className="p-3 rounded-lg border bg-green-900/10 border-green-500/20">
+                      <div className="flex items-start gap-2">
+                        <TrendingUp className="w-4 h-4 mt-0.5 text-green-400" />
+                        <div>
+                          <p className="text-sm font-medium text-green-300">
+                            Навыки теперь соответствуют: {analysis.matched_required_skills.length} обязательных
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                )}
               </div>
             </div>
           )}

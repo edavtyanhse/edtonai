@@ -64,8 +64,8 @@ class Settings(BaseSettings):
 
     # General AI config
     # Backward-compatible model name (used by DeepSeekProvider and for metadata storage).
-    ai_model: str = "deepseek-chat"
-    ai_timeout_seconds: int = 60
+    ai_model: str = "deepseek-reasoner"
+    ai_timeout_seconds: int = 180
     ai_max_retries: int = 3
     ai_temperature: float = 0.0
     ai_max_tokens: int = 4096
