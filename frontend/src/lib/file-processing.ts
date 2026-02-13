@@ -29,7 +29,11 @@ async function extractPdfText(file: File): Promise<string> {
         const page = await pdf.getPage(i)
         const textContent = await page.getTextContent()
         const pageText = textContent.items
-            .map((item: { str: string }) => item.str)
+            .map((item) => {
+                const maybeStr = (item as { str?: unknown }).str
+                return typeof maybeStr === 'string' ? maybeStr : ''
+            })
+            .filter(Boolean)
             .join(' ')
 
         fullText += pageText + '\n\n'
