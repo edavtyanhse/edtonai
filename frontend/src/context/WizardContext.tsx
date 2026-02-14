@@ -81,7 +81,7 @@ export function WizardProvider({ children }: { children: ReactNode }) {
       selectedCheckboxes: analysis.checkbox_options
         .filter((o) => o.enabled && (o.priority ?? 0) >= 2)
         .map((o) => o.id),
-      previousResumeText: null, // Reset previous on new analysis
+      // Keep previousResumeText — it's set by applyImprovedResume and must survive re-analysis
     }))
   }, [])
 

@@ -552,27 +552,13 @@ export default function Step4Improvement() {
                 </div>
               )}
 
-              {/* Gaps (if any remain) */}
-              {analysis && analysis.gaps.length > 0 && (
-                <div className="bg-slate-800 border border-slate-700 rounded-lg p-4">
-                  <h3 className="font-medium text-white mb-2 flex items-center gap-2">
-                    <AlertTriangle className="w-4 h-4 text-yellow-500" />
-                    {t('wizard.step3.gaps')} ({analysis.gaps.length})
-                  </h3>
-                  <p className="text-xs text-slate-400 mb-3">
-                    {t('wizard.step4.gaps_remaining_message', 'Some gaps still remain. Click "Continue Improving" to address them.')}
+              {/* Hint to continue improving */}
+              {analysis && analysis.checkbox_options.length > 0 && (
+                <div className="bg-blue-900/15 border border-blue-500/20 rounded-lg p-4">
+                  <p className="text-sm text-blue-300/80">
+                    <Sparkles className="w-3.5 h-3.5 inline-block mr-1.5 text-blue-400" />
+                    {t('wizard.step4.continue_hint')}
                   </p>
-                  <div className="space-y-2">
-                    {analysis.gaps.slice(0, 5).map((gap: Gap, i) => (
-                      <div key={i} className="flex gap-2 text-sm text-slate-300">
-                        <div className="w-1.5 h-1.5 rounded-full bg-yellow-500 mt-2 flex-shrink-0" />
-                        <span>{gap.message}</span>
-                      </div>
-                    ))}
-                    {analysis.gaps.length > 5 && (
-                      <p className="text-xs text-slate-500 pl-3.5">+{analysis.gaps.length - 5} {t('common.more')}</p>
-                    )}
-                  </div>
                 </div>
               )}
             </div>
@@ -752,58 +738,100 @@ function ScoreCard({
   )
 }
 
-function ResumeDiffViewer({ oldText, newText }: { oldText: string, newText: string }) {
-  const hasDiff = oldText !== newText
+// Format raw resume text (from API) into readable lines with section breaks
+function formatResumeText(text: string): string {
+  if (!text) return ''
 
-  // Resume section heading patterns
-  const sectionPattern = /^(EDUCATION|EXPERIENCE|WORK EXPERIENCE|SKILLS|SUMMARY|ABOUT|CONTACT|CONTACTS|PERSONAL|PROJECTS|CERTIFICATIONS|LANGUAGES|AWARDS|PUBLICATIONS|INTERESTS|OBJECTIVE|ПРОФИЛЬ|ОПЫТ|ОПЫТ РАБОТЫ|ОБРАЗОВАНИЕ|НАВЫКИ|ПРОЕКТЫ|СЕРТИФИКАТЫ|ЯЗЫКИ|О СЕБЕ|КОНТАКТЫ|ДОСТИЖЕНИЯ)\s*$/i
+  // Section keywords to detect
+  const sections = [
+    'EDUCATION', 'EXPERIENCE', 'WORK EXPERIENCE', 'SKILLS', 'SKILLS & LANGUAGES',
+    'SUMMARY', 'SUMMARY:', 'ABOUT', 'CONTACT', 'CONTACTS', 'PERSONAL',
+    'PROJECTS', 'CERTIFICATIONS', 'LANGUAGES', 'AWARDS', 'PUBLICATIONS',
+    'INTERESTS', 'OBJECTIVE',
+    'ПРОФИЛЬ', 'ОПЫТ', 'ОПЫТ РАБОТЫ', 'ОБРАЗОВАНИЕ', 'НАВЫКИ',
+    'ПРОЕКТЫ', 'СЕРТИФИКАТЫ', 'ЯЗЫКИ', 'О СЕБЕ', 'КОНТАКТЫ', 'ДОСТИЖЕНИЯ'
+  ]
+
+  let formatted = text
+
+  // Insert line breaks before section headers
+  for (const section of sections) {
+    // Match section preceded by space/pipe/start, case-insensitive
+    const regex = new RegExp(`(\\s*\\|?\\s*)(${section.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\$&')})(?=\\s)`, 'gi')
+    formatted = formatted.replace(regex, '\n\n$2')
+  }
+
+  // Insert line breaks before bullet points
+  formatted = formatted.replace(/\s*•\s*/g, '\n• ')
+
+  // Insert line breaks before date-like company entries (e.g. "CompanyName   Месяц 20XX")
+  formatted = formatted.replace(/\s{2,}((?:Январь|Февраль|Март|Апрель|Май|Июнь|Июль|Август|Сентябрь|Октябрь|Ноябрь|Декабрь|January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{4})/gi, '\n$1')
+
+  // Insert line break before "Languages:" and "Technical Skills:"
+  formatted = formatted.replace(/\s+(Languages:|Technical Skills:)/g, '\n$1')
+
+  // Clean up: collapse multiple blank lines, trim
+  formatted = formatted.replace(/\n{3,}/g, '\n\n').trim()
+
+  return formatted
+}
+
+function ResumeDiffViewer({ oldText, newText }: { oldText: string, newText: string }) {
+  // Format both texts before comparing
+  const formattedOld = formatResumeText(oldText)
+  const formattedNew = formatResumeText(newText)
+  const hasDiff = formattedOld !== formattedNew
+
+  // Section heading patterns for visual styling
+  const sectionPattern = /^(EDUCATION|EXPERIENCE|WORK EXPERIENCE|SKILLS|SKILLS & LANGUAGES|SUMMARY:?|ABOUT|CONTACT|CONTACTS|PERSONAL|PROJECTS|CERTIFICATIONS|LANGUAGES|AWARDS|PUBLICATIONS|INTERESTS|OBJECTIVE|ПРОФИЛЬ|ОПЫТ|ОПЫТ РАБОТЫ|ОБРАЗОВАНИЕ|НАВЫКИ|ПРОЕКТЫ|СЕРТИФИКАТЫ|ЯЗЫКИ|О СЕБЕ|КОНТАКТЫ|ДОСТИЖЕНИЯ)\s*$/i
 
   const isSectionHeading = (line: string) => sectionPattern.test(line.trim())
+  const isBullet = (line: string) => line.trim().startsWith('•')
 
   const renderLine = (line: string, key: string, variant: 'added' | 'removed' | 'unchanged') => {
     const isHeading = isSectionHeading(line)
     const isEmpty = line.trim() === ''
+    const bullet = isBullet(line)
 
-    if (isEmpty) {
-      return <div key={key} className="h-2" />
-    }
+    if (isEmpty) return <div key={key} className="h-3" />
 
     if (isHeading) {
       return (
-        <div key={key} className={`mt-4 mb-1 pb-1 border-b border-slate-600 ${variant === 'added' ? 'border-green-500/40' : variant === 'removed' ? 'border-red-500/40' : ''
+        <div key={key} className={`mt-5 mb-1.5 pb-1 border-b border-slate-600 ${variant === 'added' ? 'border-green-500/40' : variant === 'removed' ? 'border-red-500/40' : ''
           }`}>
-          <span className={`text-xs font-bold uppercase tracking-wider ${variant === 'added' ? 'text-green-400' : variant === 'removed' ? 'text-red-400' : 'text-blue-400'
+          <span className={`text-xs font-bold uppercase tracking-widest ${variant === 'added' ? 'text-green-400' : variant === 'removed' ? 'text-red-400' : 'text-blue-400'
             }`}>
-            {line}
+            {line.trim()}
           </span>
         </div>
       )
     }
 
+    const baseStyle = bullet ? 'pl-4' : 'pl-3'
+
     if (variant === 'added') {
       return (
-        <div key={key} className="border-l-3 border-green-500 bg-green-900/20 pl-3 py-0.5 my-0.5 rounded-r">
-          <span className="text-green-300 text-[13px]">{line}</span>
+        <div key={key} className={`border-l-3 border-green-500 bg-green-900/20 ${baseStyle} py-0.5 my-0.5 rounded-r`}>
+          <span className="text-green-300 text-[13px] leading-relaxed">{line}</span>
         </div>
       )
     }
     if (variant === 'removed') {
       return (
-        <div key={key} className="border-l-3 border-red-500 bg-red-900/20 pl-3 py-0.5 my-0.5 rounded-r opacity-60">
-          <span className="text-red-300 line-through text-[13px]">{line}</span>
+        <div key={key} className={`border-l-3 border-red-500 bg-red-900/20 ${baseStyle} py-0.5 my-0.5 rounded-r opacity-60`}>
+          <span className="text-red-300 line-through text-[13px] leading-relaxed">{line}</span>
         </div>
       )
     }
     return (
-      <div key={key} className="pl-3 py-0.5">
-        <span className="text-slate-400 text-[13px]">{line}</span>
+      <div key={key} className={`${baseStyle} py-0.5`}>
+        <span className="text-slate-400 text-[13px] leading-relaxed">{line}</span>
       </div>
     )
   }
 
   if (!hasDiff) {
-    // No diff available — show current resume formatted nicely
-    const lines = newText.split('\n')
+    const lines = formattedNew.split('\n')
     return (
       <div className="bg-slate-900 p-4 overflow-auto max-h-[600px] custom-scrollbar">
         {lines.map((line, i) => renderLine(line, `line-${i}`, 'unchanged'))}
@@ -811,8 +839,7 @@ function ResumeDiffViewer({ oldText, newText }: { oldText: string, newText: stri
     )
   }
 
-  // Has diff — show line-by-line comparison
-  const diffs = diffLines(oldText, newText)
+  const diffs = diffLines(formattedOld, formattedNew)
 
   return (
     <div className="bg-slate-900 p-4 overflow-auto max-h-[600px] custom-scrollbar">
