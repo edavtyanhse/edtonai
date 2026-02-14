@@ -2,10 +2,10 @@
 
 import uuid
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any
 
-from sqlalchemy import Text, String, DateTime, ForeignKey
-from sqlalchemy.dialects.postgresql import UUID, JSONB
+from sqlalchemy import DateTime, ForeignKey, String, Text
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from backend.db.base import Base
@@ -71,15 +71,15 @@ class IdealResume(Base):
     )
 
     # LLM metadata
-    provider: Mapped[Optional[str]] = mapped_column(
+    provider: Mapped[str | None] = mapped_column(
         String(50),
         nullable=True,
     )
-    model: Mapped[Optional[str]] = mapped_column(
+    model: Mapped[str | None] = mapped_column(
         String(100),
         nullable=True,
     )
-    prompt_version: Mapped[Optional[str]] = mapped_column(
+    prompt_version: Mapped[str | None] = mapped_column(
         String(50),
         nullable=True,
     )

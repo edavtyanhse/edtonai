@@ -1,7 +1,7 @@
 """Vacancy parsing request/response schemas."""
 
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -10,10 +10,10 @@ from pydantic import BaseModel, Field
 class VacancyParseRequest(BaseModel):
     """Request to parse a vacancy."""
 
-    vacancy_text: Optional[str] = Field(None, description="Raw vacancy text")
-    url: Optional[str] = Field(None, description="URL to fetch vacancy from")
-    
-    # Custom validator could be added in pydantic v2 with @model_validator, 
+    vacancy_text: str | None = Field(None, description="Raw vacancy text")
+    url: str | None = Field(None, description="URL to fetch vacancy from")
+
+    # Custom validator could be added in pydantic v2 with @model_validator,
     # but for simplicity we'll handle logical validation in the service/endpoint.
 
 
@@ -42,6 +42,6 @@ class VacancyDetailResponse(BaseModel):
     id: UUID
     source_text: str
     content_hash: str
-    parsed_data: Optional[dict[str, Any]] = None
+    parsed_data: dict[str, Any] | None = None
     created_at: datetime
-    parsed_at: Optional[datetime] = None
+    parsed_at: datetime | None = None

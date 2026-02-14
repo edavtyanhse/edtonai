@@ -111,7 +111,7 @@ class MatchService:
                 sb["ats_fit"]["value"] = min(sb["ats_fit"].get("value", 0), 15)
             if "clarity_evidence" in sb and isinstance(sb["clarity_evidence"], dict):
                 sb["clarity_evidence"]["value"] = min(sb["clarity_evidence"].get("value", 0), 10)
-            
+
             # Recalculate total score to be safe
             total_score = 0
             total_score += sb.get("skill_fit", {}).get("value", 0)

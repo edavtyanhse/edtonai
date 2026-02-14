@@ -1,6 +1,6 @@
 """AI result repository for LLM cache operations."""
 
-from typing import Any, Optional
+from typing import Any
 from uuid import UUID
 
 from sqlalchemy import select
@@ -15,7 +15,7 @@ class AIResultRepository:
     def __init__(self, session: AsyncSession) -> None:
         self.session = session
 
-    async def get(self, operation: str, input_hash: str) -> Optional[AIResult]:
+    async def get(self, operation: str, input_hash: str) -> AIResult | None:
         """Get cached AI result by operation and input hash."""
         stmt = select(AIResult).where(
             AIResult.operation == operation,
@@ -24,7 +24,7 @@ class AIResultRepository:
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
 
-    async def get_by_id(self, result_id: UUID) -> Optional[AIResult]:
+    async def get_by_id(self, result_id: UUID) -> AIResult | None:
         """Get AI result by ID."""
         stmt = select(AIResult).where(AIResult.id == result_id)
         result = await self.session.execute(stmt)
@@ -35,9 +35,9 @@ class AIResultRepository:
         operation: str,
         input_hash: str,
         output_json: dict[str, Any],
-        provider: Optional[str] = None,
-        model: Optional[str] = None,
-        error: Optional[str] = None,
+        provider: str | None = None,
+        model: str | None = None,
+        error: str | None = None,
     ) -> AIResult:
         """Save AI result to cache."""
         ai_result = AIResult(

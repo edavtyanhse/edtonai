@@ -1,7 +1,6 @@
 """Repository for IdealResume model."""
 
 import logging
-from typing import Optional
 from uuid import UUID
 
 from sqlalchemy import select
@@ -25,9 +24,9 @@ class IdealResumeRepository:
         generation_metadata: dict,
         options: dict,
         input_hash: str,
-        provider: Optional[str] = None,
-        model: Optional[str] = None,
-        prompt_version: Optional[str] = None,
+        provider: str | None = None,
+        model: str | None = None,
+        prompt_version: str | None = None,
     ) -> IdealResume:
         """Create a new ideal resume record."""
         ideal = IdealResume(
@@ -46,14 +45,14 @@ class IdealResumeRepository:
         self.logger.info("Created ideal resume: %s", ideal.id)
         return ideal
 
-    async def get_by_id(self, ideal_id: UUID) -> Optional[IdealResume]:
+    async def get_by_id(self, ideal_id: UUID) -> IdealResume | None:
         """Get ideal resume by ID."""
         result = await self.session.execute(
             select(IdealResume).where(IdealResume.id == ideal_id)
         )
         return result.scalar_one_or_none()
 
-    async def get_by_input_hash(self, input_hash: str) -> Optional[IdealResume]:
+    async def get_by_input_hash(self, input_hash: str) -> IdealResume | None:
         """Get ideal resume by input hash (for cache lookup)."""
         result = await self.session.execute(
             select(IdealResume).where(IdealResume.input_hash == input_hash)

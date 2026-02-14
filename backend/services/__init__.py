@@ -1,13 +1,13 @@
 """Business logic services."""
 
-from .resume import ResumeService
-from .vacancy import VacancyService
+from .adapt import AdaptResumeService
+from .cover_letter import CoverLetterService
+from .ideal import IdealResumeService
 from .match import MatchService
 from .orchestrator import OrchestratorService
-from .utils import normalize_text, compute_hash
-from .adapt import AdaptResumeService
-from .ideal import IdealResumeService
-from .cover_letter import CoverLetterService
+from .resume import ResumeService
+from .utils import compute_hash, normalize_text
+from .vacancy import VacancyService
 
 __all__ = [
     # Stage 1

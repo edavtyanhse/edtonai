@@ -3,12 +3,11 @@
 import logging
 import sys
 from contextvars import ContextVar
-from typing import Optional
 
 from backend.core.config import settings
 
 # Context variable for request tracing
-request_id_ctx: ContextVar[Optional[str]] = ContextVar("request_id", default=None)
+request_id_ctx: ContextVar[str | None] = ContextVar("request_id", default=None)
 
 
 class RequestIdFilter(logging.Filter):

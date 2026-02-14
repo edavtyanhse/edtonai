@@ -2,10 +2,10 @@
 
 import uuid
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any
 
-from sqlalchemy import Text, String, DateTime
-from sqlalchemy.dialects.postgresql import UUID, JSONB
+from sqlalchemy import DateTime, String, Text
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from backend.db.base import Base
@@ -14,7 +14,7 @@ from backend.db.base import Base
 class ResumeRaw(Base):
     """
     Raw resume text with structured parsed data in separate columns.
-    
+
     Each field from LLM parsing is stored in its own column for:
     - Better queryability
     - Easier partial updates
@@ -28,7 +28,7 @@ class ResumeRaw(Base):
         primary_key=True,
         default=uuid.uuid4,
     )
-    
+
     # Original source text
     source_text: Mapped[str] = mapped_column(Text, nullable=False)
     content_hash: Mapped[str] = mapped_column(
@@ -37,65 +37,65 @@ class ResumeRaw(Base):
         index=True,
         nullable=False,
     )
-    
+
     # ============ PARSED DATA COLUMNS ============
-    
+
     # Personal info: {name, title, location, contacts: {email, phone, links}}
-    personal_info: Mapped[Optional[Dict[str, Any]]] = mapped_column(
+    personal_info: Mapped[dict[str, Any] | None] = mapped_column(
         JSONB,
         nullable=True,
     )
-    
+
     # Summary/About section (plain text)
-    summary: Mapped[Optional[str]] = mapped_column(
+    summary: Mapped[str | None] = mapped_column(
         Text,
         nullable=True,
     )
-    
+
     # Skills: [{name, category, level}]
-    skills: Mapped[Optional[List[Dict[str, Any]]]] = mapped_column(
+    skills: Mapped[list[dict[str, Any]] | None] = mapped_column(
         JSONB,
         nullable=True,
         default=list,
     )
-    
+
     # Work experience: [{company, position, start_date, end_date, responsibilities, achievements, tech_stack}]
-    work_experience: Mapped[Optional[List[Dict[str, Any]]]] = mapped_column(
+    work_experience: Mapped[list[dict[str, Any]] | None] = mapped_column(
         JSONB,
         nullable=True,
         default=list,
     )
-    
+
     # Education: [{institution, degree, field, start_year, end_year}]
-    education: Mapped[Optional[List[Dict[str, Any]]]] = mapped_column(
+    education: Mapped[list[dict[str, Any]] | None] = mapped_column(
         JSONB,
         nullable=True,
         default=list,
     )
-    
+
     # Certifications: [{name, issuer, date}] or [str]
-    certifications: Mapped[Optional[List[Any]]] = mapped_column(
+    certifications: Mapped[list[Any] | None] = mapped_column(
         JSONB,
         nullable=True,
         default=list,
     )
-    
+
     # Languages: [{language, proficiency}] or [str]
-    languages: Mapped[Optional[List[Any]]] = mapped_column(
+    languages: Mapped[list[Any] | None] = mapped_column(
         JSONB,
         nullable=True,
         default=list,
     )
-    
+
     # Raw sections: {section_title: section_text}
-    raw_sections: Mapped[Optional[Dict[str, str]]] = mapped_column(
+    raw_sections: Mapped[dict[str, str] | None] = mapped_column(
         JSONB,
         nullable=True,
         default=dict,
     )
-    
+
     # ============ METADATA ============
-    
+
     created_at: Mapped[datetime] = mapped_column(
         DateTime,
         default=datetime.utcnow,
@@ -107,13 +107,13 @@ class ResumeRaw(Base):
         onupdate=datetime.utcnow,
         nullable=False,
     )
-    parsed_at: Mapped[Optional[datetime]] = mapped_column(
+    parsed_at: Mapped[datetime | None] = mapped_column(
         DateTime,
         nullable=True,
     )
-    
+
     # Helper to get all parsed data as dict (for API compatibility)
-    def get_parsed_data(self) -> Dict[str, Any]:
+    def get_parsed_data(self) -> dict[str, Any]:
         """Return parsed data as unified dict."""
         return {
             "personal_info": self.personal_info,
@@ -125,8 +125,8 @@ class ResumeRaw(Base):
             "languages": self.languages or [],
             "raw_sections": self.raw_sections or {},
         }
-    
-    def set_parsed_data(self, data: Dict[str, Any]) -> None:
+
+    def set_parsed_data(self, data: dict[str, Any]) -> None:
         """Set parsed data from unified dict."""
         self.personal_info = data.get("personal_info")
         self.summary = data.get("summary")

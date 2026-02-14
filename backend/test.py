@@ -5,8 +5,8 @@ from pathlib import Path
 # Добавляем корень проекта в PYTHONPATH
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from backend.core.logging import setup_logging
 from backend.ai import DeepSeekProvider
+from backend.core.logging import setup_logging
 
 setup_logging()
 

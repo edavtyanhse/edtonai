@@ -1,7 +1,7 @@
 """Resume parsing request/response schemas."""
 
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -36,6 +36,6 @@ class ResumeDetailResponse(BaseModel):
     id: UUID
     source_text: str
     content_hash: str
-    parsed_data: Optional[dict[str, Any]] = None
+    parsed_data: dict[str, Any] | None = None
     created_at: datetime
-    parsed_at: Optional[datetime] = None
+    parsed_at: datetime | None = None

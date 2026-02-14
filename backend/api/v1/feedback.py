@@ -4,19 +4,18 @@ FEATURE FLAG: Controlled by settings.feedback_collection_enabled
 TO REMOVE: Delete this file and remove router registration from __init__.py
 """
 import logging
-from typing import Annotated, Optional
+from typing import Annotated
 
+import jwt
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials
 from sqlalchemy.ext.asyncio import AsyncSession
 
-import jwt
-
+from backend.core.auth import get_jwks_client, security
 from backend.core.config import settings
-from backend.core.auth import security, get_jwks_client
 from backend.db.session import get_session
-from backend.schemas.feedback import FeedbackCreate, FeedbackResponse
 from backend.repositories.feedback import FeedbackRepository
+from backend.schemas.feedback import FeedbackCreate, FeedbackResponse
 
 logger = logging.getLogger(__name__)
 
@@ -50,11 +49,11 @@ def _decode_token_payload(token: str) -> dict:
 @router.post("", response_model=FeedbackResponse, status_code=status.HTTP_201_CREATED)
 async def submit_feedback(
     request: FeedbackCreate,
-    credentials: Annotated[Optional[HTTPAuthorizationCredentials], Depends(security)] = None,
+    credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(security)] = None,
     session: AsyncSession = Depends(get_session),
 ):
     """Submit user feedback.
-    
+
     Requires authentication. Feature can be disabled via config.
     """
     if not settings.feedback_collection_enabled:
@@ -62,20 +61,20 @@ async def submit_feedback(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Feedback collection is currently disabled"
         )
-    
+
     if not credentials:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Authentication required"
         )
-    
+
     payload = _decode_token_payload(credentials.credentials)
     user_email = payload.get("email", payload.get("sub", "unknown"))
-    
+
     repo = FeedbackRepository(session)
     feedback = await repo.create(
         user_email=user_email,
         feedback_text=request.feedback_text
     )
-    
+
     return feedback

@@ -1,0 +1,29 @@
+# Ruff linter configuration for EdTon.ai Backend
+# https://docs.astral.sh/ruff/
+
+[lint]
+# Enable rules
+select = [
+    "E",   # pycodestyle errors
+    "F",   # pyflakes
+    "W",   # pycodestyle warnings
+    "I",   # isort (import ordering)
+    "N",   # pep8-naming
+    "UP",  # pyupgrade
+]
+
+ignore = [
+    "E501",  # line too long (handled by formatter)
+    "E712",  # comparison to True/False
+]
+
+# Allow autofix for all enabled rules
+fixable = ["ALL"]
+
+[lint.per-file-ignores]
+"__init__.py" = ["F401"]  # unused imports OK in __init__
+"test_*.py" = ["N802"]    # allow non-PEP8 function names in tests
+
+[format]
+quote-style = "double"
+indent-style = "space"

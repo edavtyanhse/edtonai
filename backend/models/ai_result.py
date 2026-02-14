@@ -2,10 +2,10 @@
 
 import uuid
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any
 
-from sqlalchemy import Text, String, DateTime, Index
-from sqlalchemy.dialects.postgresql import UUID, JSONB
+from sqlalchemy import DateTime, Index, String, Text
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from backend.db.base import Base
@@ -39,15 +39,15 @@ class AIResult(Base):
         JSONB,
         nullable=False,
     )
-    model: Mapped[Optional[str]] = mapped_column(
+    model: Mapped[str | None] = mapped_column(
         String(100),
         nullable=True,
     )
-    provider: Mapped[Optional[str]] = mapped_column(
+    provider: Mapped[str | None] = mapped_column(
         String(50),
         nullable=True,
     )
-    error: Mapped[Optional[str]] = mapped_column(
+    error: Mapped[str | None] = mapped_column(
         Text,
         nullable=True,
     )

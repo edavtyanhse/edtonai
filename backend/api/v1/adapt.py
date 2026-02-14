@@ -2,8 +2,8 @@
 
 from fastapi import APIRouter, Depends, HTTPException
 
-from backend.api.dependencies import get_adapt_resume_service
 from backend.ai.errors import AIError
+from backend.api.dependencies import get_adapt_resume_service
 from backend.schemas import AdaptResumeRequest, AdaptResumeResponse, ChangeLogEntry
 from backend.services import AdaptResumeService
 from backend.services.adapt import SelectedImprovement
@@ -42,7 +42,7 @@ async def adapt_resume(
             status_code=400,
             detail="Either vacancy_text or vacancy_id must be provided",
         )
-    
+
     # Validate that at least one improvement is selected
     has_improvements = bool(request.selected_improvements) or bool(request.selected_checkbox_ids)
     if not has_improvements:

@@ -2,9 +2,9 @@
 
 from fastapi import APIRouter, Depends, HTTPException
 
-from backend.api.dependencies import get_ideal_resume_service
 from backend.ai.errors import AIError
-from backend.schemas import IdealResumeRequest, IdealResumeResponse, IdealResumeMetadata
+from backend.api.dependencies import get_ideal_resume_service
+from backend.schemas import IdealResumeMetadata, IdealResumeRequest, IdealResumeResponse
 from backend.services import IdealResumeService
 
 router = APIRouter(prefix="/resumes", tags=["resumes"])

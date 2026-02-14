@@ -2,10 +2,10 @@
 
 import uuid
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any
 
-from sqlalchemy import Text, String, DateTime, ForeignKey
-from sqlalchemy.dialects.postgresql import UUID, JSONB
+from sqlalchemy import DateTime, ForeignKey, String, Text
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from backend.db.base import Base
@@ -46,7 +46,7 @@ class ResumeVersion(Base):
     )
 
     # Parent version for history chain (null = first adaptation from original)
-    parent_version_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+    parent_version_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("resume_version.id", ondelete="SET NULL"),
         nullable=True,
@@ -74,22 +74,22 @@ class ResumeVersion(Base):
     )
 
     # Reference to analysis result that was used for adaptation
-    analysis_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+    analysis_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("ai_result.id", ondelete="SET NULL"),
         nullable=True,
     )
 
     # LLM metadata
-    provider: Mapped[Optional[str]] = mapped_column(
+    provider: Mapped[str | None] = mapped_column(
         String(50),
         nullable=True,
     )
-    model: Mapped[Optional[str]] = mapped_column(
+    model: Mapped[str | None] = mapped_column(
         String(100),
         nullable=True,
     )
-    prompt_version: Mapped[Optional[str]] = mapped_column(
+    prompt_version: Mapped[str | None] = mapped_column(
         String(50),
         nullable=True,
         comment="Version tag of the prompt used",

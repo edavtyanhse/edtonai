@@ -11,7 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from backend.ai.factory import get_ai_provider
 from backend.core.config import settings
 from backend.prompts import PARSE_RESUME_PROMPT
-from backend.repositories import ResumeRepository, AIResultRepository
+from backend.repositories import AIResultRepository, ResumeRepository
 from backend.services.utils import (
     compute_ai_cache_key,
     compute_hash,
@@ -78,13 +78,13 @@ class ResumeService:
         cached_result = await self.ai_result_repo.get(self.OPERATION, ai_input_hash)
         if cached_result is not None:
             self.logger.info("Cache hit for resume parsing: %s", ai_input_hash[:16])
-            
+
             # Update parsed columns if not set (e.g., migrated data)
             if resume.parsed_at is None:
                 resume.set_parsed_data(cached_result.output_json)
                 resume.parsed_at = datetime.utcnow()
                 await self.session.flush()
-            
+
             return ResumeParseResult(
                 resume_id=resume.id,
                 resume_hash=content_hash,

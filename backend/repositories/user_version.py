@@ -1,10 +1,9 @@
 """Repository for UserVersion model."""
 
 import logging
-from typing import Optional
 from uuid import UUID
 
-from sqlalchemy import select, func, delete
+from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.models import UserVersion
@@ -23,11 +22,11 @@ class UserVersionRepository:
         resume_text: str,
         vacancy_text: str,
         result_text: str,
-        user_id: Optional[str] = None,
-        title: Optional[str] = None,
+        user_id: str | None = None,
+        title: str | None = None,
         change_log: list[dict] = None,
         selected_checkbox_ids: list[str] = None,
-        analysis_id: Optional[UUID] = None,
+        analysis_id: UUID | None = None,
     ) -> UserVersion:
         """Create a new user version."""
         version = UserVersion(
@@ -47,15 +46,15 @@ class UserVersionRepository:
         return version
 
     async def get_by_id(
-        self, version_id: UUID, user_id: Optional[str] = None
-    ) -> Optional[UserVersion]:
+        self, version_id: UUID, user_id: str | None = None
+    ) -> UserVersion | None:
         """Get user version by ID, optionally filtered by user_id."""
         query = select(UserVersion).where(UserVersion.id == version_id)
-        
+
         # If user_id is provided, filter by it
         if user_id:
             query = query.where(UserVersion.user_id == user_id)
-        
+
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
 
@@ -63,15 +62,15 @@ class UserVersionRepository:
         self,
         limit: int = 50,
         offset: int = 0,
-        user_id: Optional[str] = None,
+        user_id: str | None = None,
     ) -> tuple[list[UserVersion], int]:
         """List versions with pagination, ordered by created_at desc.
-        
+
         If user_id is provided, only returns versions for that user.
         """
         # Base query with optional user filter
         base_filter = UserVersion.user_id == user_id if user_id else True
-        
+
         # Get total count
         count_result = await self.session.execute(
             select(func.count()).select_from(UserVersion).where(base_filter)
@@ -91,17 +90,17 @@ class UserVersionRepository:
         return versions, total
 
     async def delete_by_id(
-        self, version_id: UUID, user_id: Optional[str] = None
+        self, version_id: UUID, user_id: str | None = None
     ) -> bool:
         """Delete user version by ID. Returns True if deleted.
-        
+
         If user_id is provided, only deletes if the version belongs to that user.
         """
         query = delete(UserVersion).where(UserVersion.id == version_id)
-        
+
         if user_id:
             query = query.where(UserVersion.user_id == user_id)
-        
+
         result = await self.session.execute(query)
         await self.session.flush()
         deleted = result.rowcount > 0

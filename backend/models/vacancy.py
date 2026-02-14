@@ -2,10 +2,10 @@
 
 import uuid
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any
 
-from sqlalchemy import Text, String, DateTime
-from sqlalchemy.dialects.postgresql import UUID, JSONB
+from sqlalchemy import DateTime, String, Text
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from backend.db.base import Base
@@ -14,7 +14,7 @@ from backend.db.base import Base
 class VacancyRaw(Base):
     """
     Raw vacancy text with structured parsed data in separate columns.
-    
+
     Each field from LLM parsing is stored in its own column for:
     - Better queryability
     - Easier partial updates
@@ -28,7 +28,7 @@ class VacancyRaw(Base):
         primary_key=True,
         default=uuid.uuid4,
     )
-    
+
     # Original source text
     source_text: Mapped[str] = mapped_column(Text, nullable=False)
     content_hash: Mapped[str] = mapped_column(
@@ -37,75 +37,75 @@ class VacancyRaw(Base):
         index=True,
         nullable=False,
     )
-    
+
     # URL the vacancy was fetched from (if any)
-    source_url: Mapped[Optional[str]] = mapped_column(
+    source_url: Mapped[str | None] = mapped_column(
         String(2048),
         nullable=True,
     )
-    
+
     # ============ PARSED DATA COLUMNS ============
-    
+
     # Job title
-    job_title: Mapped[Optional[str]] = mapped_column(
+    job_title: Mapped[str | None] = mapped_column(
         String(255),
         nullable=True,
     )
-    
+
     # Company name
-    company: Mapped[Optional[str]] = mapped_column(
+    company: Mapped[str | None] = mapped_column(
         String(255),
         nullable=True,
     )
-    
+
     # Employment type (full-time, part-time, contract, etc.)
-    employment_type: Mapped[Optional[str]] = mapped_column(
+    employment_type: Mapped[str | None] = mapped_column(
         String(100),
         nullable=True,
     )
-    
+
     # Location
-    location: Mapped[Optional[str]] = mapped_column(
+    location: Mapped[str | None] = mapped_column(
         String(255),
         nullable=True,
     )
-    
+
     # Required skills: [{name, type, evidence}]
-    required_skills: Mapped[Optional[List[Dict[str, Any]]]] = mapped_column(
+    required_skills: Mapped[list[dict[str, Any]] | None] = mapped_column(
         JSONB,
         nullable=True,
         default=list,
     )
-    
+
     # Preferred skills: [{name, type, evidence}]
-    preferred_skills: Mapped[Optional[List[Dict[str, Any]]]] = mapped_column(
+    preferred_skills: Mapped[list[dict[str, Any]] | None] = mapped_column(
         JSONB,
         nullable=True,
         default=list,
     )
-    
+
     # Experience requirements: {min_years, max_years, details}
-    experience_requirements: Mapped[Optional[Dict[str, Any]]] = mapped_column(
+    experience_requirements: Mapped[dict[str, Any] | None] = mapped_column(
         JSONB,
         nullable=True,
     )
-    
+
     # Responsibilities: [str]
-    responsibilities: Mapped[Optional[List[str]]] = mapped_column(
+    responsibilities: Mapped[list[str] | None] = mapped_column(
         JSONB,
         nullable=True,
         default=list,
     )
-    
+
     # ATS keywords: [str]
-    ats_keywords: Mapped[Optional[List[str]]] = mapped_column(
+    ats_keywords: Mapped[list[str] | None] = mapped_column(
         JSONB,
         nullable=True,
         default=list,
     )
-    
+
     # ============ METADATA ============
-    
+
     created_at: Mapped[datetime] = mapped_column(
         DateTime,
         default=datetime.utcnow,
@@ -117,13 +117,13 @@ class VacancyRaw(Base):
         onupdate=datetime.utcnow,
         nullable=False,
     )
-    parsed_at: Mapped[Optional[datetime]] = mapped_column(
+    parsed_at: Mapped[datetime | None] = mapped_column(
         DateTime,
         nullable=True,
     )
-    
+
     # Helper to get all parsed data as dict (for API compatibility)
-    def get_parsed_data(self) -> Dict[str, Any]:
+    def get_parsed_data(self) -> dict[str, Any]:
         """Return parsed data as unified dict."""
         return {
             "job_title": self.job_title,
@@ -136,8 +136,8 @@ class VacancyRaw(Base):
             "responsibilities": self.responsibilities or [],
             "ats_keywords": self.ats_keywords or [],
         }
-    
-    def set_parsed_data(self, data: Dict[str, Any]) -> None:
+
+    def set_parsed_data(self, data: dict[str, Any]) -> None:
         """Set parsed data from unified dict."""
         self.job_title = data.get("job_title")
         self.company = data.get("company")

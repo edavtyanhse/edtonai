@@ -1,39 +1,39 @@
 """Pydantic schemas for API request/response."""
 
-from .resume import (
-    ResumeParseRequest,
-    ResumeParseResponse,
-    ResumePatchRequest,
-    ResumeDetailResponse,
-)
-from .vacancy import (
-    VacancyParseRequest,
-    VacancyParseResponse,
-    VacancyPatchRequest,
-    VacancyDetailResponse,
-)
-from .match import MatchAnalyzeRequest, MatchAnalyzeResponse
 from .adapt import (
+    AdaptResumeOptions,
     AdaptResumeRequest,
     AdaptResumeResponse,
-    AdaptResumeOptions,
     ChangeLogEntry,
-)
-from .ideal import (
-    IdealResumeRequest,
-    IdealResumeResponse,
-    IdealResumeOptions,
-    IdealResumeMetadata,
 )
 from .cover_letter import (
     CoverLetterRequest,
     CoverLetterResponse,
     CoverLetterStructure,
 )
+from .ideal import (
+    IdealResumeMetadata,
+    IdealResumeOptions,
+    IdealResumeRequest,
+    IdealResumeResponse,
+)
+from .match import MatchAnalyzeRequest, MatchAnalyzeResponse
+from .resume import (
+    ResumeDetailResponse,
+    ResumeParseRequest,
+    ResumeParseResponse,
+    ResumePatchRequest,
+)
+from .vacancy import (
+    VacancyDetailResponse,
+    VacancyParseRequest,
+    VacancyParseResponse,
+    VacancyPatchRequest,
+)
 from .version import (
     VersionCreateRequest,
-    VersionItemResponse,
     VersionDetailResponse,
+    VersionItemResponse,
     VersionListResponse,
 )
 

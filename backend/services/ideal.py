@@ -4,7 +4,7 @@ import hashlib
 import json
 import logging
 from dataclasses import dataclass
-from typing import Any, Optional
+from typing import Any
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -13,11 +13,11 @@ from backend.ai.factory import get_ai_provider
 from backend.core.config import settings
 from backend.prompts import IDEAL_RESUME_PROMPT
 from backend.repositories import (
-    VacancyRepository,
     IdealResumeRepository,
+    VacancyRepository,
 )
-from backend.services.vacancy import VacancyService
 from backend.services.utils import compute_hash
+from backend.services.vacancy import VacancyService
 
 
 @dataclass
@@ -77,9 +77,9 @@ class IdealResumeService:
 
     async def generate_ideal(
         self,
-        vacancy_text: Optional[str] = None,
-        vacancy_id: Optional[UUID] = None,
-        options: Optional[dict[str, Any]] = None,
+        vacancy_text: str | None = None,
+        vacancy_id: UUID | None = None,
+        options: dict[str, Any] | None = None,
     ) -> IdealResumeResult:
         """Generate ideal resume for vacancy.
 

@@ -2,14 +2,14 @@
 
 from fastapi import APIRouter
 
+from .adapt import router as adapt_router
+from .cover_letter import router as cover_letter_router
+from .feedback import router as feedback_router  # FEEDBACK FEATURE - remove to disable
+from .ideal import router as ideal_router
+from .match import router as match_router
 from .resumes import router as resumes_router
 from .vacancies import router as vacancies_router
-from .match import router as match_router
-from .adapt import router as adapt_router
-from .ideal import router as ideal_router
-from .cover_letter import router as cover_letter_router
 from .versions import router as versions_router
-from .feedback import router as feedback_router  # FEEDBACK FEATURE - remove to disable
 
 router = APIRouter(prefix="/v1")
 

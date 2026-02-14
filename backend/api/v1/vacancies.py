@@ -5,17 +5,17 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.api.dependencies import get_vacancy_service
 from backend.ai.errors import AIError
+from backend.api.dependencies import get_vacancy_service
 from backend.db import get_db
+from backend.repositories import VacancyRepository
 from backend.schemas import (
+    VacancyDetailResponse,
     VacancyParseRequest,
     VacancyParseResponse,
     VacancyPatchRequest,
-    VacancyDetailResponse,
 )
 from backend.services import VacancyService
-from backend.repositories import VacancyRepository
 
 router = APIRouter(prefix="/vacancies", tags=["vacancies"])
 
@@ -38,7 +38,7 @@ async def parse_vacancy(
             text = await WebScraper.fetch_text(source_url)
         except ValueError as e:
             raise HTTPException(status_code=422, detail=str(e))
-            
+
     if not text or len(text) < 10:
         raise HTTPException(status_code=422, detail="Vacancy text is empty or too short")
 
@@ -66,7 +66,7 @@ async def get_vacancy(
     vacancy = await repo.get_by_id(vacancy_id)
     if vacancy is None:
         raise HTTPException(status_code=404, detail="Vacancy not found")
-    
+
     return VacancyDetailResponse(
         id=vacancy.id,
         source_text=vacancy.source_text,
@@ -92,9 +92,9 @@ async def update_vacancy_parsed_data(
     vacancy = await repo.update_parsed_data(vacancy_id, request.parsed_data)
     if vacancy is None:
         raise HTTPException(status_code=404, detail="Vacancy not found")
-    
+
     await db.commit()
-    
+
     return VacancyDetailResponse(
         id=vacancy.id,
         source_text=vacancy.source_text,

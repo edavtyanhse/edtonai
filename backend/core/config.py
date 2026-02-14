@@ -40,7 +40,7 @@ class Settings(BaseSettings):
         # Allow direct override if set (e.g. for Supabase with special flags)
         if hasattr(self, "DATABASE_URL") and self.DATABASE_URL:
             return self.DATABASE_URL
-            
+
         return (
             f"postgresql+asyncpg://{self.postgres_user}:{self.postgres_password}"
             f"@{self.postgres_host}:{self.postgres_port}/{self.postgres_db}"
@@ -48,15 +48,15 @@ class Settings(BaseSettings):
 
     # AI provider
     ai_provider: str = "deepseek"  # Deprecated, kept for backward compatibility if needed
-    
+
     # AI Configuration
     ai_provider_parsing: str = "groq"
     ai_provider_reasoning: str = "deepseek"
-    
+
     # DeepSeek
     deepseek_api_key: str | None = None
     deepseek_base_url: str = "https://api.deepseek.com/v1"
-    
+
     # Groq
     groq_api_key: str | None = None
     groq_model_parsing: str = "llama-3.1-8b-instant"

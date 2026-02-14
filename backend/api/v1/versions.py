@@ -1,10 +1,10 @@
 """API endpoints for version management (Stage 3)."""
 
 import logging
-from typing import Annotated, Optional
+from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.core.auth import get_current_user_id
@@ -12,8 +12,8 @@ from backend.db import get_session
 from backend.repositories import UserVersionRepository
 from backend.schemas import (
     VersionCreateRequest,
-    VersionItemResponse,
     VersionDetailResponse,
+    VersionItemResponse,
     VersionListResponse,
 )
 
@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 async def create_version(
     request: VersionCreateRequest,
     session: Annotated[AsyncSession, Depends(get_session)],
-    user_id: Annotated[Optional[str], Depends(get_current_user_id)],
+    user_id: Annotated[str | None, Depends(get_current_user_id)],
 ) -> VersionDetailResponse:
     """Save a new version to history."""
     repo = UserVersionRepository(session)
@@ -68,7 +68,7 @@ async def create_version(
 )
 async def list_versions(
     session: Annotated[AsyncSession, Depends(get_session)],
-    user_id: Annotated[Optional[str], Depends(get_current_user_id)],
+    user_id: Annotated[str | None, Depends(get_current_user_id)],
     limit: int = Query(default=50, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
 ) -> VersionListResponse:
@@ -102,7 +102,7 @@ async def list_versions(
 async def get_version(
     version_id: UUID,
     session: Annotated[AsyncSession, Depends(get_session)],
-    user_id: Annotated[Optional[str], Depends(get_current_user_id)],
+    user_id: Annotated[str | None, Depends(get_current_user_id)],
 ) -> VersionDetailResponse:
     """Get full details of a specific version."""
     repo = UserVersionRepository(session)
@@ -134,7 +134,7 @@ async def get_version(
 async def delete_version(
     version_id: UUID,
     session: Annotated[AsyncSession, Depends(get_session)],
-    user_id: Annotated[Optional[str], Depends(get_current_user_id)],
+    user_id: Annotated[str | None, Depends(get_current_user_id)],
 ) -> None:
     """Delete a version from history."""
     repo = UserVersionRepository(session)

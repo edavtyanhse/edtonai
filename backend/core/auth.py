@@ -1,13 +1,12 @@
 """JWT authentication for Supabase tokens."""
 
 import logging
-from typing import Annotated, Optional
 from functools import lru_cache
-
-from fastapi import Depends, HTTPException, status
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from typing import Annotated
 
 import jwt
+from fastapi import Depends, HTTPException, status
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jwt import PyJWKClient
 
 from backend.core.config import settings
@@ -30,24 +29,24 @@ def get_jwks_client() -> PyJWKClient:
         # Fallback: construct from project ref in JWT secret or use default
         # Extract from SUPABASE_URL env var via frontend config
         jwks_url = "https://qwxfmnhkgepyksdkibvw.supabase.co/auth/v1/.well-known/jwks.json"
-    
+
     logger.info(f"Initializing JWKS client with URL: {jwks_url}")
     return PyJWKClient(jwks_url, cache_keys=True, lifespan=3600)
 
 
 def get_current_user_id(
-    credentials: Annotated[Optional[HTTPAuthorizationCredentials], Depends(security)]
-) -> Optional[str]:
+    credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(security)]
+) -> str | None:
     """Extract user_id from Supabase JWT token.
-    
+
     Returns None if no valid token is provided (allows anonymous access).
     Raises 401 if token is invalid.
     """
     if not credentials:
         return None
-    
+
     token = credentials.credentials
-    
+
     try:
         # Try JWKS verification first (for new ECC-signed tokens)
         try:
@@ -83,7 +82,7 @@ def get_current_user_id(
                     )
                 except Exception:
                     raise jwt.InvalidSignatureError("Signature verification failed")
-        
+
         # Extract user ID from 'sub' claim
         user_id = payload.get("sub")
         if not user_id:
@@ -92,9 +91,9 @@ def get_current_user_id(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid token: missing user ID",
             )
-        
+
         return user_id
-        
+
     except jwt.ExpiredSignatureError:
         logger.warning("JWT token expired")
         raise HTTPException(
@@ -110,7 +109,7 @@ def get_current_user_id(
 
 
 def require_auth(
-    user_id: Annotated[Optional[str], Depends(get_current_user_id)]
+    user_id: Annotated[str | None, Depends(get_current_user_id)]
 ) -> str:
     """Require authentication - raises 401 if not authenticated."""
     if not user_id:

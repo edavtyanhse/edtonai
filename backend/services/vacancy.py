@@ -11,7 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from backend.ai.factory import get_ai_provider
 from backend.core.config import settings
 from backend.prompts import PARSE_VACANCY_PROMPT
-from backend.repositories import VacancyRepository, AIResultRepository
+from backend.repositories import AIResultRepository, VacancyRepository
 from backend.services.utils import (
     compute_ai_cache_key,
     compute_hash,
@@ -88,13 +88,13 @@ class VacancyService:
         cached_result = await self.ai_result_repo.get(self.OPERATION, ai_input_hash)
         if cached_result is not None:
             self.logger.info("Cache hit for vacancy parsing: %s", ai_input_hash[:16])
-            
+
             # Update parsed columns if not set (e.g., migrated data)
             if vacancy.parsed_at is None:
                 vacancy.set_parsed_data(cached_result.output_json)
                 vacancy.parsed_at = datetime.utcnow()
                 await self.session.flush()
-            
+
             return VacancyParseResult(
                 vacancy_id=vacancy.id,
                 vacancy_hash=content_hash,

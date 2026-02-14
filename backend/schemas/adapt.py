@@ -1,6 +1,5 @@
 """Schemas for resume adaptation (adapt_resume operation)."""
 
-from typing import Any, Optional
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -9,11 +8,11 @@ from pydantic import BaseModel, Field
 class AdaptResumeOptions(BaseModel):
     """Optional settings for resume adaptation."""
 
-    language: Optional[str] = Field(
+    language: str | None = Field(
         default=None,
         description="Target language: ru | en | auto",
     )
-    template: Optional[str] = Field(
+    template: str | None = Field(
         default=None,
         description="Resume template style: default | harvard",
     )
@@ -23,7 +22,7 @@ class SelectedImprovement(BaseModel):
     """Single improvement selected by user with optional input."""
 
     checkbox_id: str = Field(..., description="ID of the checkbox/gap")
-    user_input: Optional[str] = Field(
+    user_input: str | None = Field(
         default=None,
         description="User-provided text for this improvement (if requires_user_input)",
     )
@@ -37,22 +36,22 @@ class AdaptResumeRequest(BaseModel):
     """Request to adapt resume for a vacancy."""
 
     # Either text or ID must be provided
-    resume_text: Optional[str] = Field(
+    resume_text: str | None = Field(
         default=None,
         min_length=10,
         description="Raw resume text (if not using resume_id)",
     )
-    resume_id: Optional[UUID] = Field(
+    resume_id: UUID | None = Field(
         default=None,
         description="UUID of existing resume (if already parsed)",
     )
 
-    vacancy_text: Optional[str] = Field(
+    vacancy_text: str | None = Field(
         default=None,
         min_length=10,
         description="Raw vacancy text (if not using vacancy_id)",
     )
-    vacancy_id: Optional[UUID] = Field(
+    vacancy_id: UUID | None = Field(
         default=None,
         description="UUID of existing vacancy (if already parsed)",
     )
@@ -64,12 +63,12 @@ class AdaptResumeRequest(BaseModel):
     )
 
     # Legacy format for backward compatibility
-    selected_checkbox_ids: Optional[list[str]] = Field(
+    selected_checkbox_ids: list[str] | None = Field(
         default=None,
         description="DEPRECATED: Use selected_improvements instead. List of checkbox IDs.",
     )
 
-    base_version_id: Optional[UUID] = Field(
+    base_version_id: UUID | None = Field(
         default=None,
         description="UUID of parent version (if adapting from existing version)",
     )
@@ -86,15 +85,15 @@ class ChangeLogEntry(BaseModel):
     checkbox_id: str = Field(..., description="ID of the checkbox that triggered this change")
     what_changed: str = Field(..., description="Description of what was changed")
     where: str = Field(..., description="Section: summary | skills | experience | education | other")
-    before_excerpt: Optional[str] = Field(default=None, description="Original text fragment")
-    after_excerpt: Optional[str] = Field(default=None, description="New text fragment")
+    before_excerpt: str | None = Field(default=None, description="Original text fragment")
+    after_excerpt: str | None = Field(default=None, description="New text fragment")
 
 
 class AdaptResumeResponse(BaseModel):
     """Response with adapted resume."""
 
     version_id: UUID = Field(..., description="UUID of the new resume version")
-    parent_version_id: Optional[UUID] = Field(
+    parent_version_id: UUID | None = Field(
         default=None,
         description="UUID of parent version (null if first adaptation)",
     )

@@ -8,9 +8,9 @@ from uuid import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.repositories import AnalysisRepository
+from backend.services.match import MatchService
 from backend.services.resume import ResumeService
 from backend.services.vacancy import VacancyService
-from backend.services.match import MatchService
 
 
 @dataclass

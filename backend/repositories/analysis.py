@@ -1,6 +1,5 @@
 """Analysis link repository for linking resume-vacancy-analysis."""
 
-from typing import Optional
 from uuid import UUID
 
 from sqlalchemy import select
@@ -19,7 +18,7 @@ class AnalysisRepository:
         self,
         resume_id: UUID,
         vacancy_id: UUID,
-    ) -> Optional[AnalysisLink]:
+    ) -> AnalysisLink | None:
         """Get analysis link by resume and vacancy IDs."""
         stmt = select(AnalysisLink).where(
             AnalysisLink.resume_id == resume_id,

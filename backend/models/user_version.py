@@ -2,10 +2,10 @@
 
 import uuid
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any
 
-from sqlalchemy import Text, String, DateTime, ForeignKey
-from sqlalchemy.dialects.postgresql import UUID, JSONB
+from sqlalchemy import DateTime, ForeignKey, String, Text
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from backend.db.base import Base
@@ -13,7 +13,7 @@ from backend.db.base import Base
 
 class UserVersion(Base):
     """Standalone version storage for frontend history feature.
-    
+
     Unlike ResumeVersion, this doesn't require foreign keys to parsed documents.
     It stores the raw text inputs and result for easy retrieval.
     """
@@ -27,7 +27,7 @@ class UserVersion(Base):
     )
 
     # User ID from Supabase Auth (for per-user filtering)
-    user_id: Mapped[Optional[str]] = mapped_column(
+    user_id: Mapped[str | None] = mapped_column(
         String(255),
         nullable=True,
         index=True,
@@ -40,7 +40,7 @@ class UserVersion(Base):
     )
 
     # Reference to analysis result (for cover letter generation)
-    analysis_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+    analysis_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("ai_result.id", ondelete="SET NULL"),
         nullable=True,
@@ -48,7 +48,7 @@ class UserVersion(Base):
     )
 
     # User-friendly title
-    title: Mapped[Optional[str]] = mapped_column(
+    title: Mapped[str | None] = mapped_column(
         String(255),
         nullable=True,
     )

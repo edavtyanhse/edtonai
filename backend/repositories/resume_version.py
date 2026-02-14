@@ -1,7 +1,6 @@
 """Repository for ResumeVersion model."""
 
 import logging
-from typing import Optional
 from uuid import UUID
 
 from sqlalchemy import select
@@ -24,11 +23,11 @@ class ResumeVersionRepository:
         text: str,
         change_log: list[dict],
         selected_checkbox_ids: list[str],
-        analysis_id: Optional[UUID] = None,
-        parent_version_id: Optional[UUID] = None,
-        provider: Optional[str] = None,
-        model: Optional[str] = None,
-        prompt_version: Optional[str] = None,
+        analysis_id: UUID | None = None,
+        parent_version_id: UUID | None = None,
+        provider: str | None = None,
+        model: str | None = None,
+        prompt_version: str | None = None,
     ) -> ResumeVersion:
         """Create a new resume version."""
         version = ResumeVersion(
@@ -48,7 +47,7 @@ class ResumeVersionRepository:
         self.logger.info("Created resume version: %s", version.id)
         return version
 
-    async def get_by_id(self, version_id: UUID) -> Optional[ResumeVersion]:
+    async def get_by_id(self, version_id: UUID) -> ResumeVersion | None:
         """Get resume version by ID."""
         result = await self.session.execute(
             select(ResumeVersion).where(ResumeVersion.id == version_id)
@@ -58,7 +57,7 @@ class ResumeVersionRepository:
     async def get_versions_for_resume(
         self,
         resume_id: UUID,
-        vacancy_id: Optional[UUID] = None,
+        vacancy_id: UUID | None = None,
     ) -> list[ResumeVersion]:
         """Get all versions for a resume, optionally filtered by vacancy."""
         query = select(ResumeVersion).where(ResumeVersion.resume_id == resume_id)
@@ -72,7 +71,7 @@ class ResumeVersionRepository:
         self,
         resume_id: UUID,
         vacancy_id: UUID,
-    ) -> Optional[ResumeVersion]:
+    ) -> ResumeVersion | None:
         """Get the most recent version for resume-vacancy pair."""
         result = await self.session.execute(
             select(ResumeVersion)

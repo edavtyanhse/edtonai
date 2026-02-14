@@ -1,13 +1,13 @@
-import jwt
 import base64
-import sys
+
+import jwt
 
 # The secret from backend.env
 SECRET_STR = "sviXIxL2LAzLtQp/ewp7jOsnN2tJ3/2MGr3NFdb852JL+/X1LYve//bS4oTdbFOEtBBISOctmoxrTF1HUYlvdA=="
 
 def test():
     print(f"Secret string length: {len(SECRET_STR)}")
-    
+
     # 1. Decode to bytes
     try:
         secret_bytes = base64.b64decode(SECRET_STR)
@@ -17,11 +17,11 @@ def test():
         return
 
     payload = {"sub": "123", "aud": "authenticated"}
-    
+
     # Simulate Supabase: Sign with BYTES
     print("\n--- Scenario A: Supabase signs with DECODED BYTES ---")
     token_bytes = jwt.encode(payload, secret_bytes, algorithm="HS256")
-    
+
     # Verify with STRING (Current Code)
     try:
         jwt.decode(token_bytes, SECRET_STR, algorithms=["HS256"], audience="authenticated")
@@ -41,7 +41,7 @@ def test():
     # Simulate Supabase: Sign with STRING (Alternative hypothesis)
     print("\n--- Scenario B: Supabase signs with RAW STRING ---")
     token_str = jwt.encode(payload, SECRET_STR, algorithm="HS256") # PyJWT encodes str to utf-8 bytes
-    
+
     # Verify with STRING (Current Code)
     try:
         jwt.decode(token_str, SECRET_STR, algorithms=["HS256"], audience="authenticated")

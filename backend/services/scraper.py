@@ -1,7 +1,7 @@
 
 import logging
 import re
-from typing import Any, Dict, Optional
+from typing import Any
 
 import httpx
 from bs4 import BeautifulSoup
@@ -60,7 +60,7 @@ class WebScraper:
     # ─── HH.ru API path ────────────────────────────────────────────
 
     @classmethod
-    def _extract_hh_vacancy_id(cls, url: str) -> Optional[str]:
+    def _extract_hh_vacancy_id(cls, url: str) -> str | None:
         """Extract vacancy ID from HH.ru URL, or None if not an HH URL."""
         match = _HH_VACANCY_RE.search(url)
         return match.group(1) if match else None
@@ -109,7 +109,7 @@ class WebScraper:
         raise ValueError("HH.ru API request failed")
 
     @classmethod
-    def _format_hh_vacancy(cls, data: Dict[str, Any]) -> str:
+    def _format_hh_vacancy(cls, data: dict[str, Any]) -> str:
         """Convert HH.ru API JSON into clean structured text for LLM parsing.
 
         Extracts all relevant fields and formats them as human-readable text

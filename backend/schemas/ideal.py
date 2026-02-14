@@ -1,6 +1,5 @@
 """Schemas for ideal resume generation (ideal_resume operation)."""
 
-from typing import Any, Optional
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -9,15 +8,15 @@ from pydantic import BaseModel, Field
 class IdealResumeOptions(BaseModel):
     """Options for ideal resume generation."""
 
-    language: Optional[str] = Field(
+    language: str | None = Field(
         default=None,
         description="Target language: ru | en | auto",
     )
-    template: Optional[str] = Field(
+    template: str | None = Field(
         default=None,
         description="Resume template style: default | harvard",
     )
-    seniority: Optional[str] = Field(
+    seniority: str | None = Field(
         default=None,
         description="Target seniority level: junior | middle | senior | any",
     )
@@ -27,12 +26,12 @@ class IdealResumeRequest(BaseModel):
     """Request to generate ideal resume for a vacancy."""
 
     # Either text or ID must be provided
-    vacancy_text: Optional[str] = Field(
+    vacancy_text: str | None = Field(
         default=None,
         min_length=10,
         description="Raw vacancy text (if not using vacancy_id)",
     )
-    vacancy_id: Optional[UUID] = Field(
+    vacancy_id: UUID | None = Field(
         default=None,
         description="UUID of existing vacancy (if already parsed)",
     )
@@ -58,11 +57,11 @@ class IdealResumeMetadata(BaseModel):
         default_factory=list,
         description="Assumptions made during generation",
     )
-    language: Optional[str] = Field(
+    language: str | None = Field(
         default=None,
         description="Language of the generated resume",
     )
-    template: Optional[str] = Field(
+    template: str | None = Field(
         default=None,
         description="Template style used",
     )

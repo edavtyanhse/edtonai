@@ -5,17 +5,17 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.api.dependencies import get_resume_service
 from backend.ai.errors import AIError
+from backend.api.dependencies import get_resume_service
 from backend.db import get_db
+from backend.repositories import ResumeRepository
 from backend.schemas import (
+    ResumeDetailResponse,
     ResumeParseRequest,
     ResumeParseResponse,
     ResumePatchRequest,
-    ResumeDetailResponse,
 )
 from backend.services import ResumeService
-from backend.repositories import ResumeRepository
 
 router = APIRouter(prefix="/resumes", tags=["resumes"])
 
@@ -53,7 +53,7 @@ async def get_resume(
     resume = await repo.get_by_id(resume_id)
     if resume is None:
         raise HTTPException(status_code=404, detail="Resume not found")
-    
+
     return ResumeDetailResponse(
         id=resume.id,
         source_text=resume.source_text,
@@ -79,9 +79,9 @@ async def update_resume_parsed_data(
     resume = await repo.update_parsed_data(resume_id, request.parsed_data)
     if resume is None:
         raise HTTPException(status_code=404, detail="Resume not found")
-    
+
     await db.commit()
-    
+
     return ResumeDetailResponse(
         id=resume.id,
         source_text=resume.source_text,

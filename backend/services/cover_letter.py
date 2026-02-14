@@ -99,7 +99,7 @@ class CoverLetterService:
         # Step 1: Get version (try ResumeVersion first, then UserVersion)
         resume_version = await self.version_repo.get_by_id(resume_version_id)
         is_user_version = False
-        
+
         if not resume_version:
             # Try finding in UserVersion
             user_version_repo = UserVersionRepository(self.session)
@@ -118,13 +118,13 @@ class CoverLetterService:
         # Step 2: Prepare data (vacancy text and analysis ID)
         vacancy_text = ""
         analysis_id = None
-        vacancy_id = None 
+        vacancy_id = None
 
         if is_user_version:
             # UserVersion path
             vacancy_text = resume_version.vacancy_text
             analysis_id = resume_version.analysis_id
-            vacancy_id = None 
+            vacancy_id = None
         else:
             # ResumeVersion path
             vacancy = await self.vacancy_repo.get_by_id(resume_version.vacancy_id)
@@ -144,7 +144,7 @@ class CoverLetterService:
         analysis_result = await self.ai_result_repo.get_by_id(analysis_id)
         if not analysis_result:
             raise ValueError(f"Analysis not found: {analysis_id}")
-        
+
         match_analysis = analysis_result.output_json
 
         # Step 4: Compute hash (use the actual AI model name, not settings.ai_model)

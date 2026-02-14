@@ -4,13 +4,12 @@ import uuid
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse
 from sqlalchemy import text
 
 from backend.api import v1_router
-from backend.core.config import settings, MAX_RESUME_CHARS, MAX_VACANCY_CHARS
-from backend.core.logging import setup_logging, request_id_ctx
-from backend.db import async_engine, Base, AsyncSessionLocal
+from backend.core.config import MAX_RESUME_CHARS, MAX_VACANCY_CHARS
+from backend.core.logging import request_id_ctx, setup_logging
+from backend.db import AsyncSessionLocal, Base, async_engine
 
 
 @asynccontextmanager

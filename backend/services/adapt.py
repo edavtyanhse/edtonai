@@ -4,7 +4,7 @@ import hashlib
 import json
 import logging
 from dataclasses import dataclass
-from typing import Any, Optional
+from typing import Any
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -13,26 +13,26 @@ from backend.ai.factory import get_ai_provider
 from backend.core.config import settings
 from backend.prompts import GENERATE_UPDATED_RESUME_PROMPT
 from backend.repositories import (
-    ResumeRepository,
-    VacancyRepository,
     AIResultRepository,
+    ResumeRepository,
     ResumeVersionRepository,
+    VacancyRepository,
 )
-from backend.services.resume import ResumeService
-from backend.services.vacancy import VacancyService
 from backend.services.match import MatchService
+from backend.services.resume import ResumeService
 from backend.services.utils import (
     get_model_name,
     get_provider_name,
     prompt_template_sha256,
 )
+from backend.services.vacancy import VacancyService
 
 
 @dataclass
 class SelectedImprovement:
     """Single improvement with optional user input."""
     checkbox_id: str
-    user_input: Optional[str] = None
+    user_input: str | None = None
     ai_generate: bool = False
 
 
@@ -41,7 +41,7 @@ class AdaptResumeResult:
     """Result of resume adaptation."""
 
     version_id: UUID
-    parent_version_id: Optional[UUID]
+    parent_version_id: UUID | None
     resume_id: UUID
     vacancy_id: UUID
     updated_resume_text: str
@@ -101,7 +101,7 @@ class AdaptResumeService:
             }
             for imp in sorted(selected_improvements, key=lambda x: x.checkbox_id)
         ]
-        
+
         data = {
             "operation": self.OPERATION,
             "original_resume_text_hash": hashlib.sha256(
@@ -131,14 +131,14 @@ class AdaptResumeService:
 
     async def adapt_and_version(
         self,
-        resume_text: Optional[str] = None,
-        resume_id: Optional[UUID] = None,
-        vacancy_text: Optional[str] = None,
-        vacancy_id: Optional[UUID] = None,
-        selected_improvements: Optional[list[SelectedImprovement]] = None,
-        selected_checkbox_ids: Optional[list[str]] = None,  # Legacy support
-        base_version_id: Optional[UUID] = None,
-        options: Optional[dict[str, Any]] = None,
+        resume_text: str | None = None,
+        resume_id: UUID | None = None,
+        vacancy_text: str | None = None,
+        vacancy_id: UUID | None = None,
+        selected_improvements: list[SelectedImprovement] | None = None,
+        selected_checkbox_ids: list[str] | None = None,  # Legacy support
+        base_version_id: UUID | None = None,
+        options: dict[str, Any] | None = None,
     ) -> AdaptResumeResult:
         """Adapt resume for vacancy and create new version.
 
@@ -153,7 +153,7 @@ class AdaptResumeService:
         8. Return result
         """
         options = options or {}
-        
+
         # Handle legacy format (selected_checkbox_ids) -> convert to selected_improvements
         if selected_improvements is None and selected_checkbox_ids:
             selected_improvements = [
@@ -161,7 +161,7 @@ class AdaptResumeService:
                 for cid in selected_checkbox_ids
             ]
         selected_improvements = selected_improvements or []
-        
+
         # Extract checkbox_ids for storing in version
         checkbox_ids_for_storage = [imp.checkbox_id for imp in selected_improvements]
 
@@ -323,7 +323,7 @@ class AdaptResumeService:
             }
             for imp in selected_improvements
         ]
-        
+
         return (
             GENERATE_UPDATED_RESUME_PROMPT
             .replace("{{ORIGINAL_RESUME_TEXT}}", original_resume_text)

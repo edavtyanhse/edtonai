@@ -1,12 +1,12 @@
 """Repository layer for database operations."""
 
-from .resume import ResumeRepository
-from .vacancy import VacancyRepository
 from .ai_result import AIResultRepository
 from .analysis import AnalysisRepository
-from .resume_version import ResumeVersionRepository
 from .ideal_resume import IdealResumeRepository
+from .resume import ResumeRepository
+from .resume_version import ResumeVersionRepository
 from .user_version import UserVersionRepository
+from .vacancy import VacancyRepository
 
 __all__ = [
     # Stage 1
