@@ -17,7 +17,7 @@ interface PendingChange extends ChangeLogEntry {
   status: 'pending' | 'confirmed' | 'rejected'
 }
 
-import { diffLines } from 'diff'
+import { diffWords } from 'diff'
 
 export default function Step4Improvement() {
   const { t } = useTranslation()
@@ -786,69 +786,119 @@ function ResumeDiffViewer({ oldText, newText }: { oldText: string, newText: stri
   const sectionPattern = /^(EDUCATION|EXPERIENCE|WORK EXPERIENCE|SKILLS|SKILLS & LANGUAGES|SUMMARY:?|ABOUT|CONTACT|CONTACTS|PERSONAL|PROJECTS|CERTIFICATIONS|LANGUAGES|AWARDS|PUBLICATIONS|INTERESTS|OBJECTIVE|ПРОФИЛЬ|ОПЫТ|ОПЫТ РАБОТЫ|ОБРАЗОВАНИЕ|НАВЫКИ|ПРОЕКТЫ|СЕРТИФИКАТЫ|ЯЗЫКИ|О СЕБЕ|КОНТАКТЫ|ДОСТИЖЕНИЯ)\s*$/i
 
   const isSectionHeading = (line: string) => sectionPattern.test(line.trim())
-  const isBullet = (line: string) => line.trim().startsWith('•')
 
-  const renderLine = (line: string, key: string, variant: 'added' | 'removed' | 'unchanged') => {
-    const isHeading = isSectionHeading(line)
-    const isEmpty = line.trim() === ''
-    const bullet = isBullet(line)
-
-    if (isEmpty) return <div key={key} className="h-3" />
-
-    if (isHeading) {
-      return (
-        <div key={key} className={`mt-5 mb-1.5 pb-1 border-b border-slate-600 ${variant === 'added' ? 'border-green-500/40' : variant === 'removed' ? 'border-red-500/40' : ''
-          }`}>
-          <span className={`text-xs font-bold uppercase tracking-widest ${variant === 'added' ? 'text-green-400' : variant === 'removed' ? 'text-red-400' : 'text-blue-400'
-            }`}>
-            {line.trim()}
-          </span>
-        </div>
-      )
-    }
-
-    const baseStyle = bullet ? 'pl-4' : 'pl-3'
-
-    if (variant === 'added') {
-      return (
-        <div key={key} className={`border-l-3 border-green-500 bg-green-900/20 ${baseStyle} py-0.5 my-0.5 rounded-r`}>
-          <span className="text-green-300 text-[13px] leading-relaxed">{line}</span>
-        </div>
-      )
-    }
-    if (variant === 'removed') {
-      return (
-        <div key={key} className={`border-l-3 border-red-500 bg-red-900/20 ${baseStyle} py-0.5 my-0.5 rounded-r opacity-60`}>
-          <span className="text-red-300 line-through text-[13px] leading-relaxed">{line}</span>
-        </div>
-      )
-    }
-    return (
-      <div key={key} className={`${baseStyle} py-0.5`}>
-        <span className="text-slate-400 text-[13px] leading-relaxed">{line}</span>
-      </div>
-    )
-  }
-
+  // Render formatted text without diff (no previous version)
   if (!hasDiff) {
     const lines = formattedNew.split('\n')
     return (
-      <div className="bg-slate-900 p-4 overflow-auto max-h-[600px] custom-scrollbar">
-        {lines.map((line, i) => renderLine(line, `line-${i}`, 'unchanged'))}
+      <div className="bg-slate-900 p-4 overflow-auto max-h-[600px] custom-scrollbar font-mono">
+        {lines.map((line, i) => {
+          if (line.trim() === '') return <div key={i} className="h-3" />
+          if (isSectionHeading(line)) {
+            return (
+              <div key={i} className="mt-5 mb-1.5 pb-1 border-b border-slate-600">
+                <span className="text-xs font-bold uppercase tracking-widest text-blue-400">{line.trim()}</span>
+              </div>
+            )
+          }
+          return (
+            <div key={i} className={`${line.trim().startsWith('•') ? 'pl-4' : 'pl-3'} py-0.5`}>
+              <span className="text-slate-400 text-[13px] leading-relaxed">{line}</span>
+            </div>
+          )
+        })}
       </div>
     )
   }
 
-  const diffs = diffLines(formattedOld, formattedNew)
+  // Word-level diff for precise highlighting
+  const diffs = diffWords(formattedOld, formattedNew)
+
+  // Build an array of styled segments, then split by newlines for rendering
+  type Segment = { text: string; type: 'added' | 'removed' | 'unchanged' }
+  const allSegments: Segment[] = []
+
+  diffs.forEach((part) => {
+    const type = part.added ? 'added' as const : part.removed ? 'removed' as const : 'unchanged' as const
+    allSegments.push({ text: part.value, type })
+  })
+
+  // Now render: split segments by newline to create visual lines
+  // Each "visual line" is an array of segments
+  type LineSegment = { text: string; type: 'added' | 'removed' | 'unchanged' }
+  const lines: LineSegment[][] = [[]]
+
+  allSegments.forEach(seg => {
+    const parts = seg.text.split('\n')
+    parts.forEach((part, idx) => {
+      if (idx > 0) {
+        // New line
+        lines.push([])
+      }
+      if (part !== '') {
+        lines[lines.length - 1].push({ text: part, type: seg.type })
+      }
+    })
+  })
+
+  const hasChanges = (segments: LineSegment[]) =>
+    segments.some(s => s.type === 'added' || s.type === 'removed')
 
   return (
-    <div className="bg-slate-900 p-4 overflow-auto max-h-[600px] custom-scrollbar">
-      {diffs.map((part, index) => {
-        const lines = part.value.split('\n').filter((line: string, i: number, arr: string[]) => !(i === arr.length - 1 && line === ''))
-        return lines.map((line: string, lineIdx: number) => {
-          const variant = part.added ? 'added' : part.removed ? 'removed' : 'unchanged'
-          return renderLine(line, `${index}-${lineIdx}`, variant)
-        })
+    <div className="bg-slate-900 p-4 overflow-auto max-h-[600px] custom-scrollbar font-mono">
+      {lines.map((lineSegments, lineIdx) => {
+        // Empty line
+        if (lineSegments.length === 0) return <div key={lineIdx} className="h-3" />
+
+        const fullText = lineSegments.map(s => s.text).join('')
+
+        // Section heading
+        if (isSectionHeading(fullText)) {
+          const hasAdded = lineSegments.some(s => s.type === 'added')
+          const hasRemoved = lineSegments.some(s => s.type === 'removed')
+          return (
+            <div key={lineIdx} className={`mt-5 mb-1.5 pb-1 border-b border-slate-600 ${hasAdded ? 'border-green-500/40' : hasRemoved ? 'border-red-500/40' : ''
+              }`}>
+              <span className={`text-xs font-bold uppercase tracking-widest ${hasAdded ? 'text-green-400' : hasRemoved ? 'text-red-400' : 'text-blue-400'
+                }`}>
+                {fullText.trim()}
+              </span>
+            </div>
+          )
+        }
+
+        const isBullet = fullText.trim().startsWith('•')
+        const lineChanged = hasChanges(lineSegments)
+
+        return (
+          <div
+            key={lineIdx}
+            className={`${isBullet ? 'pl-4' : 'pl-3'} py-0.5 my-0.5 ${lineChanged ? 'border-l-3 border-blue-500/50 bg-blue-900/10 rounded-r' : ''
+              }`}
+          >
+            {lineSegments.map((seg, segIdx) => {
+              if (seg.type === 'added') {
+                return (
+                  <span key={segIdx} className="bg-green-800/50 text-green-300 text-[13px] leading-relaxed px-0.5 rounded">
+                    {seg.text}
+                  </span>
+                )
+              }
+              if (seg.type === 'removed') {
+                return (
+                  <span key={segIdx} className="bg-red-800/40 text-red-400 line-through text-[13px] leading-relaxed px-0.5 rounded opacity-70">
+                    {seg.text}
+                  </span>
+                )
+              }
+              return (
+                <span key={segIdx} className="text-slate-400 text-[13px] leading-relaxed">
+                  {seg.text}
+                </span>
+              )
+            })}
+          </div>
+        )
       })}
     </div>
   )
