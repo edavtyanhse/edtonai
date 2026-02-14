@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Plus, X, ChevronDown, ChevronUp } from 'lucide-react'
-import type { ParsedResume, WorkExperience, Education, Skill } from '@/api'
+import type { ParsedResume, WorkExperience, Education, Skill, Language } from '@/api'
 
 interface ResumeEditorProps {
   data: ParsedResume
@@ -590,8 +590,8 @@ function LanguageEditor({
   onChange,
   readonly = false,
 }: {
-  languages: any[] // Accept string or object for compatibility
-  onChange: (languages: any[]) => void
+  languages: Language[]
+  onChange: (languages: Language[]) => void
   readonly?: boolean
 }) {
   const [input, setInput] = useState('')
