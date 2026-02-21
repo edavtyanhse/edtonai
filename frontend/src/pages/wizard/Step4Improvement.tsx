@@ -3,7 +3,7 @@ import { useMutation } from '@tanstack/react-query'
 import { Sparkles, Loader2, ArrowLeft, RotateCcw, Check, X, CheckCircle, XCircle, TrendingUp, TrendingDown, Minus, Eye, Home, Mail } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useWizard } from '@/hooks'
-import { adaptResume, createVersion, analyzeMatch, generateCoverLetter } from '@/api'
+import { adaptResume, createVersion, analyzeMatch, generateCoverLetter, parseResume } from '@/api'
 import type { CheckboxOption, CoverLetterResponse } from '@/api'
 import { Button, CheckboxList, ConfirmDialog, CoverLetterModal } from '@/components'
 import PdfPreview from '@/components/pdf/PdfPreview'
@@ -29,6 +29,7 @@ export default function Step4Improvement() {
     applyImprovedResume,
     goToPrevStep,
     reset,
+    updateParsedResume,
   } = useWizard()
   const [mode, setMode] = useState<Mode>(state.resultText ? 'review' : 'checkboxes')
   const [showSaveDialog, setShowSaveDialog] = useState(false)
@@ -89,13 +90,24 @@ export default function Step4Improvement() {
 
   // Re-analyze mutation - runs automatically after confirming
   const reanalyzeMutation = useMutation({
-    mutationFn: (newResumeText: string) =>
-      analyzeMatch({
-        resume_text: newResumeText,
-        vacancy_text: state.vacancyText,
-      }),
+    mutationFn: async (newResumeText: string) => {
+      const [analysisData, parseData] = await Promise.all([
+        analyzeMatch({
+          resume_text: newResumeText,
+          vacancy_text: state.vacancyText,
+        }),
+        parseResume({
+          resume_text: newResumeText,
+        })
+      ])
+      return { analysisData, parseData }
+    },
     onSuccess: (data) => {
-      setAnalysis(data.analysis_id, data.analysis)
+      setAnalysis(data.analysisData.analysis_id, data.analysisData.analysis)
+      // Update parsed resume data so PDF preview reflects the changes
+      if (data.parseData.parsed_resume) {
+        updateParsedResume(data.parseData.parsed_resume)
+      }
       setMode('analysis')
     },
   })
