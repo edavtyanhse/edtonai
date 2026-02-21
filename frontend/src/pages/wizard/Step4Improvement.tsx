@@ -34,6 +34,7 @@ export default function Step4Improvement() {
   const [mode, setMode] = useState<Mode>(state.resultText ? 'review' : 'checkboxes')
   const [showSaveDialog, setShowSaveDialog] = useState(false)
   const [showPdfPreview, setShowPdfPreview] = useState(false)
+  const [isPreparingPdf, setIsPreparingPdf] = useState(false)
   const [versionTitle, setVersionTitle] = useState('')
   const [pendingChanges, setPendingChanges] = useState<PendingChange[]>([])
   const [lastAppliedChanges, setLastAppliedChanges] = useState<ChangeLogEntry[]>([])
@@ -91,21 +92,30 @@ export default function Step4Improvement() {
   // Re-analyze mutation - runs automatically after confirming
   const reanalyzeMutation = useMutation({
     mutationFn: async (newResumeText: string) => {
-      const [analysisData, parseData] = await Promise.all([
-        analyzeMatch({
-          resume_text: newResumeText,
-          vacancy_text: state.vacancyText,
-        }),
-        parseResume({
-          resume_text: newResumeText,
-        })
-      ])
+      const analysisPromise = analyzeMatch({
+        resume_text: newResumeText,
+        vacancy_text: state.vacancyText,
+      }).catch(e => {
+        console.error('Analysis failed:', e)
+        return null
+      })
+
+      const parsePromise = parseResume({
+        resume_text: newResumeText,
+      }).catch(e => {
+        console.error('Parse resume failed:', e)
+        return null
+      })
+
+      const [analysisData, parseData] = await Promise.all([analysisPromise, parsePromise])
       return { analysisData, parseData }
     },
     onSuccess: (data) => {
-      setAnalysis(data.analysisData.analysis_id, data.analysisData.analysis)
+      if (data.analysisData) {
+        setAnalysis(data.analysisData.analysis_id, data.analysisData.analysis)
+      }
       // Update parsed resume data so PDF preview reflects the changes
-      if (data.parseData.parsed_resume) {
+      if (data.parseData?.parsed_resume) {
         updateParsedResume(data.parseData.parsed_resume)
       }
     },
@@ -201,6 +211,26 @@ export default function Step4Improvement() {
     coverLetterMutation.mutate()
   }
 
+  const handleOpenPdfPreview = async () => {
+    if (state.parsedResume) {
+      setShowPdfPreview(true)
+      return
+    }
+
+    setIsPreparingPdf(true)
+    try {
+      const parseData = await parseResume({
+        resume_text: state.resumeText,
+      })
+      updateParsedResume(parseData.parsed_resume)
+      setShowPdfPreview(true)
+    } catch (error) {
+      console.error('Failed to prepare PDF preview:', error)
+    } finally {
+      setIsPreparingPdf(false)
+    }
+  }
+
   const handleSaveAndAnalyze = () => {
     saveVersionMutation.mutate(state.resultText)
   }
@@ -276,8 +306,12 @@ export default function Step4Improvement() {
         </div>
         {mode === 'analysis' && (
           <div className="flex gap-2">
-            <Button onClick={() => setShowPdfPreview(true)}>
-              <Eye className="w-4 h-4 mr-2" />
+            <Button onClick={handleOpenPdfPreview} disabled={isPreparingPdf || reanalyzeMutation.isPending}>
+              {isPreparingPdf ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Eye className="w-4 h-4 mr-2" />
+              )}
               {t('wizard.step4.preview_pdf')}
             </Button>
             <Button
@@ -945,4 +979,3 @@ function SkillBadge({ skill, matched }: { skill: string; matched: boolean }) {
     </div>
   )
 }
-
