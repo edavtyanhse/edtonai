@@ -47,12 +47,17 @@ def prompt_template_sha256(prompt_template: str) -> str:
 
 def get_provider_name(provider: Any) -> str:
     name = getattr(provider, "provider_name", None)
-    return str(name) if name else "unknown"
+    if name is None:
+        return "unknown"
+    # Ensure it's a string and truncate if extremely long (safety)
+    return str(name)[:100]
 
 
 def get_model_name(provider: Any, fallback: str = "unknown") -> str:
     model = getattr(provider, "model", None) or getattr(provider, "model_name", None)
-    return str(model) if model else fallback
+    if model is None:
+        return str(fallback)[:255]
+    return str(model)[:255]
 
 
 def compute_ai_cache_key(operation: str, payload: dict[str, Any]) -> str:

@@ -26,7 +26,7 @@ class AIResult(Base):
         default=uuid.uuid4,
     )
     operation: Mapped[str] = mapped_column(
-        String(50),
+        String(100),
         nullable=False,
         comment="parse_resume | parse_vacancy | analyze_match",
     )
@@ -40,11 +40,11 @@ class AIResult(Base):
         nullable=False,
     )
     model: Mapped[str | None] = mapped_column(
-        String(100),
+        String(255),
         nullable=True,
     )
     provider: Mapped[str | None] = mapped_column(
-        String(50),
+        String(100),
         nullable=True,
     )
     error: Mapped[str | None] = mapped_column(

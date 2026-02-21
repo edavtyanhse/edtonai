@@ -82,11 +82,11 @@ class ResumeVersion(Base):
 
     # LLM metadata
     provider: Mapped[str | None] = mapped_column(
-        String(50),
+        String(100),
         nullable=True,
     )
     model: Mapped[str | None] = mapped_column(
-        String(100),
+        String(255),
         nullable=True,
     )
     prompt_version: Mapped[str | None] = mapped_column(
