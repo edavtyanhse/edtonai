@@ -108,6 +108,8 @@ export default function Step4Improvement() {
       if (data.parseData.parsed_resume) {
         updateParsedResume(data.parseData.parsed_resume)
       }
+    },
+    onSettled: () => {
       setMode('analysis')
     },
   })
@@ -150,6 +152,16 @@ export default function Step4Improvement() {
       // Apply improved resume as new base
       applyImprovedResume(resumeText)
       // Run re-analysis with new text
+      reanalyzeMutation.mutate(resumeText)
+    },
+    onError: (error, resumeText) => {
+      console.error('Failed to save version, but proceeding to analysis', error)
+      setShowSaveDialog(false)
+
+      const applied = pendingChanges.filter(c => c.status !== 'rejected')
+      setLastAppliedChanges(applied)
+
+      applyImprovedResume(resumeText)
       reanalyzeMutation.mutate(resumeText)
     },
   })
