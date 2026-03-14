@@ -82,5 +82,9 @@ class Settings(BaseSettings):
     # To remove feature: set to False and delete feedback-related files
     feedback_collection_enabled: bool = True
 
+    # Database bootstrap
+    # Disabled by default so production/Cloud Run startup does not block on DDL.
+    db_auto_create: bool = False
+
 
 settings = Settings()

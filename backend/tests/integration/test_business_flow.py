@@ -102,5 +102,6 @@ async def test_analyze_match_flow(client: AsyncClient, mock_ai_provider):
     assert data["analysis"]["matched_required_skills"] == ["Python"]
     assert data["cache_hit"] is False
 
-    # Verify AI was called
-    mock_ai_provider.generate_json.assert_called_once()
+    # Verify AI was called for the full pipeline:
+    # 1) parse resume, 2) parse vacancy, 3) analyze match
+    assert mock_ai_provider.generate_json.call_count == 3

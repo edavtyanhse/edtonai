@@ -9,7 +9,6 @@ from backend.api import v1_router
 from backend.api.v1.health import router as health_router
 from backend.containers import Container
 from backend.core.logging import request_id_ctx, setup_logging
-from backend.db import Base
 from backend.errors.handlers import register_exception_handlers
 
 # ── DI Container ──────────────────────────────────────────────────
@@ -20,14 +19,19 @@ container.wire()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Application lifespan: create tables on startup, dispose engine on shutdown."""
+    """Application lifespan: initialize logging and dispose engine on shutdown."""
     setup_logging()
 
     engine = container.async_engine()
 
-    # Create tables (for development; use Alembic in production)
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+    # Optional development-only bootstrap.
+    # Disabled by default so production startup does not fail if DB is not yet reachable
+    # or the configured connection points to a pooled/protected database.
+    if container.config().db_auto_create:
+        from backend.db import Base
+
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
 
     yield
 
