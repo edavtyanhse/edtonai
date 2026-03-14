@@ -6,22 +6,24 @@
 
 | Раздел | Описание |
 |--------|----------|
-| [API Specification](api/) | Спецификации REST API endpoints |
-| [Architecture](architecture/) | Архитектура: FastAPI, Services, Repositories |
-| [DB Schema](database/) | PostgreSQL, SQLAlchemy, RLS |
-| [AI Integration](ai/) | DeepSeek LLM, промпты, валидация |
-| [Configuration](configuration/) | Переменные окружения |
+| [API Specification](api/README.md) | Спецификации REST API endpoints |
+| [Architecture](architecture/README.md) | Архитектура: DI-контейнер, слои, Protocol-интерфейсы |
+| [DB Schema](database/README.md) | PostgreSQL, SQLAlchemy, RLS |
+| [AI Integration](ai/README.md) | DeepSeek / Groq LLM, промпты, валидация |
+| [Configuration](configuration/README.md) | Переменные окружения |
+| [Services](services/README.md) | Бизнес-логика, CachedAIService |
 
 ---
 
 ## 🛠️ Стек технологий
 
-- **Language:** Python 3.11
+- **Language:** Python 3.11+
 - **Framework:** FastAPI
 - **Database:** PostgreSQL 16 (Managed by **Supabase**)
 - **ORM:** SQLAlchemy 2.0 (async) + AsyncPG
-- **AI:** DeepSeek API
-- **Auth:** JWT (Supabase Auth tokens)
+- **DI:** dependency-injector 4.48 (DeclarativeContainer)
+- **AI:** DeepSeek API (reasoning) + Groq API (parsing)
+- **Auth:** JWT (Supabase Auth tokens, JWKS)
 - **Deployment:** Google Cloud Run
 
 ---
@@ -31,7 +33,7 @@
 ### Требования
 - Python 3.11+
 - PostgreSQL (или Supabase проект)
-- API Key от DeepSeek
+- API Key от DeepSeek и/или Groq
 
 ### Локальный запуск
 
@@ -55,10 +57,14 @@
 
    # AI
    DEEPSEEK_API_KEY=sk-your-key
-   AI_MODEL=deepseek-chat
+   GROQ_API_KEY=gsk_your-key
 
    # Auth
    SUPABASE_JWT_SECRET=your-jwt-secret-from-supabase-settings
+   SUPABASE_URL=https://xxx.supabase.co
+
+   # Logging
+   LOG_LEVEL=INFO
    ```
 
 3. **Запуск:**
@@ -75,9 +81,9 @@
 Сервис не занимается выпуском токенов (это делает Frontend через Supabase Auth).
 Backend занимается **валидацией** JWT токенов.
 
-1. **JWT Secret:** Переменная `SUPABASE_JWT_SECRET` используется для проверки подписи токена `Authorization: Bearer <token>`.
-2. **User Identification:** Из токена извлекается `sub` (UUID пользователя), который используется для фильтрации данных (RLS на уровне приложения).
-3. **RLS (Database):** На уровне базы данных также включены политики Row Level Security (хотя backend использует сервисный ключ или пользователя postgres, логика фильтрации дублируется в репозиториях для надежности, или используется пользователь с ограниченными правами). *Примечание: В текущей реализации мы фильтруем по `user_id` в репозиториях.*
+1. **JWKS + JWT Secret:** Токены проверяются через JWKS (`supabase_url + /auth/v1/.well-known/jwks.json`), с fallback на `SUPABASE_JWT_SECRET`.
+2. **User Identification:** Из токена извлекается `sub` (UUID пользователя), который используется для фильтрации данных.
+3. **RLS:** Фильтрация по `user_id` реализована в репозиториях.
 
 ---
 
@@ -92,51 +98,125 @@ FROM python:3.11-slim
 CMD ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8000"]
 ```
 
-**Команда деплоя:**
-```bash
-gcloud run deploy edtonai-backend \
-  --source . \
-  --env-vars-file backend.env \
-  --allow-unauthenticated
-```
-*Примечание: `--allow-unauthenticated` нужно, чтобы Frontend мог обращаться к API. Сами эндпоинты защищены проверкой JWT внутри приложения.*
-
 ---
 
 ## 🏗️ Структура проекта
 
 ```
 backend/
-├── main.py              # Entry point
-├── prompts.py           # LLM prompts (parse, analyze, adapt, cover letter)
+├── containers.py           # Composition Root (DI-контейнер)
+├── main.py                 # Entry point: создание app + wiring + lifespan
+│
 ├── core/
-│   ├── auth.py          # JWT verification logic
-│   ├── config.py        # Environment variables
+│   ├── auth.py             # JWT verification (JWKS + secret fallback)
+│   ├── config.py           # Settings (Pydantic BaseSettings)
+│   └── logging.py          # Structured logging setup
+│
+├── errors/                 # Таксономия ошибок
+│   ├── base.py             # AppError базовый класс
+│   ├── business.py         # ResumeNotFoundError, VacancyNotFoundError, ...
+│   ├── integration.py      # AIProviderError, ScraperError
+│   └── handlers.py         # Глобальные FastAPI exception handlers
+│
+├── integration/            # Внешние системы
+│   ├── ai/
+│   │   ├── base.py         # AIProvider ABC
+│   │   ├── deepseek.py     # DeepSeek (reasoning)
+│   │   ├── groq.py         # Groq (parsing)
+│   │   ├── errors.py       # AIError, AIRequestError, AIResponseFormatError
+│   │   └── prompts.py      # Все LLM-промпты
+│   └── scraper/
+│       └── scraper.py      # WebScraper (hh.ru API + generic HTML)
+│
+├── domain/                 # Внутренние DTO (dataclasses)
+│   ├── mappers.py          # ORM ↔ dict маппинг (get_/set_parsed_data)
+│   ├── resume.py           # ResumeParseResult
+│   ├── vacancy.py          # VacancyParseResult
+│   ├── match.py            # MatchAnalysisResult
+│   ├── adapt.py            # AdaptResumeResult
+│   ├── ideal.py            # IdealResumeResult
+│   ├── cover_letter.py     # CoverLetterResult
+│   └── analysis.py         # FullAnalysisResult
+│
 ├── api/
-│   ├── dependencies.py  # FastAPI dependency injection
-│   └── v1/              # Endpoint controllers
-│       ├── cover_letter.py  # POST /v1/cover-letter
-│       └── ...
-├── services/            # Business logic
-│   ├── cover_letter.py  # CoverLetterService
-│   └── ...
-├── schemas/             # Pydantic schemas (DTO)
-│   ├── cover_letter.py  # CoverLetterRequest, CoverLetterResponse
-│   └── ...
-├── repositories/        # Database access
-├── models/              # SQLAlchemy models
-├── ai/                  # LLM integration (DeepSeek)
-└── db/                  # Database session & base
+│   ├── dependencies.py     # @inject — DI из контейнера
+│   └── v1/
+│       ├── health.py       # GET /health, /v1/health, /v1/limits
+│       ├── resumes.py      # POST /v1/resumes/parse, GET, PATCH
+│       ├── vacancies.py    # POST /v1/vacancies/parse, GET, PATCH
+│       ├── match.py        # POST /v1/match/analyze
+│       ├── adapt.py        # POST /v1/resumes/adapt
+│       ├── ideal.py        # POST /v1/resumes/ideal
+│       ├── cover_letter.py # POST /v1/cover-letter
+│       ├── versions.py     # POST/GET /v1/versions
+│       └── feedback.py     # POST /v1/feedback
+│
+├── schemas/                # Pydantic-схемы (API контракт)
+│   ├── __init__.py         # Фасад: реэкспорт всех схем
+│   ├── common.py           # ChangeLogEntry, Options, ...
+│   ├── requests/           # Request-схемы
+│   └── responses/          # Response-схемы
+│
+├── services/               # Бизнес-логика
+│   ├── interfaces.py       # Protocol-классы (IResumeService, ...)
+│   ├── base.py             # CachedAIService (базовый класс)
+│   ├── resume.py
+│   ├── vacancy.py
+│   ├── match.py
+│   ├── orchestrator.py
+│   ├── adapt.py
+│   ├── ideal.py
+│   ├── cover_letter.py
+│   └── utils.py
+│
+├── repositories/           # Persistence layer
+│   ├── interfaces.py       # Protocol-классы (IResumeRepository, ...)
+│   ├── resume.py
+│   ├── vacancy.py
+│   ├── ai_result.py
+│   ├── analysis.py
+│   ├── resume_version.py
+│   ├── ideal_resume.py
+│   ├── user_version.py
+│   └── feedback.py
+│
+├── models/                 # ORM-маппинги (чистые, без бизнес-логики)
+│
+├── db/
+│   ├── base.py
+│   ├── session.py
+│   └── migrations/
+│
+└── tests/
+    ├── conftest.py         # container.override() fixtures
+    ├── unit/               # Тесты сервисов с мок-зависимостями
+    └── integration/        # Тесты API с тестовой БД
 ```
+
+## Ключевые архитектурные решения
+
+| Решение | Описание |
+|---------|----------|
+| **DI-контейнер** | `containers.py` — единый Composition Root, все зависимости собираются в одном месте |
+| **Protocol-интерфейсы** | `services/interfaces.py`, `repositories/interfaces.py` — сервисы зависят от абстракций, не от конкретных классов |
+| **CachedAIService** | Базовый класс для сервисов с AI — устраняет дублирование кеширования |
+| **Таксономия ошибок** | `errors/` — типизированные ошибки + глобальные handlers, без try/except в эндпоинтах |
+| **Hybrid AI** | Groq (быстрый, для парсинга) + DeepSeek (умный, для анализа) |
 
 ## Переменные окружения (Полный список)
 
 | Переменная | Описание |
 |------------|----------|
 | `DEEPSEEK_API_KEY` | Ключ API DeepSeek |
-| `SUPABASE_JWT_SECRET` | Секрет для проверки JWT токенов (из Supabase Project Settings > API) |
+| `GROQ_API_KEY` | Ключ API Groq |
+| `SUPABASE_JWT_SECRET` | Секрет для проверки JWT (из Supabase Settings > API) |
+| `SUPABASE_URL` | URL Supabase проекта (для JWKS) |
 | `POSTGRES_USER` | Пользователь БД |
 | `POSTGRES_PASSWORD` | Пароль БД |
 | `POSTGRES_HOST` | Хост БД |
 | `POSTGRES_PORT` | Порт БД (обычно 5432 или 6543) |
 | `POSTGRES_DB` | Имя БД |
+| `LOG_LEVEL` | Уровень логирования (DEBUG, INFO, WARNING, ERROR) |
+| `AI_PROVIDER_PARSING` | AI-провайдер для парсинга (groq / deepseek) |
+| `AI_PROVIDER_REASONING` | AI-провайдер для анализа (deepseek / groq) |
+| `FEEDBACK_COLLECTION_ENABLED` | Включить/выключить сбор фидбека (true/false) |

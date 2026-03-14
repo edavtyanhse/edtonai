@@ -15,7 +15,7 @@ from backend.core.auth import get_jwks_client, security
 from backend.core.config import settings
 from backend.db.session import get_session
 from backend.repositories.feedback import FeedbackRepository
-from backend.schemas.feedback import FeedbackCreate, FeedbackResponse
+from backend.schemas import FeedbackCreate, FeedbackResponse
 
 logger = logging.getLogger(__name__)
 

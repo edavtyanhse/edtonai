@@ -2,55 +2,27 @@
 
 import hashlib
 import json
-import logging
-from dataclasses import dataclass
 from typing import Any
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.ai.factory import get_ai_provider
-from backend.core.config import settings
-from backend.prompts import GENERATE_UPDATED_RESUME_PROMPT
-from backend.repositories import (
-    AIResultRepository,
-    ResumeRepository,
-    ResumeVersionRepository,
-    VacancyRepository,
+from backend.core.config import Settings
+from backend.domain.adapt import AdaptResumeResult, SelectedImprovement
+from backend.integration.ai.base import AIProvider
+from backend.integration.ai.prompts import GENERATE_UPDATED_RESUME_PROMPT
+from backend.repositories.interfaces import (
+    IAIResultRepository,
+    IResumeRepository,
+    IResumeVersionRepository,
+    IVacancyRepository,
 )
-from backend.services.match import MatchService
-from backend.services.resume import ResumeService
-from backend.services.utils import (
-    get_model_name,
-    get_provider_name,
-    prompt_template_sha256,
-)
-from backend.services.vacancy import VacancyService
+from backend.services.base import CachedAIService
+from backend.services.interfaces import IMatchService, IResumeService, IVacancyService
+from backend.services.utils import prompt_template_sha256
 
 
-@dataclass
-class SelectedImprovement:
-    """Single improvement with optional user input."""
-    checkbox_id: str
-    user_input: str | None = None
-    ai_generate: bool = False
-
-
-@dataclass
-class AdaptResumeResult:
-    """Result of resume adaptation."""
-
-    version_id: UUID
-    parent_version_id: UUID | None
-    resume_id: UUID
-    vacancy_id: UUID
-    updated_resume_text: str
-    change_log: list[dict[str, Any]]
-    applied_checkbox_ids: list[str]
-    cache_hit: bool
-
-
-class AdaptResumeService:
+class AdaptResumeService(CachedAIService):
     """Service for adapting resume to vacancy requirements.
 
     Hybrid approach:
@@ -61,17 +33,31 @@ class AdaptResumeService:
 
     OPERATION = "adapt_resume"
 
-    def __init__(self, session: AsyncSession) -> None:
-        self.session = session
-        self.resume_repo = ResumeRepository(session)
-        self.vacancy_repo = VacancyRepository(session)
-        self.ai_result_repo = AIResultRepository(session)
-        self.version_repo = ResumeVersionRepository(session)
-        self.resume_service = ResumeService(session)
-        self.vacancy_service = VacancyService(session)
-        self.match_service = MatchService(session)
-        self.ai_provider = get_ai_provider(task_type="reasoning")
-        self.logger = logging.getLogger(__name__)
+    def __init__(
+        self,
+        session: AsyncSession,
+        resume_repo: IResumeRepository,
+        vacancy_repo: IVacancyRepository,
+        ai_result_repo: IAIResultRepository,
+        version_repo: IResumeVersionRepository,
+        resume_service: IResumeService,
+        vacancy_service: IVacancyService,
+        match_service: IMatchService,
+        ai_provider: AIProvider,
+        settings: Settings,
+    ) -> None:
+        super().__init__(
+            session=session,
+            ai_provider=ai_provider,
+            settings=settings,
+            ai_result_repo=ai_result_repo,
+        )
+        self.resume_repo = resume_repo
+        self.vacancy_repo = vacancy_repo
+        self.version_repo = version_repo
+        self.resume_service = resume_service
+        self.vacancy_service = vacancy_service
+        self.match_service = match_service
 
     def _compute_adapt_hash(
         self,
@@ -119,11 +105,11 @@ class AdaptResumeService:
             "selected_improvements": improvements_data,
             "template": options.get("template"),
             "language": options.get("language"),
-            "provider": get_provider_name(self.ai_provider),
-            "model": get_model_name(self.ai_provider, fallback=settings.ai_model),
+            "provider": self.provider_name,
+            "model": self.model_name,
             "prompt_template_sha256": prompt_template_sha256(GENERATE_UPDATED_RESUME_PROMPT),
-            "temperature": settings.ai_temperature,
-            "max_tokens": settings.ai_max_tokens,
+            "temperature": self.settings.ai_temperature,
+            "max_tokens": self.settings.ai_max_tokens,
         }
         return hashlib.sha256(
             json.dumps(data, sort_keys=True).encode("utf-8")
@@ -225,7 +211,7 @@ class AdaptResumeService:
             options,
         )
 
-        cached_result = await self.ai_result_repo.get(self.OPERATION, input_hash)
+        cached_result = await self._check_cache(input_hash)
         if cached_result is not None:
             self.logger.info("Cache hit for adapt_resume: %s", input_hash[:16])
 
@@ -239,8 +225,8 @@ class AdaptResumeService:
                 selected_checkbox_ids=checkbox_ids_for_storage,
                 analysis_id=analysis_id,
                 parent_version_id=base_version_id,
-                provider=self.ai_provider.provider_name,
-                model=get_model_name(self.ai_provider, fallback=settings.ai_model),
+                provider=self.provider_name,
+                model=self.model_name,
             )
             await self.session.commit()
 
@@ -269,13 +255,7 @@ class AdaptResumeService:
         )
 
         # Step 8: Save to AIResult cache
-        await self.ai_result_repo.save(
-            operation=self.OPERATION,
-            input_hash=input_hash,
-            output_json=adapt_output,
-            provider=self.ai_provider.provider_name,
-            model=get_model_name(self.ai_provider, fallback=settings.ai_model),
-        )
+        await self._save_to_cache(input_hash, adapt_output)
         self.logger.info("Saved adapt_resume to cache: %s", input_hash[:16])
 
         # Step 9: Create ResumeVersion
@@ -287,8 +267,8 @@ class AdaptResumeService:
             selected_checkbox_ids=checkbox_ids_for_storage,
             analysis_id=analysis_id,
             parent_version_id=base_version_id,
-            provider=self.ai_provider.provider_name,
-            model=get_model_name(self.ai_provider, fallback=settings.ai_model),
+            provider=self.provider_name,
+            model=self.model_name,
         )
         await self.session.commit()
 

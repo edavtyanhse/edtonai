@@ -7,6 +7,7 @@ from uuid import UUID
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from backend.domain.mappers import set_vacancy_parsed_data
 from backend.models import VacancyRaw
 
 
@@ -52,7 +53,7 @@ class VacancyRepository:
         if vacancy is None:
             return None
         # Use helper method to set all parsed fields
-        vacancy.set_parsed_data(parsed_data)
+        set_vacancy_parsed_data(vacancy, parsed_data)
         vacancy.parsed_at = datetime.utcnow()
         await self.session.flush()
         return vacancy

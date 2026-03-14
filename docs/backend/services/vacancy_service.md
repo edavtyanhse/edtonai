@@ -9,37 +9,45 @@
 ## Класс
 
 ```python
-class VacancyService:
+class VacancyService(CachedAIService):
     OPERATION = "parse_vacancy"
+
+    def __init__(
+        self,
+        session: AsyncSession,
+        vacancy_repo: IVacancyRepository,
+        ai_result_repo: IAIResultRepository,
+        ai_provider: AIProvider,
+        settings: Settings,
+    ) -> None:
+        super().__init__(session, ai_provider, settings, ai_result_repo)
+        self.vacancy_repo = vacancy_repo
 ```
 
-## Зависимости
+## Зависимости (через DI-контейнер)
 
-- `VacancyRepository` — CRUD для `vacancy_raw`
-- `AIResultRepository` — CRUD для `ai_result`
-- `DeepSeekProvider` — вызовы LLM
+| Dependency | Interface | Provider |
+|------------|-----------|----------|
+| `vacancy_repo` | `IVacancyRepository` | `VacancyRepository` |
+| `ai_result_repo` | `IAIResultRepository` | `AIResultRepository` |
+| `ai_provider` | `AIProvider` | Groq (parsing) |
+| `settings` | `Settings` | Singleton |
 
 ## Методы
 
-### `parse_and_cache(vacancy_text: str) -> VacancyParseResult`
+### `parse_and_cache(vacancy_text: str, source_url: str = None) -> VacancyParseResult`
 
 Парсит текст вакансии и возвращает структурированный JSON.
-
-#### Параметры
-
-| Name | Type | Description |
-|------|------|-------------|
-| `vacancy_text` | str | Исходный текст вакансии |
 
 #### Возвращает
 
 ```python
 @dataclass
 class VacancyParseResult:
-    vacancy_id: UUID       # ID записи в vacancy_raw
-    vacancy_hash: str      # SHA256 хэш
-    parsed_vacancy: dict   # Структурированный JSON
-    cache_hit: bool        # True если из кеша
+    vacancy_id: UUID
+    vacancy_hash: str
+    parsed_vacancy: dict
+    cache_hit: bool
 ```
 
 #### Алгоритм
@@ -48,99 +56,16 @@ class VacancyParseResult:
 
 1. Нормализация и хэширование текста
 2. Get or create `VacancyRaw`
-3. Проверка кеша в `ai_result`
-4. Если miss — вызов LLM с `PARSE_VACANCY_PROMPT`
-5. Сохранение результата
-6. Возврат `VacancyParseResult`
+3. `_check_cache(hash)` → from CachedAIService
+4. Если miss — вызов LLM с `PARSE_VACANCY_PROMPT` через Groq
+5. `_save_to_cache()` → сохранение в `ai_result`
+6. Update vacancy parsed fields via `domain/mappers.py`
+7. Возврат `VacancyParseResult`
 
 ## Prompt
 
-Использует `PARSE_VACANCY_PROMPT` из `backend/prompts.py`.
+Использует `PARSE_VACANCY_PROMPT` из `backend/integration/ai/prompts.py`.
 
-Структура ожидаемого JSON:
+## Скрапинг URL
 
-```json
-{
-  "job_title": "string|null",
-  "company": "string|null",
-  "employment_type": "string|null",
-  "location": "string|null",
-  "required_skills": [
-    {
-      "name": "string",
-      "type": "hard|soft|domain|tool",
-      "evidence": "string"
-    }
-  ],
-  "preferred_skills": [
-    {
-      "name": "string",
-      "type": "hard|soft|domain|tool",
-      "evidence": "string"
-    }
-  ],
-  "experience_requirements": {
-    "min_years": "number|null",
-    "details": "string|null"
-  },
-  "responsibilities": ["string"],
-  "ats_keywords": ["string"]
-}
-```
-
-### Поля
-
-| Field | Description |
-|-------|-------------|
-| `job_title` | Название должности |
-| `company` | Название компании |
-| `employment_type` | full-time, part-time, remote и т.д. |
-| `location` | Город/страна/удалёнка |
-| `required_skills` | Обязательные навыки с evidence |
-| `preferred_skills` | Желательные навыки с evidence |
-| `experience_requirements` | Требования к опыту |
-| `responsibilities` | Список обязанностей |
-| `ats_keywords` | Ключевые слова для ATS |
-
-### Skill Types
-
-| Type | Description | Examples |
-|------|-------------|----------|
-| `hard` | Технические навыки | Python, SQL, Docker |
-| `soft` | Soft skills | Communication, Leadership |
-| `domain` | Доменные знания | Fintech, E-commerce |
-| `tool` | Инструменты | Jira, Confluence, Git |
-
-## Пример
-
-```python
-service = VacancyService(session)
-
-result = await service.parse_and_cache("""
-    Senior Python Developer
-    
-    Требования:
-    - Python 5+ лет
-    - FastAPI или Django
-    - PostgreSQL
-    
-    Желательно:
-    - Kubernetes
-    - CI/CD опыт
-""")
-
-print(result.parsed_vacancy["required_skills"])
-# [
-#   {"name": "Python", "type": "hard", "evidence": "Python 5+ лет"},
-#   {"name": "FastAPI", "type": "hard", "evidence": "FastAPI или Django"},
-#   {"name": "PostgreSQL", "type": "hard", "evidence": "PostgreSQL"}
-# ]
-```
-
-## Логирование
-
-```
-INFO  | Created new vacancy record: <uuid>
-INFO  | Cache hit for vacancy parsing: <hash[:16]>
-INFO  | Saved parsed vacancy to cache: <hash[:16]>
-```
+Если вместо текста передан URL, `api/v1/vacancies.py` вызывает `WebScraper.fetch_text(url)` перед сервисом. При ошибке URL бросается `ScraperError` (обрабатывается глобально).

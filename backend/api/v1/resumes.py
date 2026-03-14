@@ -5,9 +5,9 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.ai.errors import AIError
 from backend.api.dependencies import get_resume_service
 from backend.db import get_db
+from backend.domain.mappers import get_resume_parsed_data
 from backend.repositories import ResumeRepository
 from backend.schemas import (
     ResumeDetailResponse,
@@ -30,10 +30,7 @@ async def parse_resume(
     - Caches results by content hash
     - Returns cache_hit=true if result was from cache
     """
-    try:
-        result = await service.parse_and_cache(request.resume_text)
-    except AIError as e:
-        raise HTTPException(status_code=502, detail=f"AI provider error: {e}")
+    result = await service.parse_and_cache(request.resume_text)
 
     return ResumeParseResponse(
         resume_id=result.resume_id,
@@ -58,7 +55,7 @@ async def get_resume(
         id=resume.id,
         source_text=resume.source_text,
         content_hash=resume.content_hash,
-        parsed_data=resume.get_parsed_data(),
+        parsed_data=get_resume_parsed_data(resume),
         created_at=resume.created_at,
         parsed_at=resume.parsed_at,
     )
@@ -86,7 +83,7 @@ async def update_resume_parsed_data(
         id=resume.id,
         source_text=resume.source_text,
         content_hash=resume.content_hash,
-        parsed_data=resume.get_parsed_data(),
+        parsed_data=get_resume_parsed_data(resume),
         created_at=resume.created_at,
         parsed_at=resume.parsed_at,
     )

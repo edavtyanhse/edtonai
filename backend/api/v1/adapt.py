@@ -2,11 +2,10 @@
 
 from fastapi import APIRouter, Depends, HTTPException
 
-from backend.ai.errors import AIError
 from backend.api.dependencies import get_adapt_resume_service
+from backend.domain.adapt import SelectedImprovement
 from backend.schemas import AdaptResumeRequest, AdaptResumeResponse, ChangeLogEntry
 from backend.services import AdaptResumeService
-from backend.services.adapt import SelectedImprovement
 
 router = APIRouter(prefix="/resumes", tags=["resumes"])
 
@@ -63,8 +62,7 @@ async def adapt_resume(
             for imp in request.selected_improvements
         ]
 
-    try:
-        result = await service.adapt_and_version(
+    result = await service.adapt_and_version(
             resume_text=request.resume_text,
             resume_id=request.resume_id,
             vacancy_text=request.vacancy_text,
@@ -74,10 +72,6 @@ async def adapt_resume(
             base_version_id=request.base_version_id,
             options=request.options.model_dump() if request.options else {},
         )
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-    except AIError as e:
-        raise HTTPException(status_code=502, detail=f"AI provider error: {e}")
 
     return AdaptResumeResponse(
         version_id=result.version_id,

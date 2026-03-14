@@ -121,30 +121,3 @@ class VacancyRaw(Base):
         DateTime,
         nullable=True,
     )
-
-    # Helper to get all parsed data as dict (for API compatibility)
-    def get_parsed_data(self) -> dict[str, Any]:
-        """Return parsed data as unified dict."""
-        return {
-            "job_title": self.job_title,
-            "company": self.company,
-            "employment_type": self.employment_type,
-            "location": self.location,
-            "required_skills": self.required_skills or [],
-            "preferred_skills": self.preferred_skills or [],
-            "experience_requirements": self.experience_requirements,
-            "responsibilities": self.responsibilities or [],
-            "ats_keywords": self.ats_keywords or [],
-        }
-
-    def set_parsed_data(self, data: dict[str, Any]) -> None:
-        """Set parsed data from unified dict."""
-        self.job_title = data.get("job_title")
-        self.company = data.get("company")
-        self.employment_type = data.get("employment_type")
-        self.location = data.get("location")
-        self.required_skills = data.get("required_skills", [])
-        self.preferred_skills = data.get("preferred_skills", [])
-        self.experience_requirements = data.get("experience_requirements")
-        self.responsibilities = data.get("responsibilities", [])
-        self.ats_keywords = data.get("ats_keywords", [])

@@ -5,9 +5,9 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.ai.errors import AIError
 from backend.api.dependencies import get_vacancy_service
 from backend.db import get_db
+from backend.domain.mappers import get_vacancy_parsed_data
 from backend.repositories import VacancyRepository
 from backend.schemas import (
     VacancyDetailResponse,
@@ -33,19 +33,13 @@ async def parse_vacancy(
     text = request.vacancy_text
     source_url = request.url
     if not text and source_url:
-        from backend.services.scraper import WebScraper
-        try:
-            text = await WebScraper.fetch_text(source_url)
-        except ValueError as e:
-            raise HTTPException(status_code=422, detail=str(e))
+        from backend.integration.scraper import WebScraper
+        text = await WebScraper.fetch_text(source_url)
 
     if not text or len(text) < 10:
         raise HTTPException(status_code=422, detail="Vacancy text is empty or too short")
 
-    try:
-        result = await service.parse_and_cache(text, source_url=source_url)
-    except AIError as e:
-        raise HTTPException(status_code=502, detail=f"AI provider error: {e}")
+    result = await service.parse_and_cache(text, source_url=source_url)
 
     return VacancyParseResponse(
         vacancy_id=result.vacancy_id,
@@ -71,7 +65,7 @@ async def get_vacancy(
         id=vacancy.id,
         source_text=vacancy.source_text,
         content_hash=vacancy.content_hash,
-        parsed_data=vacancy.get_parsed_data(),
+        parsed_data=get_vacancy_parsed_data(vacancy),
         created_at=vacancy.created_at,
         parsed_at=vacancy.parsed_at,
     )
@@ -99,7 +93,7 @@ async def update_vacancy_parsed_data(
         id=vacancy.id,
         source_text=vacancy.source_text,
         content_hash=vacancy.content_hash,
-        parsed_data=vacancy.get_parsed_data(),
+        parsed_data=get_vacancy_parsed_data(vacancy),
         created_at=vacancy.created_at,
         parsed_at=vacancy.parsed_at,
     )

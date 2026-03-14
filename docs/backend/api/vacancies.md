@@ -164,4 +164,17 @@ Content-Type: application/json
 
 **File:** `backend/api/v1/vacancies.py`
 
-**Service:** `backend/services/vacancy.py` → `VacancyService.parse_and_cache()`
+```python
+@router.post("/parse", response_model=VacancyParseResponse)
+async def parse_vacancy(
+    request: VacancyParseRequest,
+    service: VacancyService = Depends(get_vacancy_service),  # DI
+) -> VacancyParseResponse:
+    # supports URL scraping: if no text but url provided, scrapes it
+    result = await service.parse_and_cache(text, source_url=source_url)
+    return VacancyParseResponse(...)
+```
+
+**Dependencies:** `get_vacancy_service` → `backend/api/dependencies.py` → DI Container
+
+**Service:** `backend/services/vacancy.py` → `CachedAIService`

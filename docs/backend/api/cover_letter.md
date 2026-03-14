@@ -202,8 +202,25 @@ POST /v1/match/analyze → POST /v1/resumes/adapt → POST /v1/versions → POST
 
 ## Implementation
 
-**API:** `backend/api/v1/cover_letter.py`
+**File:** `backend/api/v1/cover_letter.py`
 
-**Service:** `backend/services/cover_letter.py` → `CoverLetterService.generate_cover_letter()`
+```python
+@router.post("/cover-letter", response_model=CoverLetterResponse)
+async def generate_cover_letter(
+    request: CoverLetterRequest,
+    user_id: str = Depends(require_auth),
+    cover_letter_service: CoverLetterService = Depends(get_cover_letter_service),  # DI
+) -> CoverLetterResponse:
+    result = await cover_letter_service.generate_cover_letter(
+        resume_version_id=request.resume_version_id,
+        user_id=user_id,
+        options=request.options or {},
+    )
+    return CoverLetterResponse(...)
+```
 
-**Prompt:** `backend/prompts.py` → `COVER_LETTER_PROMPT`
+**Dependencies:** `get_cover_letter_service` → `backend/api/dependencies.py` → DI Container
+
+**Service:** `backend/services/cover_letter.py` → `CachedAIService`
+
+**Prompt:** `backend/integration/ai/prompts.py` → `COVER_LETTER_PROMPT`

@@ -250,24 +250,16 @@ Content-Type: application/json
 
 **File:** `backend/api/v1/match.py`
 
-**Service:** `backend/services/orchestrator.py` → `OrchestratorService.run_analysis()`
-
 ```python
-async def run_analysis(self, resume_text: str, vacancy_text: str) -> FullAnalysisResult:
-    # Step 1
-    resume_result = await self.resume_service.parse_and_cache(resume_text)
-    
-    # Step 2
-    vacancy_result = await self.vacancy_service.parse_and_cache(vacancy_text)
-    
-    # Step 3
-    match_result = await self.match_service.analyze_and_cache(
-        resume_result.parsed_resume,
-        vacancy_result.parsed_vacancy,
-    )
-    
-    # Step 4
-    await self.analysis_repo.link(...)
-    
-    return FullAnalysisResult(...)
+@router.post("/analyze", response_model=MatchAnalyzeResponse)
+async def analyze_match(
+    request: MatchAnalyzeRequest,
+    service: OrchestratorService = Depends(get_orchestrator_service),  # DI
+) -> MatchAnalyzeResponse:
+    result = await service.run_analysis(request.resume_text, request.vacancy_text)
+    return MatchAnalyzeResponse(...)
 ```
+
+**Dependencies:** `get_orchestrator_service` → `backend/api/dependencies.py` → DI Container
+
+**Service:** `backend/services/orchestrator.py` → делегирует в `ResumeService`, `VacancyService`, `MatchService`

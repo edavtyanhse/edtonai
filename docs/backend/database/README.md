@@ -48,11 +48,11 @@ PostgreSQL схема данных.
 | Column | Type | Constraints | Description |
 |--------|------|-------------|-------------|
 | `id` | UUID | PK | Уникальный ID |
-| `operation` | VARCHAR(50) | NOT NULL | Тип операции: `parse_resume`, `parse_vacancy`, `analyze_match`, `adapt_resume` |
+| `operation` | VARCHAR(50) | NOT NULL | Тип операции: `parse_resume`, `parse_vacancy`, `analyze_match`, `adapt_resume`, `generate_cover_letter` |
 | `input_hash` | VARCHAR(64) | NOT NULL, INDEX | SHA256 входных данных |
 | `output_json` | JSONB | NOT NULL | Результат от LLM |
 | `model` | VARCHAR(100) | NULL | Модель LLM |
-| `provider` | VARCHAR(50) | NULL | Провайдер (deepseek) |
+| `provider` | VARCHAR(50) | NULL | Провайдер (`deepseek`, `groq`) |
 | `error` | TEXT | NULL | Текст ошибки (если была) |
 | `created_at` | TIMESTAMP | NOT NULL, DEFAULT now() | Время создания |
 

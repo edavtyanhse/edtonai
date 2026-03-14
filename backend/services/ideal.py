@@ -2,51 +2,50 @@
 
 import hashlib
 import json
-import logging
-from dataclasses import dataclass
 from typing import Any
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.ai.factory import get_ai_provider
-from backend.core.config import settings
-from backend.prompts import IDEAL_RESUME_PROMPT
-from backend.repositories import (
-    IdealResumeRepository,
-    VacancyRepository,
-)
+from backend.core.config import Settings
+from backend.domain.ideal import IdealResumeResult
+from backend.integration.ai.base import AIProvider
+from backend.integration.ai.prompts import IDEAL_RESUME_PROMPT
+from backend.repositories.interfaces import IIdealResumeRepository, IVacancyRepository
+from backend.services.base import CachedAIService
+from backend.services.interfaces import IVacancyService
 from backend.services.utils import compute_hash
-from backend.services.vacancy import VacancyService
 
 
-@dataclass
-class IdealResumeResult:
-    """Result of ideal resume generation."""
-
-    ideal_id: UUID
-    vacancy_id: UUID
-    ideal_resume_text: str
-    metadata: dict[str, Any]
-    cache_hit: bool
-
-
-class IdealResumeService:
+class IdealResumeService(CachedAIService):
     """Service for generating ideal resume template for a vacancy.
 
     Creates a reference example showing what an ideal candidate's resume
     would look like. Uses placeholder data, not real personal info.
+
+    Note: caches via ``ideal_repo`` (not ``ai_result_repo``).
     """
 
     OPERATION = "ideal_resume"
 
-    def __init__(self, session: AsyncSession) -> None:
-        self.session = session
-        self.vacancy_repo = VacancyRepository(session)
-        self.ideal_repo = IdealResumeRepository(session)
-        self.vacancy_service = VacancyService(session)
-        self.ai_provider = get_ai_provider(task_type="reasoning")
-        self.logger = logging.getLogger(__name__)
+    def __init__(
+        self,
+        session: AsyncSession,
+        vacancy_repo: IVacancyRepository,
+        ideal_repo: IIdealResumeRepository,
+        vacancy_service: IVacancyService,
+        ai_provider: AIProvider,
+        settings: Settings,
+    ) -> None:
+        super().__init__(
+            session=session,
+            ai_provider=ai_provider,
+            settings=settings,
+            ai_result_repo=None,  # IdealResumeService uses ideal_repo for caching
+        )
+        self.vacancy_repo = vacancy_repo
+        self.ideal_repo = ideal_repo
+        self.vacancy_service = vacancy_service
 
     def _compute_ideal_hash(
         self,
@@ -141,8 +140,8 @@ class IdealResumeService:
             generation_metadata=ideal_output.get("metadata", {}),
             options=options,
             input_hash=input_hash,
-            provider=self.ai_provider.provider_name,
-            model=settings.ai_model,
+            provider=self.provider_name,
+            model=self.model_name,
         )
         await self.session.commit()
 

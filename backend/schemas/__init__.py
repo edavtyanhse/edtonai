@@ -1,69 +1,80 @@
-"""Pydantic schemas for API request/response."""
+"""Pydantic schemas for API request/response.
 
-from .adapt import (
+Backward-compatible façade: re-exports every schema from
+common/, requests/ and responses/ sub-packages so that existing
+`from backend.schemas import Xyz` imports keep working.
+"""
+
+# ── common (shared between requests & responses) ──────────────────
+from .common import (
     AdaptResumeOptions,
-    AdaptResumeRequest,
-    AdaptResumeResponse,
     ChangeLogEntry,
-)
-from .cover_letter import (
-    CoverLetterRequest,
-    CoverLetterResponse,
     CoverLetterStructure,
-)
-from .ideal import (
     IdealResumeMetadata,
     IdealResumeOptions,
+    SelectedImprovementSchema,
+)
+
+# ── requests ──────────────────────────────────────────────────────
+from .requests import (
+    AdaptResumeRequest,
+    CoverLetterRequest,
+    FeedbackCreate,
     IdealResumeRequest,
-    IdealResumeResponse,
-)
-from .match import MatchAnalyzeRequest, MatchAnalyzeResponse
-from .resume import (
-    ResumeDetailResponse,
+    MatchAnalyzeRequest,
     ResumeParseRequest,
-    ResumeParseResponse,
     ResumePatchRequest,
-)
-from .vacancy import (
-    VacancyDetailResponse,
     VacancyParseRequest,
-    VacancyParseResponse,
     VacancyPatchRequest,
-)
-from .version import (
     VersionCreateRequest,
+)
+
+# ── responses ─────────────────────────────────────────────────────
+from .responses import (
+    AdaptResumeResponse,
+    CoverLetterResponse,
+    FeedbackResponse,
+    IdealResumeResponse,
+    MatchAnalyzeResponse,
+    ResumeDetailResponse,
+    ResumeParseResponse,
+    VacancyDetailResponse,
+    VacancyParseResponse,
     VersionDetailResponse,
     VersionItemResponse,
     VersionListResponse,
 )
 
 __all__ = [
-    # Stage 1
-    "ResumeParseRequest",
-    "ResumeParseResponse",
-    "ResumePatchRequest",
-    "ResumeDetailResponse",
-    "VacancyParseRequest",
-    "VacancyParseResponse",
-    "VacancyPatchRequest",
-    "VacancyDetailResponse",
-    "MatchAnalyzeRequest",
-    "MatchAnalyzeResponse",
-    # Stage 2
-    "AdaptResumeRequest",
-    "AdaptResumeResponse",
+    # common
     "AdaptResumeOptions",
     "ChangeLogEntry",
-    "IdealResumeRequest",
-    "IdealResumeResponse",
-    "IdealResumeOptions",
-    "IdealResumeMetadata",
-    "CoverLetterRequest",
-    "CoverLetterResponse",
     "CoverLetterStructure",
-    # Stage 3 - Versions
+    "IdealResumeMetadata",
+    "IdealResumeOptions",
+    "SelectedImprovementSchema",
+    # requests
+    "ResumeParseRequest",
+    "ResumePatchRequest",
+    "VacancyParseRequest",
+    "VacancyPatchRequest",
+    "MatchAnalyzeRequest",
+    "AdaptResumeRequest",
+    "IdealResumeRequest",
+    "CoverLetterRequest",
     "VersionCreateRequest",
+    "FeedbackCreate",
+    # responses
+    "ResumeParseResponse",
+    "ResumeDetailResponse",
+    "VacancyParseResponse",
+    "VacancyDetailResponse",
+    "MatchAnalyzeResponse",
+    "AdaptResumeResponse",
+    "IdealResumeResponse",
+    "CoverLetterResponse",
     "VersionItemResponse",
     "VersionDetailResponse",
     "VersionListResponse",
+    "FeedbackResponse",
 ]

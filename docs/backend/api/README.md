@@ -44,12 +44,16 @@ http://localhost:8000
 
 ### Коды ответов
 
-| Code | Description |
-|------|-------------|
-| 200 | Успешный запрос |
-| 422 | Validation error (невалидный JSON или данные) |
-| 500 | Internal server error |
-| 502 | AI provider error (DeepSeek недоступен) |
+| Code | Description | Handler |
+|------|-------------|--------|
+| 200 | Успешный запрос | — |
+| 400 | Business error (`AppError`) или `ValueError` | `app_error_handler` / `value_error_handler` |
+| 404 | Not found (`AppError` с status 404) | `app_error_handler` |
+| 422 | Validation error (невалидный JSON / Pydantic) | FastAPI built-in |
+| 500 | Internal server error | — |
+| 502 | AI provider error (`AIError`) | `ai_error_handler` |
+
+Обработчики ошибок зарегистрированы в `backend/errors/handlers.py` → `register_exception_handlers(app)`.
 
 ### Заголовки
 
@@ -65,16 +69,38 @@ Content-Type: application/json
 X-Request-ID: <echo или generated>
 ```
 
+### Dependency Injection
+
+Все эндпоинты получают сервисы через DI-контейнер:
+
+```python
+@router.post("/parse")
+async def parse_resume(
+    request: ResumeParseRequest,
+    service: ResumeService = Depends(get_resume_service),  # ← из DI
+) -> ResumeParseResponse:
+```
+
+Dependency-функции определены в `backend/api/dependencies.py` и используют `@inject` + `Provide[Container.xxx_service]`.
+
 ### Кеширование
 
-Все LLM-операции кешируются по SHA256 хэшу входных данных.
+Все LLM-операции кешируются по SHA256 хэшу входных данных (через `CachedAIService`).
 
 Ответ содержит поле `cache_hit`:
 - `true` — результат из кеша, LLM не вызывался
 - `false` — свежий результат от LLM
 
-### Пример ошибки
+### Примеры ошибок
 
+**AppError (400/404):**
+```json
+{
+  "detail": "Resume not found: 94367c01-..."
+}
+```
+
+**AIError (502):**
 ```json
 {
   "detail": "AI provider error: DeepSeek request failed after retries: ..."

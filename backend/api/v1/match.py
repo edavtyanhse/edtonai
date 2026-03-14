@@ -1,8 +1,7 @@
 """Match analysis endpoint."""
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 
-from backend.ai.errors import AIError
 from backend.api.dependencies import get_orchestrator_service
 from backend.schemas import MatchAnalyzeRequest, MatchAnalyzeResponse
 from backend.services import OrchestratorService
@@ -24,10 +23,7 @@ async def analyze_match(
 
     Returns cache_hit=true only if ALL steps were from cache.
     """
-    try:
-        result = await service.run_analysis(request.resume_text, request.vacancy_text)
-    except AIError as e:
-        raise HTTPException(status_code=502, detail=f"AI provider error: {e}")
+    result = await service.run_analysis(request.resume_text, request.vacancy_text)
 
     return MatchAnalyzeResponse(
         resume_id=result.resume_id,

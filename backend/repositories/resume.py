@@ -7,6 +7,7 @@ from uuid import UUID
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from backend.domain.mappers import set_resume_parsed_data
 from backend.models import ResumeRaw
 
 
@@ -43,7 +44,7 @@ class ResumeRepository:
         if resume is None:
             return None
         # Use helper method to set all parsed fields
-        resume.set_parsed_data(parsed_data)
+        set_resume_parsed_data(resume, parsed_data)
         resume.parsed_at = datetime.utcnow()
         await self.session.flush()
         return resume

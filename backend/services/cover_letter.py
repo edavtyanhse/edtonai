@@ -2,39 +2,25 @@
 
 import hashlib
 import json
-import logging
-from dataclasses import dataclass
 from typing import Any, cast
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.ai.factory import get_ai_provider
-from backend.core.config import settings
-from backend.prompts import COVER_LETTER_PROMPT
-from backend.repositories import (
-    AIResultRepository,
-    ResumeVersionRepository,
-    UserVersionRepository,
-    VacancyRepository,
+from backend.core.config import Settings
+from backend.domain.cover_letter import CoverLetterResult
+from backend.integration.ai.base import AIProvider
+from backend.integration.ai.prompts import COVER_LETTER_PROMPT
+from backend.repositories.interfaces import (
+    IAIResultRepository,
+    IResumeVersionRepository,
+    IUserVersionRepository,
+    IVacancyRepository,
 )
+from backend.services.base import CachedAIService
 
 
-@dataclass
-class CoverLetterResult:
-    """Result of cover letter generation."""
-
-    cover_letter_id: UUID
-    resume_version_id: UUID
-    vacancy_id: UUID | None
-    cover_letter_text: str
-    structure: dict[str, str]
-    key_points_used: list[str]
-    alignment_notes: list[str]
-    cache_hit: bool
-
-
-class CoverLetterService:
+class CoverLetterService(CachedAIService):
     """Service for generating cover letter based on resume version.
 
     Generates professional cover letter that:
@@ -46,13 +32,25 @@ class CoverLetterService:
 
     OPERATION = "generate_cover_letter"
 
-    def __init__(self, session: AsyncSession) -> None:
-        self.session = session
-        self.ai_result_repo = AIResultRepository(session)
-        self.version_repo = ResumeVersionRepository(session)
-        self.vacancy_repo = VacancyRepository(session)
-        self.ai_provider = get_ai_provider(task_type="reasoning")
-        self.logger = logging.getLogger(__name__)
+    def __init__(
+        self,
+        session: AsyncSession,
+        ai_result_repo: IAIResultRepository,
+        version_repo: IResumeVersionRepository,
+        user_version_repo: IUserVersionRepository,
+        vacancy_repo: IVacancyRepository,
+        ai_provider: AIProvider,
+        settings: Settings,
+    ) -> None:
+        super().__init__(
+            session=session,
+            ai_provider=ai_provider,
+            settings=settings,
+            ai_result_repo=ai_result_repo,
+        )
+        self.version_repo = version_repo
+        self.user_version_repo = user_version_repo
+        self.vacancy_repo = vacancy_repo
 
     def _compute_cover_letter_hash(
         self,
@@ -102,8 +100,7 @@ class CoverLetterService:
 
         if not resume_version:
             # Try finding in UserVersion
-            user_version_repo = UserVersionRepository(self.session)
-            resume_version = await user_version_repo.get_by_id(
+            resume_version = await self.user_version_repo.get_by_id(
                 resume_version_id, user_id=str(user_id)
             )
             is_user_version = True
@@ -147,16 +144,7 @@ class CoverLetterService:
 
         match_analysis = analysis_result.output_json
 
-        # Step 4: Compute hash (use the actual AI model name, not settings.ai_model)
-        provider_name = getattr(self.ai_provider, "provider_name", "unknown")
-        model_name = (
-            getattr(self.ai_provider, "model", None)
-            or getattr(self.ai_provider, "model_name", None)
-            or settings.ai_model
-        )
-
-        # Use the resume text that the letter should be based on.
-        # For UserVersion it's the adapted/ideal result_text; resume_text is the original input.
+        # Step 4: Compute hash
         resume_text = (
             cast(str, resume_version.result_text)
             if is_user_version
@@ -167,13 +155,13 @@ class CoverLetterService:
             resume_version_text=resume_text,
             vacancy_text=vacancy_text,
             match_analysis=match_analysis,
-            provider=str(provider_name),
-            model=str(model_name),
+            provider=self.provider_name,
+            model=self.model_name,
             prompt_template=COVER_LETTER_PROMPT,
         )
 
         # Step 5: Check cache
-        cached_result = await self.ai_result_repo.get(self.OPERATION, input_hash)
+        cached_result = await self._check_cache(input_hash)
         if cached_result is not None:
             self.logger.info(
                 "Cache hit for cover letter: %s", input_hash[:16]
@@ -224,14 +212,8 @@ class CoverLetterService:
                 raise ValueError(f"LLM returned incomplete JSON. Missing structure key: {k}")
 
         # Step 8: Save to cache
-        ai_result = await self.ai_result_repo.save(
-            operation=self.OPERATION,
-            input_hash=input_hash,
-            output_json=cover_letter_json,
-            provider=self.ai_provider.provider_name,
-            model=model_name,
-        )
-        self.logger.info("Saved cover letter to cache: %s (model: %s)", input_hash[:16], model_name)
+        ai_result = await self._save_to_cache(input_hash, cover_letter_json)
+        self.logger.info("Saved cover letter to cache: %s (model: %s)", input_hash[:16], self.model_name)
 
         return CoverLetterResult(
             cover_letter_id=ai_result.id,

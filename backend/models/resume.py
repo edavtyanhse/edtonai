@@ -111,28 +111,3 @@ class ResumeRaw(Base):
         DateTime,
         nullable=True,
     )
-
-    # Helper to get all parsed data as dict (for API compatibility)
-    def get_parsed_data(self) -> dict[str, Any]:
-        """Return parsed data as unified dict."""
-        return {
-            "personal_info": self.personal_info,
-            "summary": self.summary,
-            "skills": self.skills or [],
-            "work_experience": self.work_experience or [],
-            "education": self.education or [],
-            "certifications": self.certifications or [],
-            "languages": self.languages or [],
-            "raw_sections": self.raw_sections or {},
-        }
-
-    def set_parsed_data(self, data: dict[str, Any]) -> None:
-        """Set parsed data from unified dict."""
-        self.personal_info = data.get("personal_info")
-        self.summary = data.get("summary")
-        self.skills = data.get("skills", [])
-        self.work_experience = data.get("work_experience", [])
-        self.education = data.get("education", [])
-        self.certifications = data.get("certifications", [])
-        self.languages = data.get("languages", [])
-        self.raw_sections = data.get("raw_sections", {})

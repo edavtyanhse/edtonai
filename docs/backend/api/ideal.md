@@ -177,3 +177,21 @@ ideal_resume(vacancy_id, options)
   "detail": "Vacancy not found: b86a0150-35c8-40a5-a651-c9fdd720310f"
 }
 ```
+
+## Implementation
+
+**File:** `backend/api/v1/ideal.py`
+
+```python
+@router.post("/ideal", response_model=IdealResumeResponse)
+async def generate_ideal_resume(
+    request: IdealResumeRequest,
+    service: IdealResumeService = Depends(get_ideal_resume_service),  # DI
+) -> IdealResumeResponse:
+    result = await service.generate_ideal(...)
+    return IdealResumeResponse(...)
+```
+
+**Dependencies:** `get_ideal_resume_service` → `backend/api/dependencies.py` → DI Container
+
+**Service:** `backend/services/ideal.py` → `CachedAIService`

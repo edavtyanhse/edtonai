@@ -19,18 +19,22 @@ security = HTTPBearer(auto_error=False)
 # JWKS client for fetching Supabase public keys
 # Cache the client to avoid re-fetching on every request
 @lru_cache(maxsize=1)
-def get_jwks_client() -> PyJWKClient:
-    """Get cached JWKS client for Supabase."""
-    # Supabase JWKS endpoint
-    supabase_url = settings.supabase_url if hasattr(settings, 'supabase_url') else None
-    if supabase_url:
-        jwks_url = f"{supabase_url}/auth/v1/.well-known/jwks.json"
-    else:
-        # Fallback: construct from project ref in JWT secret or use default
-        # Extract from SUPABASE_URL env var via frontend config
-        jwks_url = "https://qwxfmnhkgepyksdkibvw.supabase.co/auth/v1/.well-known/jwks.json"
+def get_jwks_client() -> PyJWKClient | None:
+    """Get cached JWKS client for Supabase.
 
-    logger.info(f"Initializing JWKS client with URL: {jwks_url}")
+    Returns ``None`` when ``supabase_url`` is not configured, in which case
+    authentication falls back to legacy HS256 verification only.
+    """
+    supabase_url = settings.supabase_url
+    if not supabase_url:
+        logger.warning(
+            "SUPABASE_URL is not set — JWKS verification disabled, "
+            "falling back to HS256 only",
+        )
+        return None
+
+    jwks_url = f"{supabase_url}/auth/v1/.well-known/jwks.json"
+    logger.info("Initializing JWKS client with URL: %s", jwks_url)
     return PyJWKClient(jwks_url, cache_keys=True, lifespan=3600)
 
 
@@ -49,17 +53,21 @@ def get_current_user_id(
 
     try:
         # Try JWKS verification first (for new ECC-signed tokens)
-        try:
-            jwks_client = get_jwks_client()
-            signing_key = jwks_client.get_signing_key_from_jwt(token)
-            payload = jwt.decode(
-                token,
-                signing_key.key,
-                algorithms=["ES256", "RS256", "HS256"],
-                audience="authenticated",
-            )
-        except Exception as jwks_error:
-            logger.debug(f"JWKS verification failed, trying legacy HS256: {jwks_error}")
+        jwks_client = get_jwks_client()
+        if jwks_client is not None:
+            try:
+                signing_key = jwks_client.get_signing_key_from_jwt(token)
+                payload = jwt.decode(
+                    token,
+                    signing_key.key,
+                    algorithms=["ES256", "RS256", "HS256"],
+                    audience="authenticated",
+                )
+            except Exception as jwks_error:
+                logger.debug("JWKS verification failed, trying legacy HS256: %s", jwks_error)
+                jwks_client = None  # fall through to HS256
+
+        if jwks_client is None:
             # Fallback to legacy HS256 with shared secret
             import base64
             key = settings.supabase_jwt_secret
@@ -101,7 +109,7 @@ def get_current_user_id(
             detail="Token expired",
         )
     except jwt.InvalidTokenError as e:
-        logger.warning(f"Invalid JWT token: {e}")
+        logger.warning("Invalid JWT token: %s", e)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid token",

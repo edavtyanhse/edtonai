@@ -2,7 +2,6 @@
 
 from fastapi import APIRouter, Depends, HTTPException
 
-from backend.ai.errors import AIError
 from backend.api.dependencies import get_ideal_resume_service
 from backend.schemas import IdealResumeMetadata, IdealResumeRequest, IdealResumeResponse
 from backend.services import IdealResumeService
@@ -35,16 +34,11 @@ async def generate_ideal_resume(
             detail="Either vacancy_text or vacancy_id must be provided",
         )
 
-    try:
-        result = await service.generate_ideal(
+    result = await service.generate_ideal(
             vacancy_text=request.vacancy_text,
             vacancy_id=request.vacancy_id,
             options=request.options.model_dump() if request.options else {},
         )
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-    except AIError as e:
-        raise HTTPException(status_code=502, detail=f"AI provider error: {e}")
 
     return IdealResumeResponse(
         ideal_id=result.ideal_id,

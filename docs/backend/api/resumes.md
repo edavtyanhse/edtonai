@@ -146,11 +146,12 @@ Content-Type: application/json
 @router.post("/parse", response_model=ResumeParseResponse)
 async def parse_resume(
     request: ResumeParseRequest,
-    db: AsyncSession = Depends(get_db),
+    service: ResumeService = Depends(get_resume_service),  # DI
 ) -> ResumeParseResponse:
-    service = ResumeService(db)
     result = await service.parse_and_cache(request.resume_text)
     return ResumeParseResponse(...)
 ```
 
-**Service:** `backend/services/resume.py` → `ResumeService.parse_and_cache()`
+**Dependencies:** `get_resume_service` → `backend/api/dependencies.py` → DI Container
+
+**Service:** `backend/services/resume.py` → `CachedAIService`

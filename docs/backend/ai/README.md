@@ -5,7 +5,9 @@
 ## Содержание
 
 - [Architecture](#architecture)
+- [Hybrid AI Approach](#hybrid-ai-approach)
 - [DeepSeek Provider](#deepseek-provider)
+- [Groq Provider](#groq-provider)
 - [Prompts](#prompts)
 - [JSON Validation](#json-validation)
 - [Error Handling](#error-handling)
@@ -15,200 +17,118 @@
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                        Services                                 │
-│  (ResumeService, VacancyService, MatchService)                 │
+│                  Services (CachedAIService)                     │
+│  (ResumeService, VacancyService, MatchService, ...)            │
 └───────────────────────────┬─────────────────────────────────────┘
                             │
-                            │ generate_json(prompt)
+                            │ generate_json(prompt, prompt_name)
                             ▼
 ┌─────────────────────────────────────────────────────────────────┐
 │                     AIProvider (ABC)                            │
 │                                                                 │
+│  File: backend/integration/ai/base.py                          │
+│                                                                 │
 │  @abstractmethod                                                │
 │  async def generate_json(prompt, prompt_name) -> dict           │
-└───────────────────────────┬─────────────────────────────────────┘
-                            │
-                            │ implements
-                            ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                    DeepSeekProvider                             │
-│                                                                 │
-│  • HTTP client (httpx) with streaming                           │
-│  • SYSTEM_PROMPT injection                                      │
-│  • SSE streaming (Server-Sent Events)                           │
-│  • JSON parsing + validation                                    │
-│  • Retry logic                                                  │
-│  • Logging                                                      │
-└───────────────────────────┬─────────────────────────────────────┘
-                            │
-                            │ POST /chat/completions (stream=true)
-                            ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                     DeepSeek API                                │
-│                                                                 │
-│  https://api.deepseek.com/v1/chat/completions                  │
-└─────────────────────────────────────────────────────────────────┘
+└────────────────┬────────────────────────────┬───────────────────┘
+                 │ implements                  │ implements
+                 ▼                             ▼
+┌────────────────────────────┐ ┌──────────────────────────────────┐
+│     DeepSeekProvider       │ │         GroqProvider             │
+│                            │ │                                  │
+│ File: integration/ai/      │ │ File: integration/ai/groq.py    │
+│        deepseek.py         │ │                                  │
+│                            │ │ • HTTP client (httpx)            │
+│ • SSE streaming            │ │ • Sync JSON response             │
+│ • Retry logic              │ │ • Retry logic                    │
+│ • JSON validation fallback │ │ • Fast inference (Llama 3)       │
+│ • Good for reasoning       │ │ • Good for parsing tasks         │
+└────────────┬───────────────┘ └──────────────┬───────────────────┘
+             │                                │
+             ▼                                ▼
+┌────────────────────────────┐ ┌──────────────────────────────────┐
+│     DeepSeek API           │ │         Groq API                 │
+│ api.deepseek.com/v1        │ │ api.groq.com/openai/v1           │
+└────────────────────────────┘ └──────────────────────────────────┘
 ```
+
+## Hybrid AI Approach
+
+Проект использует **два AI-провайдера** для разных задач:
+
+| Task Type | Provider | Model | Reason |
+|-----------|----------|-------|--------|
+| **Parsing** (resume, vacancy) | Groq | `llama-3.1-8b-instant` | Быстрый inference, достаточно для структурирования |
+| **Reasoning** (match, adapt, ideal, cover letter) | DeepSeek | `deepseek-reasoner` | Глубокий анализ, сложные рассуждения |
+
+Выбор провайдера определяется в `containers.py`:
+
+```python
+ai_provider_parsing = Factory(_create_ai_provider, settings=config, task_type="parsing")
+ai_provider_reasoning = Factory(_create_ai_provider, settings=config, task_type="reasoning")
+
+# ResumeService, VacancyService ← ai_provider_parsing (fast)
+# MatchService, AdaptService, ... ← ai_provider_reasoning (smart)
+```
+
+Провайдер для каждого типа задачи настраивается через переменные окружения:
+- `AI_PROVIDER_PARSING=groq` (default)
+- `AI_PROVIDER_REASONING=deepseek` (default)
 
 ## DeepSeek Provider
 
 ### Файл
 
-`backend/ai/deepseek.py`
+`backend/integration/ai/deepseek.py`
 
 ### Конфигурация
-
-Все параметры читаются из `settings`:
 
 | Setting | Description | Default |
 |---------|-------------|---------|
 | `DEEPSEEK_API_KEY` | API ключ | required |
 | `DEEPSEEK_BASE_URL` | Base URL | `https://api.deepseek.com/v1` |
-| `AI_MODEL` | Модель | `deepseek-chat` |
-| `AI_TIMEOUT_SECONDS` | Базовый таймаут (read timeout = 60s per chunk) | 120 |
+| `AI_MODEL` | Модель | `deepseek-reasoner` |
+| `AI_TIMEOUT_SECONDS` | Базовый таймаут | 180 |
 | `AI_MAX_RETRIES` | Количество ретраев | 3 |
 | `AI_TEMPERATURE` | Температура | 0.0 |
 | `AI_MAX_TOKENS` | Max tokens | 4096 |
 
-### Метод `generate_json()`
-
-```python
-async def generate_json(
-    self,
-    prompt: str,
-    prompt_name: Optional[str] = None
-) -> dict[str, Any]:
-```
-
-#### Flow
-
-```
-generate_json(prompt, prompt_name)
-│
-├── 1. Compute input_hash (для логирования)
-│
-├── 2. _call_model(prompt)
-│       │
-│       ├── Build payload:
-│       │     {
-│       │       "model": settings.ai_model,
-│       │       "messages": [...],
-│       │       "temperature": settings.ai_temperature,
-│       │       "max_tokens": settings.ai_max_tokens,
-│       │       "stream": true  ← SSE streaming enabled
-│       │     }
-│       │
-│       ├── _stream_response() with retry
-│       │     │
-│       │     ├── Open SSE stream
-│       │     ├── Read chunks: "data: {...}"
-│       │     ├── Extract delta.content from each chunk
-│       │     ├── Accumulate until "data: [DONE]"
-│       │     └── Return concatenated content
-│       │
-│       └── Return (raw_output, latency_ms)
-│
-├── 3. _parse_or_validate(raw_output)
-│       │
-│       ├── Try json.loads()
-│       │     │
-│       │     ├── Success → return parsed
-│       │     │
-│       │     └── Fail → _validate_with_model()
-│       │                   │
-│       │                   ├── Call LLM with VALIDATE_JSON_PROMPT
-│       │                   │
-│       │                   ├── Try json.loads() again
-│       │                   │     │
-│       │                   │     ├── Success → return parsed
-│       │                   │     │
-│       │                   │     └── Fail → AIResponseFormatError
-│       │                   │
-│       │                   └── Request failed → AIResponseFormatError
-│
-└── 4. Log success/failure with metrics
-```
-
 ### Streaming (SSE)
 
-DeepSeek API поддерживает Server-Sent Events для потоковой передачи ответа.
-
-**Почему streaming:**
-- При `stream: false` DeepSeek генерирует весь ответ, затем отправляет — соединение простаивает
-- Keep-alive timeout (~30 сек) может разорвать соединение до завершения генерации
+DeepSeek API использует Server-Sent Events для потоковой передачи:
 - При `stream: true` каждый токен отправляется сразу — соединение постоянно активно
-
-**Формат SSE:**
-```
-data: {"choices":[{"delta":{"content":"{"}}]}
-data: {"choices":[{"delta":{"content":"\"score\""}}]}
-...
-data: [DONE]
-```
-
-**Реализация:**
-```python
-async def _stream_response(self, client, headers, payload) -> str:
-    content_parts: list[str] = []
-    
-    async with client.stream("POST", url, headers=headers, json=payload) as response:
-        response.raise_for_status()
-        
-        async for line in response.aiter_lines():
-            if line.startswith("data: "):
-                data_str = line[6:]
-                if data_str.strip() == "[DONE]":
-                    break
-                chunk = json.loads(data_str)
-                delta = chunk["choices"][0].get("delta", {})
-                if "content" in delta:
-                    content_parts.append(delta["content"])
-    
-    return "".join(content_parts)
-```
+- Предотвращает таймауты при долгой генерации
 
 ### Retry Logic
 
-```python
-for attempt in range(self.max_retries + 1):
-    try:
-        content = await self._stream_response(client, headers, payload)
-        return content, latency_ms
-    except (TimeoutException, TransportError, HTTPStatusError, RemoteProtocolError):
-        logger.warning("ai_request_retry | attempt=%d/%d error=%s", ...)
-        if attempt < self.max_retries:
-            continue
-        raise AIRequestError(...)
-```
+Ретраи на: `TimeoutException`, `TransportError`, `HTTPStatusError`, `RemoteProtocolError`.
+НЕ ретраятся: невалидный JSON (используется validation fallback), auth ошибки.
 
-Ретраи на:
-- `httpx.TimeoutException` — таймаут соединения/чтения
-- `httpx.TransportError` — сетевые ошибки
-- `httpx.HTTPStatusError` — HTTP 5xx ошибки
-- `httpx.RemoteProtocolError` — peer closed connection (chunked read interrupted)
+## Groq Provider
 
-**НЕ** ретраятся:
-- Невалидный JSON от LLM (используется validation fallback)
-- 401/403 (auth errors)
+### Файл
 
-### Timeouts
+`backend/integration/ai/groq.py`
 
-```python
-timeout = httpx.Timeout(
-    connect=30.0,   # Время на установку соединения (увеличено для медленных сетей)
-    read=60.0,      # Время ожидания каждого chunk'а (не общее!)
-    write=30.0,     # Время на отправку запроса
-    pool=30.0,      # Время ожидания свободного соединения в пуле
-)
-```
+### Конфигурация
 
-**Важно:** `read=60.0` — это таймаут на **каждый chunk**, не на весь ответ. При streaming каждый токен приходит отдельно, поэтому общее время может быть неограниченным.
+| Setting | Description | Default |
+|---------|-------------|---------|
+| `GROQ_API_KEY` | API ключ | required |
+| `GROQ_MODEL_PARSING` | Модель для парсинга | `llama-3.1-8b-instant` |
+| `GROQ_MODEL_REASONING` | Модель для рассуждений | `llama-3.3-70b-versatile` |
+
+### Особенности
+
+- Синхронный JSON-ответ (без streaming)
+- Очень быстрый inference (~300ms)
+- Используется для задач парсинга текста
 
 ## Prompts
 
 ### Файл
 
-`backend/prompts.py`
+`backend/integration/ai/prompts.py`
 
 ### SYSTEM_PROMPT
 
@@ -218,120 +138,77 @@ timeout = httpx.Timeout(
 Ты — AI-модуль, встроенный в backend веб-сервиса.
 Ты работаешь как часть программной системы, а не как чат.
 Ты ОБЯЗАН возвращать ТОЛЬКО валидный JSON, без пояснений, без markdown.
-Структура JSON должна СТРОГО соответствовать описанию в запросе.
-Если данные отсутствуют — используй null или пустые списки.
-Запрещено выдумывать факты, опыт, технологии, даты, компании.
 ```
 
 ### Операционные промпты
 
-| Constant | Operation | Description |
-|----------|-----------|-------------|
-| `PARSE_RESUME_PROMPT` | parse_resume | Структурирование резюме |
-| `PARSE_VACANCY_PROMPT` | parse_vacancy | Структурирование вакансии |
-| `ANALYZE_MATCH_PROMPT` | analyze_match | Анализ соответствия |
-| `VALIDATE_JSON_PROMPT` | (validation) | Исправление невалидного JSON |
-
-### Template Variables
-
-Промпты содержат плейсхолдеры:
-
-| Placeholder | Prompt | Replaced with |
-|-------------|--------|---------------|
-| `{{RESUME_TEXT}}` | PARSE_RESUME | Текст резюме |
-| `{{VACANCY_TEXT}}` | PARSE_VACANCY | Текст вакансии |
-| `{{PARSED_RESUME_JSON}}` | ANALYZE_MATCH | JSON резюме |
-| `{{PARSED_VACANCY_JSON}}` | ANALYZE_MATCH | JSON вакансии |
-| `{{RAW_MODEL_OUTPUT}}` | VALIDATE_JSON | Невалидный output |
+| Constant | Operation | Used by |
+|----------|-----------|---------|
+| `PARSE_RESUME_PROMPT` | parse_resume | ResumeService |
+| `PARSE_VACANCY_PROMPT` | parse_vacancy | VacancyService |
+| `ANALYZE_MATCH_PROMPT` | analyze_match | MatchService |
+| `GENERATE_UPDATED_RESUME_PROMPT` | adapt_resume | AdaptResumeService |
+| `IDEAL_RESUME_PROMPT` | ideal_resume | IdealResumeService |
+| `COVER_LETTER_PROMPT` | generate_cover_letter | CoverLetterService |
+| `VALIDATE_JSON_PROMPT` | (validation) | DeepSeekProvider |
 
 ## JSON Validation
 
 ### Проблема
 
-LLM иногда возвращает:
-- JSON с комментариями
-- JSON с markdown-оформлением (```json ... ```)
-- Невалидный JSON с лишними запятыми
+LLM иногда возвращает невалидный JSON (комментарии, markdown-оформление, лишние запятые).
 
 ### Решение: Validation Fallback
 
-```python
-async def _parse_or_validate(self, raw_output: str) -> dict:
-    # 1. Try direct parse
-    try:
-        return json.loads(raw_output)
-    except json.JSONDecodeError:
-        pass
-    
-    # 2. Try validation via LLM
-    validated = await self._validate_with_model(raw_output)
-    if validated:
-        try:
-            return json.loads(validated)
-        except json.JSONDecodeError:
-            pass
-    
-    # 3. Give up
-    raise AIResponseFormatError("Cannot parse LLM output as JSON")
-```
-
-`VALIDATE_JSON_PROMPT` просит LLM:
-- Удалить лишний текст
-- Исправить синтаксические ошибки
-- Вернуть только JSON
+1. Try `json.loads(raw_output)`
+2. Fail → вызов LLM с `VALIDATE_JSON_PROMPT` для исправления
+3. Fail → `AIResponseFormatError`
 
 ## Error Handling
 
 ### Exceptions
 
+Определены в `backend/integration/ai/errors.py`:
+
 | Exception | Cause | HTTP Code |
 |-----------|-------|-----------|
+| `AIError` | Базовый AI-ошибка | 502 |
 | `AIRequestError` | Network/timeout/HTTP error | 502 |
 | `AIResponseFormatError` | Invalid JSON after validation | 502 |
 
-### Usage in Routes
+Также в `backend/errors/integration.py`:
 
-```python
-@router.post("/parse")
-async def parse_resume(request: ResumeParseRequest, db: AsyncSession = Depends(get_db)):
-    service = ResumeService(db)
-    try:
-        result = await service.parse_and_cache(request.resume_text)
-    except AIError as e:
-        raise HTTPException(status_code=502, detail=f"AI provider error: {e}")
-    return result
-```
+| Exception | Cause | HTTP Code |
+|-----------|-------|-----------|
+| `AIProviderError` | Общая ошибка AI-провайдера | 502 |
+| `ScraperError` | Ошибка web scraping | 502 / 422 |
+
+Все ошибки обрабатываются **глобально** в `errors/handlers.py` — эндпоинты не содержат `try/except`.
 
 ## Configuration
 
 ### Environment Variables
 
 ```env
-# Required
+# DeepSeek (reasoning)
 DEEPSEEK_API_KEY=sk-...
-
-# Optional (have defaults in .env.example)
 DEEPSEEK_BASE_URL=https://api.deepseek.com/v1
-AI_MODEL=deepseek-chat
-AI_TIMEOUT_SECONDS=120
+
+# Groq (parsing)
+GROQ_API_KEY=gsk_...
+GROQ_MODEL_PARSING=llama-3.1-8b-instant
+GROQ_MODEL_REASONING=llama-3.3-70b-versatile
+
+# Provider selection
+AI_PROVIDER_PARSING=groq       # groq | deepseek
+AI_PROVIDER_REASONING=deepseek  # deepseek | groq
+
+# General
+AI_MODEL=deepseek-reasoner     # backward-compat model name
+AI_TIMEOUT_SECONDS=180
 AI_MAX_RETRIES=3
 AI_TEMPERATURE=0.0
 AI_MAX_TOKENS=4096
-```
-
-### Settings Class
-
-```python
-# backend/core/config.py
-
-class Settings(BaseSettings):
-    deepseek_api_key: str
-    deepseek_base_url: str
-    ai_model: str
-    ai_timeout_seconds: int
-    ai_max_retries: int
-    ai_temperature: float
-    ai_max_tokens: int
 ```
 
 ## Logging
@@ -339,17 +216,7 @@ class Settings(BaseSettings):
 Каждый вызов LLM логируется:
 
 ```
-INFO | ai_call_success | prompt_name=parse_resume model=deepseek-chat provider=deepseek input_hash=abc123... latency_ms=2341
-
+INFO | ai_call_success | prompt_name=parse_resume model=llama-3.1-8b-instant provider=groq input_hash=abc123... latency_ms=312
+INFO | ai_call_success | prompt_name=analyze_match model=deepseek-reasoner provider=deepseek input_hash=def456... latency_ms=4521
 WARNING | ai_request_retry | attempt=1/4 error=peer closed connection...
-
-ERROR | ai_call_failed | prompt_name=parse_resume model=deepseek-chat input_hash=abc123... error=DeepSeek request failed...
 ```
-
-Метрики:
-- `prompt_name` — тип операции
-- `model` — используемая модель
-- `provider` — провайдер (deepseek)
-- `input_hash` — хэш входных данных
-- `latency_ms` — время ответа
-- `attempt` — номер попытки при retry

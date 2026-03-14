@@ -1,6 +1,6 @@
-# Utility Functions
+# Утилиты сервисного слоя
 
-Вспомогательные функции для сервисного слоя.
+Модуль вспомогательных функций для нормализации текста, хеширования и работы с AI-провайдерами.
 
 ## Файл
 
@@ -10,117 +10,45 @@
 
 ### `normalize_text(text: str) -> str`
 
-Нормализует текст для детерминированного хэширования.
-
-#### Операции
-
-1. **Trim** — удаление пробелов в начале и конце
-2. **Replace tabs** — табы → пробелы
-3. **Collapse spaces** — множественные пробелы → один пробел
-4. **Collapse newlines** — множественные переносы → два переноса
-5. **Trim lines** — удаление пробелов в начале/конце каждой строки
-
-#### Реализация
-
-```python
-def normalize_text(text: str) -> str:
-    # Trim
-    text = text.strip()
-    
-    # Replace tabs with spaces
-    text = text.replace("\t", " ")
-    
-    # Collapse multiple spaces to single
-    text = re.sub(r" +", " ", text)
-    
-    # Collapse multiple newlines to double
-    text = re.sub(r"\n\s*\n+", "\n\n", text)
-    
-    # Trim each line
-    lines = [line.strip() for line in text.split("\n")]
-    text = "\n".join(lines)
-    
-    return text
-```
-
-#### Примеры
-
-| Input | Output |
-|-------|--------|
-| `"  hello  "` | `"hello"` |
-| `"hello   world"` | `"hello world"` |
-| `"line1\n\n\n\nline2"` | `"line1\n\nline2"` |
-| `"  line1  \n  line2  "` | `"line1\nline2"` |
-
-#### Почему важно
-
-Нормализация гарантирует, что:
-- `"hello world"` и `"hello  world"` дадут **одинаковый хэш**
-- Незначимые различия в форматировании не создают дубликаты в кеше
-- Кеширование работает эффективно
-
----
+Нормализация текста для стабильного хеширования:
+- Trim whitespace
+- Замена табов на пробелы
+- Collapse множественных пробелов → один пробел
+- Collapse множественных пустых строк → одна
+- Trim каждой строки
 
 ### `compute_hash(text: str) -> str`
 
-Вычисляет SHA256 хэш нормализованного текста.
+SHA256-хеш нормализованного текста. Используется для определения дубликатов резюме / вакансий.
 
-#### Реализация
+### `prompt_template_sha256(prompt_template: str) -> str`
 
-```python
-def compute_hash(text: str) -> str:
-    normalized = normalize_text(text)
-    return hashlib.sha256(normalized.encode("utf-8")).hexdigest()
-```
+SHA256-хеш prompt-шаблона. Включается в cache key, чтобы при изменении промпта кеш инвалидировался.
 
-#### Возвращает
+### `get_provider_name(provider: Any) -> str`
 
-64-символьная hex-строка (SHA256).
+Извлекает `provider_name` из AI-провайдера (для логирования и cache key).
 
-#### Пример
+### `get_model_name(provider: Any, fallback: str = "unknown") -> str`
 
-```python
->>> compute_hash("Hello World")
-'a591a6d40bf420404a011733cfb7b190d62c65bf0bcda32b57b277d9ad9f146e'
+Извлекает `model` или `model_name` из AI-провайдера.
 
->>> compute_hash("Hello  World")  # два пробела
-'a591a6d40bf420404a011733cfb7b190d62c65bf0bcda32b57b277d9ad9f146e'  # тот же хэш!
-```
+### `compute_ai_cache_key(operation: str, payload: dict) -> str`
 
----
-
-## Использование в сервисах
+Стабильный cache key для `AIResult`, строится как:
 
 ```python
-from backend.services.utils import compute_hash
-
-class ResumeService:
-    async def parse_and_cache(self, resume_text: str):
-        content_hash = compute_hash(resume_text)
-        
-        # Поиск в БД по хэшу
-        resume = await self.resume_repo.get_by_hash(content_hash)
-        
-        # Поиск в кеше
-        cached = await self.ai_result_repo.get("parse_resume", content_hash)
-        ...
+data = {"operation": operation, **payload}
+dumped = json.dumps(data, sort_keys=True, ensure_ascii=False, default=str)
+return hashlib.sha256(dumped.encode("utf-8")).hexdigest()
 ```
 
----
+Вызывающий код отвечает за передачу хешированных входных данных (а не сырого текста) для уменьшения размера ключа.
 
-## Тестирование
+## Использование
 
-```python
-def test_normalize_text():
-    assert normalize_text("  hello  ") == "hello"
-    assert normalize_text("a  b") == "a b"
-    assert normalize_text("a\n\n\nb") == "a\n\nb"
-
-def test_compute_hash_deterministic():
-    text1 = "Hello World"
-    text2 = "Hello  World"  # extra space
-    assert compute_hash(text1) == compute_hash(text2)
-
-def test_compute_hash_different():
-    assert compute_hash("Hello") != compute_hash("World")
-```
+Все AI-сервисы (через `CachedAIService`) используют эти утилиты для:
+- Вычисления хеша входного текста (`compute_hash`)
+- Включения prompt hash в cache key (`prompt_template_sha256`)
+- Получения provider/model для cache key (`get_provider_name`, `get_model_name`)
+- Формирования финального cache key (`compute_ai_cache_key`)

@@ -75,6 +75,7 @@ class Settings(BaseSettings):
 
     # Supabase Auth
     supabase_jwt_secret: str = ""  # JWT secret for token verification
+    supabase_url: str = ""  # Supabase project URL (e.g. https://xxx.supabase.co)
 
     # Feedback Collection Feature Flag
     # Set to False to disable feedback collection entirely

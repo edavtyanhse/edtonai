@@ -2,22 +2,14 @@
 
 Документация по конфигурации приложения.
 
-## Содержание
-
-- [Overview](#overview)
-- [Settings Class](#settings-class)
-- [Environment Variables](#environment-variables)
-- [Database URL](#database-url)
-- [Files](#files)
-
 ## Overview
 
 Приложение использует **Pydantic Settings** для управления конфигурацией:
 
 - Все настройки читаются из `.env` файла
 - Типизация и валидация значений
-- Computed properties для составных значений
-- Никаких hardcoded констант в коде
+- Computed properties для составных значений (database_url)
+- DI-контейнер создаёт `Settings` как `Singleton`
 
 ## Settings Class
 
@@ -32,51 +24,70 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
-        env_file=str(PROJECT_ROOT / ".env"),
+        env_file=PROJECT_ROOT / ".env",
         env_file_encoding="utf-8",
-        extra="ignore"
+        extra="ignore",
     )
-    
+
     # Database
     postgres_user: str
     postgres_password: str
-    postgres_db: str
     postgres_host: str
     postgres_port: int
-    
-    # AI
-    deepseek_api_key: str
-    deepseek_base_url: str
-    ai_model: str
-    ai_timeout_seconds: int
-    ai_max_retries: int
-    ai_temperature: float
-    ai_max_tokens: int
-    
+    postgres_db: str
+
+    @computed_field
     @property
-    def database_url(self) -> str:
-        return (
-            f"postgresql+asyncpg://{self.postgres_user}:{self.postgres_password}"
-            f"@{self.postgres_host}:{self.postgres_port}/{self.postgres_db}"
-        )
+    def database_url(self) -> str: ...
+
+    # AI provider selection
+    ai_provider_parsing: str = "groq"
+    ai_provider_reasoning: str = "deepseek"
+
+    # DeepSeek
+    deepseek_api_key: str | None = None
+    deepseek_base_url: str = "https://api.deepseek.com/v1"
+
+    # Groq
+    groq_api_key: str | None = None
+    groq_model_parsing: str = "llama-3.1-8b-instant"
+    groq_model_reasoning: str = "llama-3.3-70b-versatile"
+
+    # General AI
+    ai_model: str = "deepseek-reasoner"
+    ai_timeout_seconds: int = 180
+    ai_max_retries: int = 3
+    ai_temperature: float = 0.0
+    ai_max_tokens: int = 4096
+
+    # Logging
+    log_level: str
+
+    # Supabase Auth
+    supabase_jwt_secret: str = ""
+    supabase_url: str = ""
+
+    # Feature flags
+    feedback_collection_enabled: bool = True
 ```
 
-### Singleton Pattern
+### Использование в DI-контейнере
+
+`Settings` создаётся как `Singleton` в контейнере и инжектируется во все сервисы:
 
 ```python
-# Global instance
-settings = Settings()
+# containers.py
+class Container(DeclarativeContainer):
+    config = providers.Singleton(Settings)
+
+    resume_service = providers.Factory(
+        ResumeService,
+        settings=config,  # ← Settings из контейнера
+        ...
+    )
 ```
 
-Использование:
-
-```python
-from backend.core.config import settings
-
-# Access any setting
-print(settings.ai_model)
-print(settings.database_url)
-```
+> **Примечание:** Глобальный `settings = Settings()` в `config.py` сохранён для обратной совместимости инфраструктурного кода (`auth.py`, `logging.py`, `db/session.py`). Сервисы **не** обращаются к нему напрямую — получают Settings через конструктор.
 
 ## Environment Variables
 
@@ -86,29 +97,42 @@ print(settings.database_url)
 |----------|------|-------------|
 | `POSTGRES_USER` | str | PostgreSQL username |
 | `POSTGRES_PASSWORD` | str | PostgreSQL password |
+| `POSTGRES_HOST` | str | Database host |
+| `POSTGRES_PORT` | int | Database port |
 | `POSTGRES_DB` | str | Database name |
-| `DEEPSEEK_API_KEY` | str | DeepSeek API key |
+| `LOG_LEVEL` | str | Logging level (DEBUG, INFO, WARNING, ERROR) |
 
-### Optional Variables (have defaults)
+### AI Variables
 
 | Variable | Type | Default | Description |
 |----------|------|---------|-------------|
-| `POSTGRES_HOST` | str | `db` | Database host |
-| `POSTGRES_PORT` | int | `5432` | Database port |
+| `DEEPSEEK_API_KEY` | str | None | DeepSeek API key |
 | `DEEPSEEK_BASE_URL` | str | `https://api.deepseek.com/v1` | DeepSeek API base URL |
-| `AI_MODEL` | str | `deepseek-chat` | LLM model name |
-| `AI_TIMEOUT_SECONDS` | int | `120` | Base timeout (read timeout per chunk = 60s) |
-| `AI_MAX_RETRIES` | int | `3` | Number of retries on network errors |
+| `GROQ_API_KEY` | str | None | Groq API key |
+| `GROQ_MODEL_PARSING` | str | `llama-3.1-8b-instant` | Groq model for parsing |
+| `GROQ_MODEL_REASONING` | str | `llama-3.3-70b-versatile` | Groq model for reasoning |
+| `AI_PROVIDER_PARSING` | str | `groq` | AI provider for parsing tasks |
+| `AI_PROVIDER_REASONING` | str | `deepseek` | AI provider for reasoning tasks |
+| `AI_MODEL` | str | `deepseek-reasoner` | Default model name (metadata) |
+| `AI_TIMEOUT_SECONDS` | int | `180` | HTTP timeout |
+| `AI_MAX_RETRIES` | int | `3` | Retry count on network errors |
 | `AI_TEMPERATURE` | float | `0.0` | LLM temperature |
 | `AI_MAX_TOKENS` | int | `4096` | Max output tokens |
 
+### Auth & Feature Variables
+
+| Variable | Type | Default | Description |
+|----------|------|---------|-------------|
+| `SUPABASE_JWT_SECRET` | str | `""` | JWT secret for token verification |
+| `SUPABASE_URL` | str | `""` | Supabase project URL (for JWKS endpoint) |
+| `FEEDBACK_COLLECTION_ENABLED` | bool | `true` | Enable/disable feedback collection |
+
 ## Database URL
 
-### Computed Property
-
-URL для подключения к PostgreSQL формируется динамически:
+URL формируется динамически из отдельных переменных:
 
 ```python
+@computed_field
 @property
 def database_url(self) -> str:
     return (
@@ -127,41 +151,11 @@ POSTGRES_HOST=db
 POSTGRES_PORT=5432
 ```
 
-Результат:
-```
-postgresql+asyncpg://appuser:secret123@db:5432/resume_adapter
-```
-
-### Зачем отдельные переменные?
-
-**Безопасность**: `docker-compose.yml` может использовать те же переменные:
-
-```yaml
-services:
-  db:
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
-```
-
-Это гарантирует:
-- Одни credentials для БД и приложения
-- Не нужно дублировать пароли
-- Централизованное управление секретами
+→ `postgresql+asyncpg://appuser:secret123@db:5432/resume_adapter`
 
 ## Files
 
 ### .env (development)
-
-Создайте из `.env.example`:
-
-```bash
-cp .env.example .env
-# Edit .env with your values
-```
-
-### .env.example
 
 ```env
 # ============================================
@@ -174,15 +168,29 @@ POSTGRES_HOST=db
 POSTGRES_PORT=5432
 
 # ============================================
-# AI PROVIDER (DeepSeek)
+# AI PROVIDER
 # ============================================
-DEEPSEEK_API_KEY=your_key_here
-DEEPSEEK_BASE_URL=https://api.deepseek.com/v1
-AI_MODEL=deepseek-chat
-AI_TIMEOUT_SECONDS=60
-AI_MAX_RETRIES=1
+DEEPSEEK_API_KEY=sk-your-key
+GROQ_API_KEY=gsk_your-key
+
+AI_PROVIDER_PARSING=groq
+AI_PROVIDER_REASONING=deepseek
+
+AI_TIMEOUT_SECONDS=180
+AI_MAX_RETRIES=3
 AI_TEMPERATURE=0.0
 AI_MAX_TOKENS=4096
+
+# ============================================
+# AUTH
+# ============================================
+SUPABASE_JWT_SECRET=your-jwt-secret
+SUPABASE_URL=https://xxx.supabase.co
+
+# ============================================
+# LOGGING
+# ============================================
+LOG_LEVEL=INFO
 ```
 
 ### Docker vs Local
@@ -192,47 +200,9 @@ AI_MAX_TOKENS=4096
 | Docker Compose | `db` (service name) |
 | Local development | `localhost` |
 
-При локальной разработке без Docker:
-
-```env
-POSTGRES_HOST=localhost
-```
-
 ## Adding New Settings
 
-1. Добавьте переменную в `.env`:
-   ```env
-   MY_NEW_SETTING=value
-   ```
-
-2. Добавьте в Settings class:
-   ```python
-   class Settings(BaseSettings):
-       my_new_setting: str  # имя в snake_case
-   ```
-
-3. Обновите `.env.example` с документацией
-
-4. Используйте:
-   ```python
-   from backend.core.config import settings
-   print(settings.my_new_setting)
-   ```
-
-## Validation
-
-Pydantic автоматически валидирует:
-
-- **Типы**: `int`, `float`, `str`, `bool`
-- **Required**: отсутствие обязательной переменной = ошибка при старте
-- **Format**: некорректный тип (строка вместо int) = ошибка
-
-```python
-# При старте приложения с ошибкой в .env:
-# POSTGRES_PORT=not_a_number
-
-# pydantic_core._pydantic_core.ValidationError:
-# 1 validation error for Settings
-# postgres_port
-#   Input should be a valid integer, unable to parse string as an integer
-```
+1. Добавьте переменную в `.env`
+2. Добавьте поле в `Settings` class (`backend/core/config.py`)
+3. Если нужно в сервисах — `Settings` уже инжектируется через контейнер
+4. Для инфраструктурного кода — доступен через глобальный `settings`

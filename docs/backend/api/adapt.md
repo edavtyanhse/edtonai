@@ -209,3 +209,21 @@ adapt_resume(resume_id, vacancy_id, selected_checkbox_ids)
   "detail": "Resume not found: 94367c01-d06c-46ea-99f8-293070552b69"
 }
 ```
+
+## Implementation
+
+**File:** `backend/api/v1/adapt.py`
+
+```python
+@router.post("/adapt", response_model=AdaptResumeResponse)
+async def adapt_resume(
+    request: AdaptResumeRequest,
+    service: AdaptResumeService = Depends(get_adapt_resume_service),  # DI
+) -> AdaptResumeResponse:
+    result = await service.adapt_and_version(...)
+    return AdaptResumeResponse(...)
+```
+
+**Dependencies:** `get_adapt_resume_service` → `backend/api/dependencies.py` → DI Container
+
+**Service:** `backend/services/adapt.py` → `CachedAIService`

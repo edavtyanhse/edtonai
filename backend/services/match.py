@@ -2,47 +2,53 @@
 
 import hashlib
 import json
-import logging
-from dataclasses import dataclass
 from typing import Any
-from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.ai.factory import get_ai_provider
-from backend.core.config import settings
-from backend.prompts import ANALYZE_MATCH_PROMPT
-from backend.repositories import AIResultRepository
+from backend.core.config import Settings
+from backend.domain.match import MatchAnalysisResult
+from backend.integration.ai.base import AIProvider
+from backend.integration.ai.prompts import ANALYZE_MATCH_PROMPT
+from backend.repositories.interfaces import IAIResultRepository
+from backend.services.base import CachedAIService
 from backend.services.utils import (
     compute_ai_cache_key,
-    get_model_name,
-    get_provider_name,
     prompt_template_sha256,
 )
 
+# Score clamping limits per breakdown category
+_SCORE_LIMITS: dict[str, int] = {
+    "skill_fit": 50,
+    "experience_fit": 25,
+    "ats_fit": 15,
+    "clarity_evidence": 10,
+}
 
-@dataclass
-class MatchAnalysisResult:
-    """Result of match analysis."""
 
-    analysis_id: UUID
-    analysis: dict[str, Any]
-    cache_hit: bool
-
-
-class MatchService:
+class MatchService(CachedAIService):
     """Service for analyzing resume-vacancy match."""
 
     OPERATION = "analyze_match"
 
-    def __init__(self, session: AsyncSession) -> None:
-        self.session = session
-        self.ai_result_repo = AIResultRepository(session)
-        self.ai_provider = get_ai_provider(task_type="reasoning")
-        self.logger = logging.getLogger(__name__)
-
-    def _compute_match_hash(
+    def __init__(
         self,
+        session: AsyncSession,
+        ai_result_repo: IAIResultRepository,
+        ai_provider: AIProvider,
+        settings: Settings,
+    ) -> None:
+        super().__init__(
+            session=session,
+            ai_provider=ai_provider,
+            settings=settings,
+            ai_result_repo=ai_result_repo,
+        )
+
+    # ── Helpers ───────────────────────────────────────────────────
+
+    @staticmethod
+    def _compute_match_hash(
         parsed_resume: dict[str, Any],
         parsed_vacancy: dict[str, Any],
     ) -> str:
@@ -52,6 +58,29 @@ class MatchService:
         )
         return hashlib.sha256(combined.encode("utf-8")).hexdigest()
 
+    @staticmethod
+    def _clamp_scores(analysis: dict[str, Any]) -> dict[str, Any]:
+        """Clamp score_breakdown values to their max limits and recalculate total."""
+        if "score_breakdown" not in analysis:
+            return analysis
+
+        sb = analysis["score_breakdown"]
+        for category, limit in _SCORE_LIMITS.items():
+            entry = sb.get(category)
+            if isinstance(entry, dict) and "value" in entry:
+                entry["value"] = min(entry["value"], limit)
+
+        analysis["score"] = sum(
+            sb.get(cat, {}).get("value", 0) for cat in _SCORE_LIMITS
+        )
+        return analysis
+
+    def _post_process_output(self, output_json: dict[str, Any]) -> dict[str, Any]:
+        """Clamp scores before the result is saved to cache."""
+        return self._clamp_scores(output_json)
+
+    # ── Public API ────────────────────────────────────────────────
+
     async def analyze_and_cache(
         self,
         parsed_resume: dict[str, Any],
@@ -60,75 +89,46 @@ class MatchService:
         """Analyze match and cache result.
 
         1. Compute hash from both parsed JSONs
-        2. Check AIResult cache
-        3. If not cached, call LLM and save result
+        2. Check AIResult cache (via base class)
+        3. If not cached, call LLM, clamp scores, save result
         """
         base_hash = self._compute_match_hash(parsed_resume, parsed_vacancy)
-        provider_name = get_provider_name(self.ai_provider)
-        model_name = get_model_name(self.ai_provider, fallback=settings.ai_model)
         prompt_sha = prompt_template_sha256(ANALYZE_MATCH_PROMPT)
         input_hash = compute_ai_cache_key(
             self.OPERATION,
             {
                 "base_hash": base_hash,
-                "provider": provider_name,
-                "model": model_name,
+                "provider": self.provider_name,
+                "model": self.model_name,
                 "prompt_sha256": prompt_sha,
-                "temperature": settings.ai_temperature,
-                "max_tokens": settings.ai_max_tokens,
+                "temperature": self.settings.ai_temperature,
+                "max_tokens": self.settings.ai_max_tokens,
             },
         )
 
         # Check cache
-        cached_result = await self.ai_result_repo.get(self.OPERATION, input_hash)
-        if cached_result is not None:
-            self.logger.info("Cache hit for match analysis: %s", input_hash[:16])
+        cached = await self._check_cache(input_hash)
+        if cached is not None:
             return MatchAnalysisResult(
-                analysis_id=cached_result.id,
-                analysis=cached_result.output_json,
+                analysis_id=cached.id,
+                analysis=cached.output_json,
                 cache_hit=True,
             )
 
-        # Build prompt
+        # Build prompt & call LLM
         prompt = ANALYZE_MATCH_PROMPT.replace(
             "{{PARSED_RESUME_JSON}}", json.dumps(parsed_resume, ensure_ascii=False, indent=2)
         ).replace(
             "{{PARSED_VACANCY_JSON}}", json.dumps(parsed_vacancy, ensure_ascii=False, indent=2)
         )
 
-        # Call LLM
-        analysis_json = await self.ai_provider.generate_json(prompt, prompt_name=self.OPERATION)
-
-        # Bug fix: Clamp scores to max values to prevent 12/10 capability
-        if "score_breakdown" in analysis_json:
-            sb = analysis_json["score_breakdown"]
-            # Max values: skill_fit=50, experience_fit=25, ats_fit=15, clarity_evidence=10
-            if "skill_fit" in sb and isinstance(sb["skill_fit"], dict):
-                sb["skill_fit"]["value"] = min(sb["skill_fit"].get("value", 0), 50)
-            if "experience_fit" in sb and isinstance(sb["experience_fit"], dict):
-                sb["experience_fit"]["value"] = min(sb["experience_fit"].get("value", 0), 25)
-            if "ats_fit" in sb and isinstance(sb["ats_fit"], dict):
-                sb["ats_fit"]["value"] = min(sb["ats_fit"].get("value", 0), 15)
-            if "clarity_evidence" in sb and isinstance(sb["clarity_evidence"], dict):
-                sb["clarity_evidence"]["value"] = min(sb["clarity_evidence"].get("value", 0), 10)
-
-            # Recalculate total score to be safe
-            total_score = 0
-            total_score += sb.get("skill_fit", {}).get("value", 0)
-            total_score += sb.get("experience_fit", {}).get("value", 0)
-            total_score += sb.get("ats_fit", {}).get("value", 0)
-            total_score += sb.get("clarity_evidence", {}).get("value", 0)
-            analysis_json["score"] = total_score
+        analysis_json = await self.ai_provider.generate_json(
+            prompt, prompt_name=self.OPERATION,
+        )
+        analysis_json = self._clamp_scores(analysis_json)
 
         # Save to cache
-        ai_result = await self.ai_result_repo.save(
-            operation=self.OPERATION,
-            input_hash=input_hash,
-            output_json=analysis_json,
-            provider=provider_name,
-            model=model_name,
-        )
-        self.logger.info("Saved match analysis to cache: %s", input_hash[:16])
+        ai_result = await self._save_to_cache(input_hash, analysis_json)
 
         return MatchAnalysisResult(
             analysis_id=ai_result.id,

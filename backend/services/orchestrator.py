@@ -1,40 +1,30 @@
 """Orchestrator service - coordinates full analysis pipeline."""
 
 import logging
-from dataclasses import dataclass
-from typing import Any
-from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.repositories import AnalysisRepository
-from backend.services.match import MatchService
-from backend.services.resume import ResumeService
-from backend.services.vacancy import VacancyService
-
-
-@dataclass
-class FullAnalysisResult:
-    """Result of full analysis pipeline."""
-
-    resume_id: UUID
-    vacancy_id: UUID
-    analysis_id: UUID
-    parsed_resume: dict[str, Any]
-    parsed_vacancy: dict[str, Any]
-    analysis: dict[str, Any]
-    cache_hit: bool  # True if ALL results were from cache
+from backend.domain.analysis import FullAnalysisResult
+from backend.repositories.interfaces import IAnalysisRepository
+from backend.services.interfaces import IMatchService, IResumeService, IVacancyService
 
 
 class OrchestratorService:
     """Orchestrates the full resume-vacancy analysis pipeline."""
 
-    def __init__(self, session: AsyncSession) -> None:
+    def __init__(
+        self,
+        session: AsyncSession,
+        resume_service: IResumeService,
+        vacancy_service: IVacancyService,
+        match_service: IMatchService,
+        analysis_repo: IAnalysisRepository,
+    ) -> None:
         self.session = session
-        self.resume_service = ResumeService(session)
-        self.vacancy_service = VacancyService(session)
-        self.match_service = MatchService(session)
-        self.analysis_repo = AnalysisRepository(session)
+        self.resume_service = resume_service
+        self.vacancy_service = vacancy_service
+        self.match_service = match_service
+        self.analysis_repo = analysis_repo
         self.logger = logging.getLogger(__name__)
 
     async def run_analysis(

@@ -94,9 +94,14 @@ graph TB
 ### Backend
 - **FastAPI**: Chosen for high performance (async), automatic OpenAPI documentation, and easy integration with Pydantic for strict data validation (crucial for LLM structured outputs).
 - **SQLAlchemy (Async) + Pydantic**: Ensures rigorous type safety from the database layer up to the API response.
+- **dependency-injector**: `DeclarativeContainer` in `backend/containers.py` wires all services, repositories, AI providers and the DB session. Endpoints receive fully-assembled services via `Depends(get_xxx_service)`.
+- **Protocol interfaces**: `repositories/interfaces.py` (8 protocols) and `services/interfaces.py` (7 protocols) decouple layers and enable unit testing with mocks.
+- **CachedAIService**: Base class (`backend/services/base.py`) encapsulates the cache-check → AI-call → cache-save pattern shared by all AI services.
+- **Typed error hierarchy**: `AppError` → `NotFoundError`, `ValidationError`, `ScraperError`, etc. Global handlers in `backend/errors/handlers.py` map them to proper HTTP codes.
 - **Hybrid AI Approach**: 
     - **Groq (Llama 3)** is used for *parsing* tasks where speed is critical and complexity is moderate.
     - **DeepSeek V3** is used for *reasoning* tasks (gap analysis, content adaptation) where model intelligence is paramount.
+- **Domain mappers**: Standalone functions in `backend/domain/mappers.py` keep ORM models free of business logic.
 
 ### Frontend
 - **React + Vite**: Industrial standard for fast SPA development.
