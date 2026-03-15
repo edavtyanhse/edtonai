@@ -6,8 +6,8 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock
 from uuid import UUID, uuid4
 
-from dependency_injector import providers
 import pytest
+from dependency_injector import providers
 from httpx import ASGITransport, AsyncClient
 
 from backend.main import app, container
