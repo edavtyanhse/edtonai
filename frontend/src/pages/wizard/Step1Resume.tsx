@@ -237,7 +237,7 @@ export default function Step1Resume() {
               ) : (
                 <>
                   <FileText className="w-4 h-4 mr-2" />
-                  {t('wizard.step1.next')}
+                  {t('wizard.step1.parse_button')}
                 </>
               )}
             </Button>

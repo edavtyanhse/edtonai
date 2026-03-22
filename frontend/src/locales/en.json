@@ -21,6 +21,7 @@
             "vacancy": "Vacancy",
             "analysis": "Analysis",
             "improvement": "Improvement",
+            "experience": "Work Experience",
             "subtitle_parsing": "Parsing & Editing",
             "subtitle_analysis": "Matching",
             "subtitle_improvement": "Applying Recommendations"
@@ -37,6 +38,7 @@
             "analyzing": "Analyzing file...",
             "manual_placeholder": "Paste your resume text here...",
             "next": "Next: Vacancy",
+            "parse_button": "Parse Resume",
             "file_loaded": "File Loaded",
             "characters": "characters",
             "remove_file": "Remove File"
@@ -47,7 +49,8 @@
             "description": "Found a dream job? Paste the full vacancy description here so the AI knows what to target.",
             "placeholder": "Paste vacancy text here (responsibilities, requirements, etc.)...",
             "back": "Back",
-            "analyze_button": "Analyze Match",
+            "analyze_button": "Parse Vacancy",
+            "next": "Next: Analysis",
             "url_disabled_hint": "Clear the text field to use a URL"
         },
         "step3": {
@@ -92,6 +95,12 @@
             "preview_pdf": "PDF Preview",
             "generate_cover_letter": "Generate Cover Letter",
             "hh_export": "HH.ru",
+            "hh_export_desc": "Copy blocks for hh.ru",
+            "hh_copy_all": "Copy Everything",
+            "hh_copy_list": "Copy as List",
+            "pdf_desc": "For printing and emailing",
+            "about": "About Me",
+            "actions": "Result actions",
             "start_over": "Start Over",
             "copy": "Copy Resume",
             "copied": "Copied!",
@@ -112,6 +121,9 @@
         "success": "Success",
         "back": "Back",
         "save": "Save",
+        "export": "Export",
+        "close": "Close",
+        "error_copy": "Failed to copy text",
         "done": "Done",
         "back_home": "Back to Home",
         "back_to_home": "Back to Home",

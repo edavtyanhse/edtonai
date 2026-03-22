@@ -121,6 +121,7 @@ export default function Step2Vacancy() {
                   placeholder="https://hh.ru/vacancy/..."
                   value={url}
                   onChange={(e) => setUrl(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && e.preventDefault()}
                   disabled={localText.length > 0}
                 />
               </div>
@@ -232,7 +233,7 @@ export default function Step2Vacancy() {
                 onClick={handleNext}
                 className="min-w-[150px]"
               >
-                {t('wizard.step1.next')}
+                {t('wizard.step2.next')}
                 <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
             </div>
