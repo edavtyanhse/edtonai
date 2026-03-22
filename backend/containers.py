@@ -18,17 +18,23 @@ from collections.abc import AsyncGenerator
 from dependency_injector import containers, providers
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
+from backend.auth.oauth_service import OAuthService
 from backend.auth.service import AuthService
 from backend.core.config import Settings
 from backend.integration.ai.base import AIProvider
 from backend.integration.email.client import SmtpEmailClient
 from backend.integration.email.service import EmailService
+from backend.integration.oauth.base import OAuthProvider
+from backend.integration.oauth.google import GoogleOAuthProvider
+from backend.integration.oauth.vk import VkOAuthProvider
+from backend.integration.oauth.yandex import YandexOAuthProvider
 from backend.integration.ai.deepseek import DeepSeekProvider
 from backend.integration.ai.groq import GroqProvider
 from backend.repositories.ai_result import AIResultRepository
 from backend.repositories.analysis import AnalysisRepository
 from backend.repositories.email_verification import EmailVerificationRepository
 from backend.repositories.feedback import FeedbackRepository
+from backend.repositories.oauth_account import OAuthAccountRepository
 from backend.repositories.ideal_resume import IdealResumeRepository
 from backend.repositories.refresh_token_repo import RefreshTokenRepository as RefreshTokenRepo
 from backend.repositories.resume import ResumeRepository
@@ -61,6 +67,32 @@ def _create_ai_provider(settings: Settings, task_type: str) -> AIProvider:
     if provider_name == "deepseek":
         return DeepSeekProvider()
     raise ValueError(f"Unsupported AI provider: {provider_name}")
+
+
+def _create_oauth_providers(settings: Settings) -> dict[str, OAuthProvider]:
+    """Build dict of configured OAuth providers. Skips providers without client_id."""
+    result: dict[str, OAuthProvider] = {}
+    base = settings.backend_url.rstrip("/")
+
+    if settings.google_oauth_client_id:
+        result["google"] = GoogleOAuthProvider(
+            client_id=settings.google_oauth_client_id,
+            client_secret=settings.google_oauth_client_secret,
+            redirect_uri=f"{base}/auth/oauth/google/callback",
+        )
+    if settings.vk_oauth_client_id:
+        result["vk"] = VkOAuthProvider(
+            client_id=settings.vk_oauth_client_id,
+            client_secret=settings.vk_oauth_client_secret,
+            redirect_uri=f"{base}/auth/oauth/vk/callback",
+        )
+    if settings.yandex_oauth_client_id:
+        result["yandex"] = YandexOAuthProvider(
+            client_id=settings.yandex_oauth_client_id,
+            client_secret=settings.yandex_oauth_client_secret,
+            redirect_uri=f"{base}/auth/oauth/yandex/callback",
+        )
+    return result
 
 
 async def _async_session_resource(
@@ -98,6 +130,7 @@ class Container(containers.DeclarativeContainer):
         modules=[
             "backend.api.dependencies",
             "backend.auth.router",
+            "backend.auth.oauth_router",
         ],
     )
 
@@ -248,4 +281,22 @@ class Container(containers.DeclarativeContainer):
         email_verification_repo=email_verification_repo,
         email_service=email_service,
         settings=config,
+    )
+
+    # ── OAuth ──────────────────────────────────────────────────────
+
+    oauth_account_repo = providers.Factory(OAuthAccountRepository, session=session)
+
+    oauth_providers = providers.Singleton(
+        _create_oauth_providers,
+        settings=config,
+    )
+
+    oauth_service = providers.Factory(
+        OAuthService,
+        user_repo=user_repo,
+        oauth_account_repo=oauth_account_repo,
+        refresh_token_repo=refresh_token_repo,
+        settings=config,
+        providers=oauth_providers,
     )

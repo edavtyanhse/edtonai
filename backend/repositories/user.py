@@ -23,6 +23,13 @@ class UserRepository:
         )
         return result.scalar_one_or_none()
 
+    async def create_oauth_user(self, email: str) -> User:
+        """Create a user via OAuth (no password, email pre-verified)."""
+        user = User(email=email.lower(), password_hash=None, is_email_verified=True)
+        self._session.add(user)
+        await self._session.flush()
+        return user
+
     async def create(self, email: str, password_hash: str) -> User:
         user = User(email=email.lower(), password_hash=password_hash)
         self._session.add(user)

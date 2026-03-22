@@ -88,9 +88,20 @@ class Settings(BaseSettings):
     # Frontend URL (for email verification links)
     frontend_url: str = "http://localhost:3000"
 
-    # Legacy Supabase (kept for transition, will be removed)
-    supabase_jwt_secret: str = ""
-    supabase_url: str = ""
+    # Backend URL (for OAuth redirect_uri construction)
+    backend_url: str = "http://localhost:8000"
+
+    # OAuth — Google
+    google_oauth_client_id: str = ""
+    google_oauth_client_secret: str = ""
+
+    # OAuth — VK
+    vk_oauth_client_id: str = ""
+    vk_oauth_client_secret: str = ""
+
+    # OAuth — Yandex
+    yandex_oauth_client_id: str = ""
+    yandex_oauth_client_secret: str = ""
 
     # Feedback Collection Feature Flag
     # Set to False to disable feedback collection entirely

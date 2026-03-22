@@ -5,8 +5,8 @@ import secrets
 from datetime import datetime, timedelta, timezone
 from uuid import UUID
 
-from backend.auth.jwt import create_access_token
 from backend.auth.password import hash_password, verify_password
+from backend.auth.tokens import create_token_pair
 from backend.core.config import Settings
 from backend.domain.auth import RegistrationResult, TokenPair, UserInfo
 from backend.errors.auth import (
@@ -160,22 +160,5 @@ class AuthService:
     # ── Private helpers ────────────────────────────────────────────
 
     async def _create_token_pair(self, user_id: UUID, email: str) -> TokenPair:
-        """Create access + refresh token pair."""
-        access_token = create_access_token(
-            user_id=user_id,
-            email=email,
-            secret=self._settings.jwt_secret_key,
-            expires_minutes=self._settings.jwt_access_token_expire_minutes,
-        )
-        expires_at = datetime.now(timezone.utc) + timedelta(
-            days=self._settings.jwt_refresh_token_expire_days
-        )
-        refresh = await self._refresh_repo.create(
-            user_id=user_id,
-            expires_at=expires_at,
-        )
-        return TokenPair(
-            access_token=access_token,
-            refresh_token=str(refresh.id),
-            expires_in=self._settings.jwt_access_token_expire_minutes * 60,
-        )
+        """Create access + refresh token pair (delegates to shared helper)."""
+        return await create_token_pair(user_id, email, self._refresh_repo, self._settings)

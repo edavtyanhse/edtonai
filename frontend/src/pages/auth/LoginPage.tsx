@@ -81,6 +81,36 @@ export default function LoginPage() {
                         Sign In
                     </Button>
 
+                    <div className="relative">
+                        <div className="absolute inset-0 flex items-center">
+                            <span className="w-full border-t border-slate-700" />
+                        </div>
+                        <div className="relative flex justify-center text-xs uppercase">
+                            <span className="bg-slate-800 px-2 text-slate-500">or continue with</span>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-3">
+                        <a
+                            href="/api/auth/oauth/google"
+                            className="flex items-center justify-center px-4 py-2 border border-slate-600 rounded-lg text-sm text-slate-300 hover:bg-slate-700 transition-colors"
+                        >
+                            Google
+                        </a>
+                        <a
+                            href="/api/auth/oauth/vk"
+                            className="flex items-center justify-center px-4 py-2 border border-slate-600 rounded-lg text-sm text-slate-300 hover:bg-slate-700 transition-colors"
+                        >
+                            VK
+                        </a>
+                        <a
+                            href="/api/auth/oauth/yandex"
+                            className="flex items-center justify-center px-4 py-2 border border-slate-600 rounded-lg text-sm text-slate-300 hover:bg-slate-700 transition-colors"
+                        >
+                            Yandex
+                        </a>
+                    </div>
+
                     <p className="text-center text-sm text-slate-400">
                         Don't have an account?{' '}
                         <Link to="/register" className="font-medium text-brand-400 hover:text-brand-300">
