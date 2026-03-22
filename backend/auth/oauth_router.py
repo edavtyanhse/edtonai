@@ -1,10 +1,13 @@
 """OAuth 2.0 API endpoints — redirect and callback."""
 
+import hashlib
+import hmac
 import secrets
+import time
 from urllib.parse import urlencode
 
 from dependency_injector.wiring import Provide, inject
-from fastapi import APIRouter, Cookie, Depends, Query, Response
+from fastapi import APIRouter, Depends, Query
 from fastapi.responses import RedirectResponse
 
 from backend.auth.oauth_service import OAuthService
@@ -13,32 +16,45 @@ from backend.core.config import Settings
 
 router = APIRouter(prefix="/auth/oauth", tags=["oauth"])
 
-_STATE_COOKIE = "oauth_state"
-_STATE_MAX_AGE = 300  # 5 minutes
+_STATE_TTL = 300  # 5 minutes
+
+
+def _sign_state(nonce: str, timestamp: int, secret: str) -> str:
+    """Create HMAC-signed state: nonce.timestamp.signature."""
+    msg = f"{nonce}.{timestamp}"
+    sig = hmac.new(secret.encode(), msg.encode(), hashlib.sha256).hexdigest()[:16]
+    return f"{nonce}.{timestamp}.{sig}"
+
+
+def _verify_state(state: str, secret: str) -> bool:
+    """Verify HMAC-signed state and check TTL."""
+    parts = state.split(".")
+    if len(parts) != 3:
+        return False
+    nonce, ts_str, sig = parts
+    try:
+        timestamp = int(ts_str)
+    except ValueError:
+        return False
+    if time.time() - timestamp > _STATE_TTL:
+        return False
+    expected = hmac.new(secret.encode(), f"{nonce}.{timestamp}".encode(), hashlib.sha256).hexdigest()[:16]
+    return hmac.compare_digest(sig, expected)
 
 
 @router.get("/{provider}")
 @inject
 async def oauth_redirect(
     provider: str,
-    response: Response,
     oauth_service: OAuthService = Depends(Provide[Container.oauth_service]),
+    settings: Settings = Depends(Provide[Container.config]),
 ) -> RedirectResponse:
     """Initiate OAuth flow — redirect user to provider's authorize page."""
-    state = secrets.token_urlsafe(32)
+    nonce = secrets.token_urlsafe(16)
+    state = _sign_state(nonce, int(time.time()), settings.jwt_secret_key)
 
     authorize_url = oauth_service.get_authorize_url(provider, state)
-
-    redirect = RedirectResponse(url=authorize_url, status_code=302)
-    redirect.set_cookie(
-        key=_STATE_COOKIE,
-        value=state,
-        httponly=True,
-        secure=True,
-        samesite="lax",
-        max_age=_STATE_MAX_AGE,
-    )
-    return redirect
+    return RedirectResponse(url=authorize_url, status_code=302)
 
 
 @router.get("/{provider}/callback")
@@ -47,13 +63,12 @@ async def oauth_callback(
     provider: str,
     code: str = Query(...),
     state: str = Query(...),
-    oauth_state: str | None = Cookie(default=None, alias=_STATE_COOKIE),
     oauth_service: OAuthService = Depends(Provide[Container.oauth_service]),
     settings: Settings = Depends(Provide[Container.config]),
 ) -> RedirectResponse:
     """Handle OAuth provider callback — exchange code, issue tokens, redirect to frontend."""
-    # CSRF check
-    if not oauth_state or oauth_state != state:
+    # Verify signed state (CSRF protection without cookies)
+    if not _verify_state(state, settings.jwt_secret_key):
         error_params = urlencode({"error": "Invalid OAuth state. Please try again."})
         return RedirectResponse(
             url=f"{settings.frontend_url}/login?{error_params}",
@@ -73,7 +88,7 @@ async def oauth_callback(
         status_code=302,
     )
 
-    # Set refresh token cookie
+    # Set refresh token cookie on frontend domain
     redirect.set_cookie(
         key="refresh_token",
         value=token_pair.refresh_token,
@@ -83,8 +98,5 @@ async def oauth_callback(
         path="/auth",
         max_age=30 * 24 * 60 * 60,
     )
-
-    # Clear state cookie
-    redirect.delete_cookie(key=_STATE_COOKIE)
 
     return redirect
