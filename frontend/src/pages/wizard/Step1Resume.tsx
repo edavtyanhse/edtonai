@@ -36,15 +36,9 @@ export default function Step1Resume() {
     try {
       const text = await extractTextFromFile(file)
       if (text.length < 50) {
-        throw new Error(t('common.error')) // Simplification or specific error key
+        throw new Error(t('common.error'))
       }
-      if (text.length > MAX_CHARS) {
-        setLocalText(text.slice(0, MAX_CHARS))
-        parseMutation.mutate(text.slice(0, MAX_CHARS))
-      } else {
-        setLocalText(text)
-        parseMutation.mutate(text)
-      }
+      setLocalText(text.length > MAX_CHARS ? text.slice(0, MAX_CHARS) : text)
     } catch (err: unknown) {
       setFileError(err instanceof Error ? err.message : t('common.error'))
     } finally {
