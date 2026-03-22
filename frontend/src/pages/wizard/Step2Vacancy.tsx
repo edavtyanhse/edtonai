@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useMutation } from '@tanstack/react-query'
-import { Briefcase, Loader2, ArrowRight, ArrowLeft, Edit3, Save, Check, Link as LinkIcon } from 'lucide-react'
+import { Briefcase, Loader2, ArrowRight, ArrowLeft, Save, Check, Link as LinkIcon, RefreshCw } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useWizard } from '@/hooks'
 import { parseVacancy, updateVacancy } from '@/api'
@@ -19,6 +19,7 @@ export default function Step2Vacancy() {
     setVacancyText,
     setVacancyData,
     updateParsedVacancy,
+    clearVacancy,
     goToNextStep,
     goToPrevStep,
   } = useWizard()
@@ -59,7 +60,10 @@ export default function Step2Vacancy() {
     parseMutation.mutate()
   }
 
-  const handleEditText = () => {
+  const handleChangeVacancy = () => {
+    clearVacancy()
+    setLocalText('')
+    setUrl('')
     setMode('input')
   }
 
@@ -94,9 +98,9 @@ export default function Step2Vacancy() {
           </p>
         </div>
         {mode === 'parsed' && (
-          <Button variant="ghost" onClick={handleEditText} className="text-slate-400 hover:text-white">
-            <Edit3 className="w-4 h-4 mr-2" />
-            {t('common.back_to_step')} 2
+          <Button variant="ghost" onClick={handleChangeVacancy} className="text-slate-400 hover:text-white">
+            <RefreshCw className="w-4 h-4 mr-2" />
+            {t('wizard.step2.change_vacancy')}
           </Button>
         )}
       </div>
@@ -196,16 +200,17 @@ export default function Step2Vacancy() {
           )}
 
           <div className="flex justify-between">
-            <Button variant="outline" onClick={goToPrevStep}>
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              {t('wizard.step2.back')}
-            </Button>
             <div className="flex gap-3">
-              <Button variant="ghost" onClick={handleEditText} className="text-slate-400 hover:text-white">
+              <Button variant="outline" onClick={goToPrevStep}>
                 <ArrowLeft className="w-4 h-4 mr-2" />
-                {t('common.back_to_step')} 2
+                {t('wizard.step2.back')}
               </Button>
-
+              <Button variant="ghost" onClick={handleChangeVacancy} className="text-slate-400 hover:text-white">
+                <RefreshCw className="w-4 h-4 mr-2" />
+                {t('wizard.step2.change_vacancy')}
+              </Button>
+            </div>
+            <div className="flex gap-3">
               {/* Separate Save button */}
               <Button
                 variant="outline"

@@ -69,6 +69,21 @@ export function WizardProvider({ children }: { children: ReactNode }) {
     setState((prev) => ({ ...prev, parsedVacancy: parsed }))
   }, [])
 
+  // Clear vacancy (and dependent analysis/improvements)
+  const clearVacancy = useCallback(() => {
+    setState((prev) => ({
+      ...prev,
+      vacancyText: '',
+      vacancyId: null,
+      parsedVacancy: null,
+      analysis: null,
+      analysisId: null,
+      selectedCheckboxes: [],
+      resultText: '',
+      changeLog: [],
+    }))
+  }, [])
+
   // Step 3 actions
   const setAnalysis = useCallback((analysisId: string, analysis: MatchAnalysis) => {
     setState((prev) => ({
@@ -170,6 +185,7 @@ export function WizardProvider({ children }: { children: ReactNode }) {
     setVacancyText,
     setVacancyData,
     updateParsedVacancy,
+    clearVacancy,
     setAnalysis,
     setSelectedCheckboxes,
     toggleCheckbox,

@@ -51,7 +51,8 @@
             "back": "Back",
             "analyze_button": "Parse Vacancy",
             "next": "Next: Analysis",
-            "url_disabled_hint": "Clear the text field to use a URL"
+            "url_disabled_hint": "Clear the text field to use a URL",
+            "change_vacancy": "Change Vacancy"
         },
         "step3": {
             "title": "Analysis Results",

@@ -44,6 +44,9 @@ export interface WizardContextType {
   setVacancyData: (id: string, parsed: ParsedVacancy) => void
   updateParsedVacancy: (parsed: ParsedVacancy) => void
 
+  // Step 2 reset
+  clearVacancy: () => void
+
   // Step 3 actions
   setAnalysis: (analysisId: string, analysis: MatchAnalysis) => void
 
