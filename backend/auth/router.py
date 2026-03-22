@@ -3,7 +3,7 @@
 from uuid import UUID
 
 from dependency_injector.wiring import Provide, inject
-from fastapi import APIRouter, Cookie, Depends, Response
+from fastapi import APIRouter, Cookie, Depends, Query, Response
 
 from backend.auth.service import AuthService
 from backend.containers import Container
@@ -115,6 +115,20 @@ async def logout(
             pass  # Token already invalid — that's fine
     _clear_refresh_cookie(response)
     return MessageResponse(message="Logged out")
+
+
+@router.post("/set-cookie", response_model=MessageResponse)
+async def set_refresh_cookie(
+    response: Response,
+    refresh_token: str = Query(...),
+) -> MessageResponse:
+    """Store refresh token as httpOnly cookie.
+
+    Called by frontend after OAuth callback to persist the refresh token
+    on the correct domain (frontend proxy → backend).
+    """
+    _set_refresh_cookie(response, refresh_token)
+    return MessageResponse(message="Cookie set")
 
 
 @router.post("/verify-email", response_model=MessageResponse)

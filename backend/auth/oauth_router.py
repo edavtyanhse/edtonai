@@ -77,26 +77,17 @@ async def oauth_callback(
 
     token_pair, user_info = await oauth_service.handle_callback(provider, code)
 
-    # Redirect to frontend callback page with access token
+    # Redirect to frontend callback page with tokens
+    # Refresh token is passed via URL (one-time) because the cookie domain
+    # (backend) differs from where /auth/refresh is called (frontend proxy).
+    # The frontend callback page will call /auth/set-cookie to store it properly.
     params = urlencode({
         "access_token": token_pair.access_token,
+        "refresh_token": token_pair.refresh_token,
         "expires_in": str(token_pair.expires_in),
     })
 
-    redirect = RedirectResponse(
+    return RedirectResponse(
         url=f"{settings.frontend_url}/oauth/callback?{params}",
         status_code=302,
     )
-
-    # Set refresh token cookie on frontend domain
-    redirect.set_cookie(
-        key="refresh_token",
-        value=token_pair.refresh_token,
-        httponly=True,
-        secure=True,
-        samesite="lax",
-        path="/auth",
-        max_age=30 * 24 * 60 * 60,
-    )
-
-    return redirect

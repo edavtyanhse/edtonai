@@ -13,6 +13,7 @@ export default function OAuthCallbackPage() {
 
     useEffect(() => {
         const accessToken = searchParams.get('access_token')
+        const refreshToken = searchParams.get('refresh_token')
         const errorMsg = searchParams.get('error')
 
         if (errorMsg) {
@@ -25,25 +26,37 @@ export default function OAuthCallbackPage() {
             return
         }
 
-        // Set token, fetch user info via /auth/me, then navigate
+        // Clear tokens from URL immediately
+        window.history.replaceState({}, '', '/oauth/callback')
+
+        // 1. Set access token in memory
         setAccessToken(accessToken)
 
-        fetch('/api/auth/me', {
-            headers: { 'Authorization': `Bearer ${accessToken}` },
-        })
-            .then((res) => {
+        // 2. Store refresh token as httpOnly cookie via backend
+        const storeRefreshAndAuth = async () => {
+            try {
+                if (refreshToken) {
+                    await fetch(`/api/auth/set-cookie?refresh_token=${encodeURIComponent(refreshToken)}`, {
+                        method: 'POST',
+                        credentials: 'include',
+                    })
+                }
+
+                // 3. Fetch user info
+                const res = await fetch('/api/auth/me', {
+                    headers: { 'Authorization': `Bearer ${accessToken}` },
+                })
                 if (!res.ok) throw new Error('Failed to get user info')
-                return res.json()
-            })
-            .then((user) => {
+                const user = await res.json()
+
                 setAuth(accessToken, user)
-                // Clear token from URL
-                window.history.replaceState({}, '', '/oauth/callback')
                 navigate('/', { replace: true })
-            })
-            .catch((err) => {
+            } catch (err) {
                 setError(err instanceof Error ? err.message : 'Authentication failed')
-            })
+            }
+        }
+
+        storeRefreshAndAuth()
     }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
     if (error) {
