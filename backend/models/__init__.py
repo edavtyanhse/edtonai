@@ -1,10 +1,13 @@
-"""ORM models for Stage 1, Stage 2, and Stage 3."""
+"""ORM models."""
 
 from .ai_result import AIResult
 from .analysis_link import AnalysisLink
+from .email_verification import EmailVerification
 from .ideal_resume import IdealResume
+from .refresh_token import RefreshToken
 from .resume import ResumeRaw
 from .resume_version import ResumeVersion
+from .user import User
 from .user_version import UserVersion
 from .vacancy import VacancyRaw
 
@@ -16,4 +19,7 @@ __all__ = [
     "ResumeVersion",
     "IdealResume",
     "UserVersion",
+    "User",
+    "RefreshToken",
+    "EmailVerification",
 ]
