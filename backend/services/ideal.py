@@ -12,6 +12,7 @@ from backend.domain.ideal import IdealResumeResult
 from backend.integration.ai.base import AIProvider
 from backend.integration.ai.prompts import IDEAL_RESUME_PROMPT
 from backend.repositories.interfaces import IIdealResumeRepository, IVacancyRepository
+from backend.errors.business import ValidationError, VacancyNotFoundError
 from backend.services.base import CachedAIService
 from backend.services.interfaces import IVacancyService
 from backend.services.utils import compute_hash
@@ -96,7 +97,7 @@ class IdealResumeService(CachedAIService):
         if vacancy_id:
             vacancy = await self.vacancy_repo.get_by_id(vacancy_id)
             if not vacancy:
-                raise ValueError(f"Vacancy not found: {vacancy_id}")
+                raise VacancyNotFoundError(str(vacancy_id))
             vacancy_text = vacancy.source_text
             vacancy_hash = vacancy.content_hash
             actual_vacancy_id = vacancy.id
@@ -105,7 +106,7 @@ class IdealResumeService(CachedAIService):
             actual_vacancy_id = vacancy_result.vacancy_id
             vacancy_hash = compute_hash(vacancy_text)
         else:
-            raise ValueError("Either vacancy_text or vacancy_id must be provided")
+            raise ValidationError("Either vacancy_text or vacancy_id must be provided")
 
         # Step 2: Get parsed vacancy
         vacancy_result = await self.vacancy_service.parse_and_cache(vacancy_text)

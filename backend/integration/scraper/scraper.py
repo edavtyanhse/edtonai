@@ -81,8 +81,9 @@ class WebScraper:
                     return cls._format_hh_vacancy(data)
                 except httpx.HTTPStatusError as e:
                     if e.response.status_code == 404:
-                        raise ValueError(
-                            f"Вакансия не найдена на HH.ru (ID: {vacancy_id})"
+                        raise ScraperError(
+                            f"Вакансия не найдена на HH.ru (ID: {vacancy_id})",
+                            status_code=404,
                         )
                     if attempt < cls.MAX_RETRIES:
                         logger.warning(
@@ -91,7 +92,7 @@ class WebScraper:
                             e.response.status_code,
                         )
                         continue
-                    raise ValueError(
+                    raise ScraperError(
                         f"HH.ru API error: HTTP {e.response.status_code}"
                     )
                 except (httpx.RequestError, Exception) as e:
@@ -103,12 +104,12 @@ class WebScraper:
                         )
                         continue
                     logger.error("HH.ru API failed after retries: %s", e)
-                    raise ValueError(
+                    raise ScraperError(
                         f"Не удалось получить вакансию с HH.ru: {str(e)}"
                     )
 
         # Unreachable, but satisfies type checker
-        raise ValueError("HH.ru API request failed")
+        raise ScraperError("HH.ru API request failed")
 
     @classmethod
     def _format_hh_vacancy(cls, data: dict[str, Any]) -> str:
@@ -256,11 +257,11 @@ class WebScraper:
                         )
                         continue
                     logger.error("Failed to fetch vacancy URL %s: %s", url, e)
-                    raise ValueError(
+                    raise ScraperError(
                         f"Failed to fetch URL (site may block bots): {str(e)}"
                     )
 
-        raise ValueError("Failed to fetch URL after retries")
+        raise ScraperError("Failed to fetch URL after retries")
 
     @classmethod
     def _clean_html(cls, html: str) -> str:

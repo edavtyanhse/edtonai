@@ -87,8 +87,6 @@ async def update_vacancy_parsed_data(
     if vacancy is None:
         raise HTTPException(status_code=404, detail="Vacancy not found")
 
-    await db.commit()
-
     return VacancyDetailResponse(
         id=vacancy.id,
         source_text=vacancy.source_text,

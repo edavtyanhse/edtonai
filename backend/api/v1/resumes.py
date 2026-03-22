@@ -77,8 +77,6 @@ async def update_resume_parsed_data(
     if resume is None:
         raise HTTPException(status_code=404, detail="Resume not found")
 
-    await db.commit()
-
     return ResumeDetailResponse(
         id=resume.id,
         source_text=resume.source_text,

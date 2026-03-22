@@ -17,6 +17,7 @@ from backend.repositories.interfaces import (
     IResumeVersionRepository,
     IVacancyRepository,
 )
+from backend.errors.business import ResumeNotFoundError, ValidationError, VacancyNotFoundError
 from backend.services.base import CachedAIService
 from backend.services.interfaces import IMatchService, IResumeService, IVacancyService
 from backend.services.utils import prompt_template_sha256
@@ -155,27 +156,27 @@ class AdaptResumeService(CachedAIService):
         if resume_id:
             resume = await self.resume_repo.get_by_id(resume_id)
             if not resume:
-                raise ValueError(f"Resume not found: {resume_id}")
+                raise ResumeNotFoundError(str(resume_id))
             resume_text = resume.source_text
             actual_resume_id = resume.id
         elif resume_text:
             resume_result = await self.resume_service.parse_and_cache(resume_text)
             actual_resume_id = resume_result.resume_id
         else:
-            raise ValueError("Either resume_text or resume_id must be provided")
+            raise ValidationError("Either resume_text or resume_id must be provided")
 
         # Step 2: Get vacancy
         if vacancy_id:
             vacancy = await self.vacancy_repo.get_by_id(vacancy_id)
             if not vacancy:
-                raise ValueError(f"Vacancy not found: {vacancy_id}")
+                raise VacancyNotFoundError(str(vacancy_id))
             vacancy_text = vacancy.source_text
             actual_vacancy_id = vacancy.id
         elif vacancy_text:
             vacancy_result = await self.vacancy_service.parse_and_cache(vacancy_text)
             actual_vacancy_id = vacancy_result.vacancy_id
         else:
-            raise ValueError("Either vacancy_text or vacancy_id must be provided")
+            raise ValidationError("Either vacancy_text or vacancy_id must be provided")
 
         # Step 2.5: Validate base_version_id (if provided)
         if base_version_id:

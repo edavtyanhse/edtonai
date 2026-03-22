@@ -9,7 +9,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
 from backend.errors.base import AppError
-from backend.integration.ai.errors import AIError
+from backend.integration.ai.errors import AIError, AIResponseFormatError
 
 logger = logging.getLogger(__name__)
 
@@ -44,6 +44,15 @@ def register_exception_handlers(app: FastAPI) -> None:
             content={"detail": f"AI provider error: {exc}"},
         )
 
+    @app.exception_handler(AIResponseFormatError)
+    async def ai_format_error_handler(request: Request, exc: AIResponseFormatError) -> JSONResponse:
+        """Handle malformed AI JSON responses → HTTP 502."""
+        logger.error("AIResponseFormatError | path=%s error=%s", request.url.path, str(exc))
+        return JSONResponse(
+            status_code=502,
+            content={"detail": f"AI provider returned invalid response: {exc}"},
+        )
+
     @app.exception_handler(ValueError)
     async def value_error_handler(request: Request, exc: ValueError) -> JSONResponse:
         """Handle untyped ValueError from services → HTTP 400.
@@ -58,4 +67,20 @@ def register_exception_handlers(app: FastAPI) -> None:
         return JSONResponse(
             status_code=400,
             content={"detail": str(exc)},
+        )
+
+    @app.exception_handler(Exception)
+    async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONResponse:
+        """Catch-all for unhandled exceptions → HTTP 500 with logging.
+
+        Prevents raw tracebacks from leaking to clients.
+        """
+        logger.exception(
+            "Unhandled exception | path=%s type=%s",
+            request.url.path,
+            type(exc).__name__,
+        )
+        return JSONResponse(
+            status_code=500,
+            content={"detail": "Internal server error"},
         )

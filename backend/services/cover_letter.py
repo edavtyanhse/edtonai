@@ -17,6 +17,14 @@ from backend.repositories.interfaces import (
     IUserVersionRepository,
     IVacancyRepository,
 )
+from backend.errors.business import (
+    AccessDeniedError,
+    NotFoundError,
+    ValidationError,
+    VersionNotFoundError,
+    VacancyNotFoundError,
+)
+from backend.integration.ai.errors import AIResponseFormatError
 from backend.services.base import CachedAIService
 
 
@@ -106,11 +114,11 @@ class CoverLetterService(CachedAIService):
             is_user_version = True
 
         if not resume_version:
-            raise ValueError(f"Resume version not found: {resume_version_id}")
+            raise VersionNotFoundError(str(resume_version_id))
 
         # Check ownership for UserVersion only (ResumeVersion doesn't have user_id in DB).
         if is_user_version and str(getattr(resume_version, "user_id", None)) != str(user_id):
-            raise ValueError("Access denied: You do not own this resume version")
+            raise AccessDeniedError("You do not own this resume version")
 
         # Step 2: Prepare data (vacancy text and analysis ID)
         vacancy_text = ""
@@ -126,13 +134,13 @@ class CoverLetterService(CachedAIService):
             # ResumeVersion path
             vacancy = await self.vacancy_repo.get_by_id(resume_version.vacancy_id)
             if not vacancy:
-                raise ValueError(f"Vacancy not found: {resume_version.vacancy_id}")
+                raise VacancyNotFoundError(str(resume_version.vacancy_id))
             vacancy_text = vacancy.source_text
             analysis_id = resume_version.analysis_id
             vacancy_id = vacancy.id
 
         if not analysis_id:
-            raise ValueError(
+            raise ValidationError(
                 f"Version {resume_version_id} has no analysis_id. "
                 "Cannot generate cover letter without match analysis."
             )
@@ -140,7 +148,7 @@ class CoverLetterService(CachedAIService):
         # Step 3: Get match analysis
         analysis_result = await self.ai_result_repo.get_by_id(analysis_id)
         if not analysis_result:
-            raise ValueError(f"Analysis not found: {analysis_id}")
+            raise NotFoundError(f"Analysis not found: {analysis_id}")
 
         match_analysis = analysis_result.output_json
 
@@ -203,13 +211,13 @@ class CoverLetterService(CachedAIService):
         required_keys = ["cover_letter_text", "structure", "key_points_used", "alignment_notes"]
         missing_keys = [k for k in required_keys if k not in cover_letter_json]
         if missing_keys:
-            raise ValueError(f"LLM returned incomplete JSON. Missing keys: {missing_keys}")
+            raise AIResponseFormatError(f"LLM returned incomplete JSON. Missing keys: {missing_keys}")
         structure = cover_letter_json.get("structure") or {}
         if not isinstance(structure, dict):
-            raise ValueError("LLM returned invalid JSON: structure must be an object")
+            raise AIResponseFormatError("LLM returned invalid JSON: structure must be an object")
         for k in ("opening", "body", "closing"):
             if k not in structure:
-                raise ValueError(f"LLM returned incomplete JSON. Missing structure key: {k}")
+                raise AIResponseFormatError(f"LLM returned incomplete JSON. Missing structure key: {k}")
 
         # Step 8: Save to cache
         ai_result = await self._save_to_cache(input_hash, cover_letter_json)
