@@ -236,6 +236,9 @@ export interface IdealResponse {
 export interface MatchRequest {
   resume_text: string
   vacancy_text: string
+  // Context for re-analysis after adaptation (optional)
+  original_analysis?: MatchAnalysis
+  applied_checkbox_ids?: string[]
 }
 
 export interface CheckboxOption {

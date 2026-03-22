@@ -45,6 +45,14 @@ class IMatchService(Protocol):
         parsed_vacancy: dict[str, Any],
     ) -> MatchAnalysisResult: ...
 
+    async def analyze_with_context(
+        self,
+        parsed_resume: dict[str, Any],
+        parsed_vacancy: dict[str, Any],
+        original_analysis: dict[str, Any],
+        applied_checkbox_ids: list[str],
+    ) -> MatchAnalysisResult: ...
+
 
 @runtime_checkable
 class IAdaptResumeService(Protocol):

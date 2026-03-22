@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from backend.core.config import Settings
 from backend.domain.match import MatchAnalysisResult
 from backend.integration.ai.base import AIProvider
-from backend.integration.ai.prompts import ANALYZE_MATCH_PROMPT
+from backend.integration.ai.prompts import ANALYZE_MATCH_PROMPT, ANALYZE_MATCH_WITH_CONTEXT_PROMPT
 from backend.repositories.interfaces import IAIResultRepository
 from backend.services.base import CachedAIService
 from backend.services.utils import (
@@ -124,6 +124,85 @@ class MatchService(CachedAIService):
 
         analysis_json = await self.ai_provider.generate_json(
             prompt, prompt_name=self.OPERATION,
+        )
+        analysis_json = self._clamp_scores(analysis_json)
+
+        # Save to cache
+        ai_result = await self._save_to_cache(input_hash, analysis_json)
+
+        return MatchAnalysisResult(
+            analysis_id=ai_result.id,
+            analysis=analysis_json,
+            cache_hit=False,
+        )
+
+    async def analyze_with_context(
+        self,
+        parsed_resume: dict[str, Any],
+        parsed_vacancy: dict[str, Any],
+        original_analysis: dict[str, Any],
+        applied_checkbox_ids: list[str],
+    ) -> MatchAnalysisResult:
+        """Re-analyze match with awareness of applied improvements.
+
+        Uses a context-aware prompt that:
+        - Knows which improvements were applied
+        - Moves applied skills from missing to matched
+        - Recalculates score upward
+        - Removes addressed gaps
+        """
+        # Build applied_improvements detail from original analysis gaps
+        applied_details = []
+        gaps_by_id = {g["id"]: g for g in original_analysis.get("gaps", [])}
+        for cid in applied_checkbox_ids:
+            gap = gaps_by_id.get(cid)
+            if gap:
+                applied_details.append({
+                    "checkbox_id": cid,
+                    "type": gap.get("type", "unknown"),
+                    "message": gap.get("message", ""),
+                    "target_section": gap.get("target_section", "other"),
+                })
+
+        # Cache key includes applied improvements
+        base_hash = self._compute_match_hash(parsed_resume, parsed_vacancy)
+        applied_hash = hashlib.sha256(
+            json.dumps(sorted(applied_checkbox_ids)).encode("utf-8")
+        ).hexdigest()
+        prompt_sha = prompt_template_sha256(ANALYZE_MATCH_WITH_CONTEXT_PROMPT)
+        input_hash = compute_ai_cache_key(
+            "analyze_match_with_context",
+            {
+                "base_hash": base_hash,
+                "applied_hash": applied_hash,
+                "provider": self.provider_name,
+                "model": self.model_name,
+                "prompt_sha256": prompt_sha,
+                "temperature": self.settings.ai_temperature,
+                "max_tokens": self.settings.ai_max_tokens,
+            },
+        )
+
+        # Check cache
+        cached = await self._check_cache(input_hash)
+        if cached is not None:
+            return MatchAnalysisResult(
+                analysis_id=cached.id,
+                analysis=cached.output_json,
+                cache_hit=True,
+            )
+
+        # Build prompt
+        prompt = (
+            ANALYZE_MATCH_WITH_CONTEXT_PROMPT
+            .replace("{{PARSED_RESUME_JSON}}", json.dumps(parsed_resume, ensure_ascii=False, indent=2))
+            .replace("{{PARSED_VACANCY_JSON}}", json.dumps(parsed_vacancy, ensure_ascii=False, indent=2))
+            .replace("{{ORIGINAL_ANALYSIS_JSON}}", json.dumps(original_analysis, ensure_ascii=False, indent=2))
+            .replace("{{APPLIED_IMPROVEMENTS_JSON}}", json.dumps(applied_details, ensure_ascii=False, indent=2))
+        )
+
+        analysis_json = await self.ai_provider.generate_json(
+            prompt, prompt_name="analyze_match_with_context",
         )
         analysis_json = self._clamp_scores(analysis_json)
 

@@ -23,7 +23,12 @@ async def analyze_match(
 
     Returns cache_hit=true only if ALL steps were from cache.
     """
-    result = await service.run_analysis(request.resume_text, request.vacancy_text)
+    result = await service.run_analysis(
+        request.resume_text,
+        request.vacancy_text,
+        original_analysis=request.original_analysis,
+        applied_checkbox_ids=request.applied_checkbox_ids,
+    )
 
     return MatchAnalyzeResponse(
         resume_id=result.resume_id,

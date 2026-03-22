@@ -231,6 +231,92 @@ parsed_vacancy:
 """
 
 # =========================
+# CONTEXT-AWARE RE-ANALYSIS (after adaptation)
+# =========================
+
+ANALYZE_MATCH_WITH_CONTEXT_PROMPT = """
+Контекст задачи:
+Ты выполняешь операцию analyze_match_with_context в составе backend-сервиса.
+Это ПОВТОРНЫЙ анализ резюме после применения улучшений. У тебя есть:
+1) Обновлённое (адаптированное) резюме — parsed_resume
+2) Вакансия — parsed_vacancy (та же, что и при первом анализе)
+3) ОРИГИНАЛЬНЫЙ анализ (до улучшений) — original_analysis
+4) Список применённых улучшений — applied_improvements (checkbox_id + описание)
+
+═══════════════════════════════════════════
+КРИТИЧЕСКИЕ ПРАВИЛА ДЛЯ ПОВТОРНОГО АНАЛИЗА
+═══════════════════════════════════════════
+
+1) APPLIED IMPROVEMENTS MUST BE RECOGNIZED:
+   Для каждого элемента из applied_improvements:
+   - Если это был missing_skill → ПРОВЕРЬ, что навык теперь есть в parsed_resume.skills
+     или в тексте опыта. Если есть — ПЕРЕНЕСИ из missing в matched.
+   - Если это был ats_keyword → ПРОВЕРЬ покрытие. Если ключевое слово есть → перенеси
+     в covered_keywords.
+   - Если это был experience_gap или weak_wording → ПРОВЕРЬ, что формулировка улучшена.
+   - ЗАПРЕЩЕНО оставлять applied improvement в gaps/missing, если он реально присутствует в резюме.
+
+2) SCORE CONSISTENCY:
+   - Начни с score_breakdown из original_analysis.
+   - Для каждого применённого улучшения — УВЕЛИЧЬ соответствующую категорию:
+     * missing_skill → увеличь skill_fit
+     * ats_keyword → увеличь ats_fit
+     * experience_gap / weak_wording → увеличь experience_fit или clarity_evidence
+   - Итоговый score ДОЛЖЕН быть >= original_analysis.score (если улучшения реально применены).
+   - Используй ту же формулу скоринга что и в обычном анализе.
+
+3) GAPS UPDATE:
+   - Удали из gaps те элементы, чьи id есть в applied_improvements.
+   - Оставшиеся gaps сохрани без изменений.
+   - checkbox_options тоже обнови: убери применённые, оставь непримёненные.
+
+4) SKILL LISTS UPDATE:
+   - missing_required_skills: убери навыки из applied improvements, добавь в matched_required_skills.
+   - missing_preferred_skills: аналогично.
+   - ats.missing_keywords: убери покрытые, добавь в ats.covered_keywords.
+
+Правила сравнения и формула скоринга (такие же, как в обычном анализе):
+Skill Fit (макс 50): 40 = (matched_required / total_required) * 40; 10 = (matched_preferred / total_preferred) * 10
+Experience Fit (макс 25): 15 за min_years, 10 за релевантность
+ATS Fit (макс 15): (covered / total) * 15
+Clarity & Evidence (макс 10): конкретика, подтверждение
+
+Верни JSON строго в той же структуре, что и обычный analyze_match:
+{
+  "score": 0,
+  "score_breakdown": {
+    "skill_fit": {"value": 0, "comment": ""},
+    "experience_fit": {"value": 0, "comment": ""},
+    "ats_fit": {"value": 0, "comment": ""},
+    "clarity_evidence": {"value": 0, "comment": ""}
+  },
+  "matched_required_skills": [],
+  "missing_required_skills": [],
+  "matched_preferred_skills": [],
+  "missing_preferred_skills": [],
+  "ats": {"covered_keywords": [], "missing_keywords": [], "coverage_ratio": 0},
+  "gaps": [...],
+  "checkbox_options": [...]
+}
+
+═══════════════════════════════════════════
+ВХОДНЫЕ ДАННЫЕ
+═══════════════════════════════════════════
+
+parsed_resume (ПОСЛЕ адаптации):
+{{PARSED_RESUME_JSON}}
+
+parsed_vacancy:
+{{PARSED_VACANCY_JSON}}
+
+original_analysis (ДО адаптации):
+{{ORIGINAL_ANALYSIS_JSON}}
+
+applied_improvements (что было улучшено):
+{{APPLIED_IMPROVEMENTS_JSON}}
+"""
+
+# =========================
 # STAGE 2 PROMPTS (NEW / UPDATED)
 # =========================
 

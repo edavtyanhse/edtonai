@@ -28,6 +28,7 @@ interface WizardState {
   resultText: string
   changeLog: ChangeLogEntry[]
   previousResumeText: string | null
+  appliedCheckboxIds: string[]
 }
 
 const initialState: WizardState = initialWizardState
@@ -126,7 +127,7 @@ export function WizardProvider({ children }: { children: ReactNode }) {
   )
 
   // Apply improved resume as the new base (after user confirms changes)
-  const applyImprovedResume = useCallback((newResumeText: string) => {
+  const applyImprovedResume = useCallback((newResumeText: string, appliedIds?: string[]) => {
     setState((prev) => ({
       ...prev,
       resumeText: newResumeText,  // New base resume text
@@ -135,6 +136,10 @@ export function WizardProvider({ children }: { children: ReactNode }) {
       resultText: '',              // Clear result
       changeLog: [],               // Clear change log
       selectedCheckboxes: [],      // Clear selections
+      appliedCheckboxIds: [
+        ...prev.appliedCheckboxIds,
+        ...(appliedIds ?? prev.selectedCheckboxes),
+      ],
     }))
   }, [])
 

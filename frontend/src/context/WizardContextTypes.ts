@@ -27,6 +27,7 @@ interface WizardState {
   resultText: string
   changeLog: ChangeLogEntry[]
   previousResumeText: string | null
+  appliedCheckboxIds: string[]
 }
 
 export interface WizardContextType {
@@ -79,6 +80,7 @@ export const initialWizardState: WizardState = {
   resultText: '',
   changeLog: [],
   previousResumeText: null,
+  appliedCheckboxIds: [],
 }
 
 export const WizardContext = createContext<WizardContextType | null>(null)

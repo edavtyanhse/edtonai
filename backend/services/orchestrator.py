@@ -1,6 +1,7 @@
 """Orchestrator service - coordinates full analysis pipeline."""
 
 import logging
+from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -31,6 +32,8 @@ class OrchestratorService:
         self,
         resume_text: str,
         vacancy_text: str,
+        original_analysis: dict[str, Any] | None = None,
+        applied_checkbox_ids: list[str] | None = None,
     ) -> FullAnalysisResult:
         """Run full analysis pipeline.
 
@@ -55,11 +58,19 @@ class OrchestratorService:
             vacancy_result.cache_hit,
         )
 
-        # Step 3: Analyze match
-        match_result = await self.match_service.analyze_and_cache(
-            resume_result.parsed_resume,
-            vacancy_result.parsed_vacancy,
-        )
+        # Step 3: Analyze match (context-aware if improvements were applied)
+        if original_analysis and applied_checkbox_ids:
+            match_result = await self.match_service.analyze_with_context(
+                resume_result.parsed_resume,
+                vacancy_result.parsed_vacancy,
+                original_analysis,
+                applied_checkbox_ids,
+            )
+        else:
+            match_result = await self.match_service.analyze_and_cache(
+                resume_result.parsed_resume,
+                vacancy_result.parsed_vacancy,
+            )
         self.logger.info(
             "Match analyzed: id=%s cache_hit=%s",
             match_result.analysis_id,

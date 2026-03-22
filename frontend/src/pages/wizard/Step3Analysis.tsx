@@ -11,13 +11,19 @@ export default function Step3Analysis() {
   const { t } = useTranslation()
   const { state, setAnalysis, goToNextStep, goToPrevStep } = useWizard()
 
-  // Analyze mutation
+  // Analyze mutation (context-aware if improvements were previously applied)
   const analyzeMutation = useMutation({
-    mutationFn: () =>
-      analyzeMatch({
+    mutationFn: () => {
+      const hasContext = state.appliedCheckboxIds.length > 0 && state.analysis
+      return analyzeMatch({
         resume_text: state.resumeText,
         vacancy_text: state.vacancyText,
-      }),
+        ...(hasContext ? {
+          original_analysis: state.analysis!,
+          applied_checkbox_ids: state.appliedCheckboxIds,
+        } : {}),
+      })
+    },
     onSuccess: (data) => {
       setAnalysis(data.analysis_id, data.analysis)
     },
@@ -101,16 +107,28 @@ export default function Step3Analysis() {
           <div className="bg-slate-800 border border-slate-700 rounded-lg p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold">{t('wizard.step3.score')}</h2>
-              <div
-                className={`text-4xl font-bold ${analysis.score >= 70
-                  ? 'text-green-600'
-                  : analysis.score >= 50
-                    ? 'text-yellow-600'
-                    : 'text-red-600'
-                  }`}
-              >
-                {analysis.score}
-                <span className="text-lg text-gray-400">/100</span>
+              <div className="flex items-center gap-3">
+                {state.previousScore !== null && state.previousScore !== analysis.score && (
+                  <div className="text-2xl text-slate-500 line-through">
+                    {state.previousScore}
+                  </div>
+                )}
+                <div
+                  className={`text-4xl font-bold ${analysis.score >= 70
+                    ? 'text-green-600'
+                    : analysis.score >= 50
+                      ? 'text-yellow-600'
+                      : 'text-red-600'
+                    }`}
+                >
+                  {analysis.score}
+                  <span className="text-lg text-gray-400">/100</span>
+                </div>
+                {state.previousScore !== null && analysis.score > state.previousScore && (
+                  <span className="text-sm font-medium text-green-400 bg-green-900/30 px-2 py-1 rounded">
+                    +{analysis.score - state.previousScore}
+                  </span>
+                )}
               </div>
             </div>
 
