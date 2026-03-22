@@ -1,8 +1,8 @@
-
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { Loader2, UserPlus } from 'lucide-react'
-import { supabase } from '@/lib/supabase'
+import { registerApi } from '@/api/auth'
+import { useAuth } from '@/context/AuthContext'
 import { Button } from '@/components'
 
 export default function RegisterPage() {
@@ -10,7 +10,8 @@ export default function RegisterPage() {
     const [password, setPassword] = useState('')
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
-    const [success, setSuccess] = useState(false)
+    const navigate = useNavigate()
+    const { setAuth } = useAuth()
 
     const handleRegister = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -18,44 +19,14 @@ export default function RegisterPage() {
         setError(null)
 
         try {
-            const { error } = await supabase.auth.signUp({
-                email,
-                password,
-                options: {
-                    emailRedirectTo: `${window.location.origin}/login`,
-                },
-            })
-
-            if (error) throw error
-            setSuccess(true)
+            const data = await registerApi(email, password)
+            setAuth(data.access_token, data.user)
+            navigate('/')
         } catch (err: unknown) {
             setError(err instanceof Error ? err.message : 'Error registering')
         } finally {
             setLoading(false)
         }
-    }
-
-    if (success) {
-        return (
-            <div className="min-h-screen flex items-center justify-center bg-slate-900 px-4">
-                <div className="max-w-md w-full bg-slate-800 p-8 rounded-xl shadow-lg border border-slate-700 text-center space-y-4">
-                    <div className="w-16 h-16 bg-green-900/30 rounded-full flex items-center justify-center mx-auto border border-green-500/30">
-                        <UserPlus className="w-8 h-8 text-green-400" />
-                    </div>
-                    <h2 className="text-2xl font-bold text-white">Registration Successful</h2>
-                    <p className="text-slate-400">
-                        Please check your email to confirm your account before signing in.
-                    </p>
-                    <div className="pt-4">
-                        <Link to="/login">
-                            <Button className="w-full">
-                                Go to Login
-                            </Button>
-                        </Link>
-                    </div>
-                </div>
-            </div>
-        )
     }
 
     return (
@@ -98,12 +69,12 @@ export default function RegisterPage() {
                                 id="password"
                                 type="password"
                                 required
-                                minLength={6}
+                                minLength={8}
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 className="mt-1 block w-full px-3 py-2 border border-slate-600 rounded-lg bg-slate-900 text-white placeholder-slate-500 focus:ring-brand-500 focus:border-brand-500"
                             />
-                            <p className="text-xs text-slate-500 mt-1">Min. 6 characters</p>
+                            <p className="text-xs text-slate-500 mt-1">Min. 8 characters</p>
                         </div>
                     </div>
 

@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase'
+import { getAccessToken } from '@/lib/auth'
 import type { ApiError } from './types'
 
 const BASE_URL = '/api'
@@ -14,20 +14,14 @@ export class ApiClientError extends Error {
   }
 }
 
-async function getAuthHeaders(): Promise<Record<string, string>> {
+function getAuthHeaders(): Record<string, string> {
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
   }
-
-  try {
-    const { data: { session } } = await supabase.auth.getSession()
-    if (session?.access_token) {
-      headers['Authorization'] = `Bearer ${session.access_token}`
-    }
-  } catch (error) {
-    console.warn('Failed to get auth session:', error)
+  const token = getAccessToken()
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`
   }
-
   return headers
 }
 
@@ -60,7 +54,7 @@ interface RequestOptions {
 
 export const apiClient = {
   async get<T>(path: string, options?: RequestOptions): Promise<T> {
-    const headers = await getAuthHeaders()
+    const headers = getAuthHeaders()
     const response = await fetch(`${BASE_URL}${path}`, {
       method: 'GET',
       headers,
@@ -70,7 +64,7 @@ export const apiClient = {
   },
 
   async post<T, D = unknown>(path: string, data: D, options?: RequestOptions): Promise<T> {
-    const headers = await getAuthHeaders()
+    const headers = getAuthHeaders()
     const response = await fetch(`${BASE_URL}${path}`, {
       method: 'POST',
       headers,
@@ -81,7 +75,7 @@ export const apiClient = {
   },
 
   async delete(path: string, options?: RequestOptions): Promise<void> {
-    const headers = await getAuthHeaders()
+    const headers = getAuthHeaders()
     const response = await fetch(`${BASE_URL}${path}`, {
       method: 'DELETE',
       headers,
@@ -106,11 +100,10 @@ export const apiClient = {
 
       throw new ApiClientError(message, response.status, detail)
     }
-    // 204 No Content - no body to parse
   },
 
   async patch<T, D = unknown>(path: string, data: D, options?: RequestOptions): Promise<T> {
-    const headers = await getAuthHeaders()
+    const headers = getAuthHeaders()
     const response = await fetch(`${BASE_URL}${path}`, {
       method: 'PATCH',
       headers,

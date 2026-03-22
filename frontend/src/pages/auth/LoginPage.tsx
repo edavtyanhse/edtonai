@@ -1,8 +1,8 @@
-
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Loader2, LogIn } from 'lucide-react'
-import { supabase } from '@/lib/supabase'
+import { loginApi } from '@/api/auth'
+import { useAuth } from '@/context/AuthContext'
 import { Button } from '@/components'
 
 export default function LoginPage() {
@@ -11,6 +11,7 @@ export default function LoginPage() {
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
     const navigate = useNavigate()
+    const { setAuth } = useAuth()
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -18,12 +19,8 @@ export default function LoginPage() {
         setError(null)
 
         try {
-            const { error } = await supabase.auth.signInWithPassword({
-                email,
-                password,
-            })
-
-            if (error) throw error
+            const data = await loginApi(email, password)
+            setAuth(data.access_token, data.user)
             navigate('/')
         } catch (err: unknown) {
             setError(err instanceof Error ? err.message : 'Error logging in')

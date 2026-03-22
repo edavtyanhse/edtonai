@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import Layout from './components/Layout'
 import { WizardPage, History, Compare, Workspace, IdealResumePage, LoginPage, RegisterPage } from './pages'
+import VerifyEmailPage from './pages/auth/VerifyEmailPage'
 import LandingPage from './pages/LandingPage'
 import { Toaster } from './components/Toast'
 import { AuthProvider } from './context/AuthContext'
@@ -14,6 +15,7 @@ function App() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
+        <Route path="/verify-email" element={<VerifyEmailPage />} />
 
         {/* Protected routes */}
         <Route path="/wizard" element={
