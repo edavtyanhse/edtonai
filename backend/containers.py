@@ -18,15 +18,21 @@ from collections.abc import AsyncGenerator
 from dependency_injector import containers, providers
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
+from backend.auth.service import AuthService
 from backend.core.config import Settings
 from backend.integration.ai.base import AIProvider
+from backend.integration.email.client import SmtpEmailClient
+from backend.integration.email.service import EmailService
 from backend.integration.ai.deepseek import DeepSeekProvider
 from backend.integration.ai.groq import GroqProvider
 from backend.repositories.ai_result import AIResultRepository
 from backend.repositories.analysis import AnalysisRepository
+from backend.repositories.email_verification import EmailVerificationRepository
 from backend.repositories.feedback import FeedbackRepository
 from backend.repositories.ideal_resume import IdealResumeRepository
+from backend.repositories.refresh_token_repo import RefreshTokenRepository as RefreshTokenRepo
 from backend.repositories.resume import ResumeRepository
+from backend.repositories.user import UserRepository
 from backend.repositories.resume_version import ResumeVersionRepository
 from backend.repositories.user_version import UserVersionRepository
 from backend.repositories.vacancy import VacancyRepository
@@ -91,6 +97,7 @@ class Container(containers.DeclarativeContainer):
     wiring_config = containers.WiringConfiguration(
         modules=[
             "backend.api.dependencies",
+            "backend.auth.router",
         ],
     )
 
@@ -215,5 +222,30 @@ class Container(containers.DeclarativeContainer):
         user_version_repo=user_version_repo,
         vacancy_repo=vacancy_repo,
         ai_provider=ai_provider_reasoning,
+        settings=config,
+    )
+
+    # ── Auth ───────────────────────────────────────────────────────
+
+    user_repo = providers.Factory(UserRepository, session=session)
+    refresh_token_repo = providers.Factory(RefreshTokenRepo, session=session)
+    email_verification_repo = providers.Factory(EmailVerificationRepository, session=session)
+
+    email_client = providers.Singleton(
+        SmtpEmailClient,
+        host=config.provided.smtp_host,
+        port=config.provided.smtp_port,
+        username=config.provided.smtp_username,
+        password=config.provided.smtp_password,
+        from_email=config.provided.smtp_from_email,
+    )
+    email_service = providers.Factory(EmailService, client=email_client)
+
+    auth_service = providers.Factory(
+        AuthService,
+        user_repo=user_repo,
+        refresh_token_repo=refresh_token_repo,
+        email_verification_repo=email_verification_repo,
+        email_service=email_service,
         settings=config,
     )

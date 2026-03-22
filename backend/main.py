@@ -7,6 +7,7 @@ from fastapi import FastAPI, Request
 
 from backend.api import v1_router
 from backend.api.v1.health import router as health_router
+from backend.auth.router import router as auth_router
 from backend.containers import Container
 from backend.core.logging import request_id_ctx, setup_logging
 from backend.errors.handlers import register_exception_handlers
@@ -62,4 +63,5 @@ register_exception_handlers(app)
 
 # Include API routers
 app.include_router(health_router)
+app.include_router(auth_router)
 app.include_router(v1_router)

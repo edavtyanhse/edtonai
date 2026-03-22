@@ -6,12 +6,12 @@ TO REMOVE: Delete this file and remove router registration from __init__.py
 import logging
 from typing import Annotated
 
-import jwt
+import jwt as pyjwt
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.core.auth import get_jwks_client, security
+from backend.core.auth import security
 from backend.core.config import settings
 from backend.db.session import get_session
 from backend.repositories.feedback import FeedbackRepository
@@ -25,24 +25,13 @@ router = APIRouter(prefix="/feedback", tags=["feedback"])
 def _decode_token_payload(token: str) -> dict:
     """Decode JWT token and return full payload including email."""
     try:
-        try:
-            jwks_client = get_jwks_client()
-            signing_key = jwks_client.get_signing_key_from_jwt(token)
-            return jwt.decode(
-                token, signing_key.key,
-                algorithms=["ES256", "RS256", "HS256"],
-                audience="authenticated",
-            )
-        except Exception:
-            import base64
-            key = settings.supabase_jwt_secret
-            try:
-                return jwt.decode(token, key, algorithms=["HS256"], audience="authenticated")
-            except jwt.InvalidSignatureError:
-                decoded_key = base64.b64decode(key)
-                return jwt.decode(token, decoded_key, algorithms=["HS256"], audience="authenticated")
+        return pyjwt.decode(
+            token,
+            settings.jwt_secret_key,
+            algorithms=["HS256"],
+        )
     except Exception as e:
-        logger.warning(f"Failed to decode token for feedback: {e}")
+        logger.warning("Failed to decode token for feedback: %s", e)
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
 
 

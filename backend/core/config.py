@@ -73,9 +73,24 @@ class Settings(BaseSettings):
     # Logging
     log_level: str
 
-    # Supabase Auth
-    supabase_jwt_secret: str = ""  # JWT secret for token verification
-    supabase_url: str = ""  # Supabase project URL (e.g. https://xxx.supabase.co)
+    # JWT Authentication
+    jwt_secret_key: str = "change-me-in-production"
+    jwt_access_token_expire_minutes: int = 15
+    jwt_refresh_token_expire_days: int = 30
+
+    # SMTP (email sending)
+    smtp_host: str = "smtp.yandex.ru"
+    smtp_port: int = 465
+    smtp_username: str = ""
+    smtp_password: str = ""
+    smtp_from_email: str = ""
+
+    # Frontend URL (for email verification links)
+    frontend_url: str = "http://localhost:3000"
+
+    # Legacy Supabase (kept for transition, will be removed)
+    supabase_jwt_secret: str = ""
+    supabase_url: str = ""
 
     # Feedback Collection Feature Flag
     # Set to False to disable feedback collection entirely
