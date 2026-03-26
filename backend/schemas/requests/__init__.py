@@ -1,6 +1,7 @@
 """Request schemas — all API input contracts."""
 
 from .adapt import AdaptResumeRequest
+from .analytics import AnalyticsEventCreate
 from .cover_letter import CoverLetterRequest
 from .feedback import FeedbackCreate
 from .ideal import IdealResumeRequest
@@ -16,6 +17,7 @@ __all__ = [
     "VacancyPatchRequest",
     "MatchAnalyzeRequest",
     "AdaptResumeRequest",
+    "AnalyticsEventCreate",
     "IdealResumeRequest",
     "CoverLetterRequest",
     "VersionCreateRequest",

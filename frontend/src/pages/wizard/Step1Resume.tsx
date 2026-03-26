@@ -9,6 +9,7 @@ import { Button, TextAreaWithCounter } from '@/components'
 import ResumeEditor from '@/components/ResumeEditor'
 import { extractTextFromFile } from '@/lib/file-processing'
 import type { ParsedResume } from '@/api'
+import { trackBehaviorEvent } from '@/features/feedback/analytics'
 
 const MAX_CHARS = 15000
 
@@ -54,6 +55,14 @@ export default function Step1Resume() {
       setResumeData(data.resume_id, data.parsed_resume)
       setMode('parsed')
       setHasUnsavedChanges(false)
+      trackBehaviorEvent('resume_uploaded', {
+        step: 'step_1',
+        properties: {
+          resume_id: data.resume_id,
+          cache_hit: data.cache_hit,
+          text_length: localText.length,
+        },
+      })
     },
   })
 

@@ -3,6 +3,7 @@
 from .ai_result import AIResult
 from .analysis_link import AnalysisLink
 from .email_verification import EmailVerification
+from .feedback import Feedback
 from .ideal_resume import IdealResume
 from .oauth_account import OAuthAccount
 from .refresh_token import RefreshToken
@@ -23,5 +24,6 @@ __all__ = [
     "User",
     "RefreshToken",
     "EmailVerification",
+    "Feedback",
     "OAuthAccount",
 ]

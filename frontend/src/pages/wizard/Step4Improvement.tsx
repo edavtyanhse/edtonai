@@ -8,6 +8,7 @@ import type { CheckboxOption, CoverLetterResponse } from '@/api'
 import { Button, CheckboxList, ConfirmDialog, CoverLetterModal } from '@/components'
 import PdfPreview from '@/components/pdf/PdfPreview'
 import type { ChangeLogEntry, SelectedImprovement } from '@/api'
+import { trackBehaviorEvent } from '@/features/feedback/analytics'
 // FEEDBACK FEATURE - remove these imports to disable
 import { FeedbackModal, useFeedback } from '@/features/feedback'
 
@@ -212,6 +213,13 @@ export default function Step4Improvement() {
   }
 
   const handleOpenPdfPreview = async () => {
+    trackBehaviorEvent('export_clicked', {
+      step: 'step_4',
+      properties: {
+        export_type: 'pdf_preview',
+      },
+    })
+
     if (state.parsedResume) {
       setShowPdfPreview(true)
       return
@@ -679,6 +687,12 @@ export default function Step4Improvement() {
                 </Button>
               )}
               <Button
+                onClick={() => feedback.showFeedback('result')}
+                className="bg-emerald-700 hover:bg-emerald-600"
+              >
+                {t('wizard.step4.rate_result', 'Оценить результат')}
+              </Button>
+              <Button
                 onClick={() => {
                   const shown = feedback.showFeedbackAuto()
                   if (shown) {
@@ -753,7 +767,7 @@ export default function Step4Improvement() {
               window.location.href = '/'
             }
           }}
-          source="auto"
+          source={feedback.source}
         />
       )}
     </div >

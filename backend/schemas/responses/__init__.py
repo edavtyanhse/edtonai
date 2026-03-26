@@ -1,6 +1,7 @@
 """Response schemas — all API output contracts."""
 
 from .adapt import AdaptResumeResponse
+from .analytics import AnalyticsEventAcceptedResponse
 from .cover_letter import CoverLetterResponse
 from .feedback import FeedbackResponse
 from .ideal import IdealResumeResponse
@@ -16,6 +17,7 @@ __all__ = [
     "VacancyDetailResponse",
     "MatchAnalyzeResponse",
     "AdaptResumeResponse",
+    "AnalyticsEventAcceptedResponse",
     "IdealResumeResponse",
     "CoverLetterResponse",
     "VersionItemResponse",

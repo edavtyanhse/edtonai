@@ -26,9 +26,7 @@ class IResumeRepository(Protocol):
         self, resume_id: UUID, parsed_data: dict[str, Any]
     ) -> Any: ...
 
-    async def update_field(
-        self, resume_id: UUID, field: str, value: Any
-    ) -> Any: ...
+    async def update_field(self, resume_id: UUID, field: str, value: Any) -> Any: ...
 
 
 # ── Vacancy ───────────────────────────────────────────────────────
@@ -53,9 +51,7 @@ class IVacancyRepository(Protocol):
         self, vacancy_id: UUID, parsed_data: dict[str, Any]
     ) -> Any: ...
 
-    async def update_field(
-        self, vacancy_id: UUID, field: str, value: Any
-    ) -> Any: ...
+    async def update_field(self, vacancy_id: UUID, field: str, value: Any) -> Any: ...
 
 
 # ── AI Result (LLM cache) ────────────────────────────────────────
@@ -87,9 +83,7 @@ class IAIResultRepository(Protocol):
 class IAnalysisRepository(Protocol):
     """Protocol for analysis link operations."""
 
-    async def get_by_ids(
-        self, resume_id: UUID, vacancy_id: UUID
-    ) -> Any: ...
+    async def get_by_ids(self, resume_id: UUID, vacancy_id: UUID) -> Any: ...
 
     async def link(
         self,
@@ -128,9 +122,7 @@ class IResumeVersionRepository(Protocol):
         vacancy_id: UUID | None = None,
     ) -> list: ...
 
-    async def get_latest_version(
-        self, resume_id: UUID, vacancy_id: UUID
-    ) -> Any: ...
+    async def get_latest_version(self, resume_id: UUID, vacancy_id: UUID) -> Any: ...
 
 
 # ── Ideal Resume ─────────────────────────────────────────────────
@@ -180,9 +172,7 @@ class IUserVersionRepository(Protocol):
         analysis_id: UUID | None = None,
     ) -> Any: ...
 
-    async def get_by_id(
-        self, version_id: UUID, user_id: str | None = None
-    ) -> Any: ...
+    async def get_by_id(self, version_id: UUID, user_id: str | None = None) -> Any: ...
 
     async def list_versions(
         self,
@@ -201,4 +191,13 @@ class IUserVersionRepository(Protocol):
 class IFeedbackRepository(Protocol):
     """Protocol for feedback operations."""
 
-    async def create(self, user_email: str, feedback_text: str) -> Any: ...
+    async def create(
+        self,
+        user_email: str,
+        metric_type: str,
+        score: int,
+        feedback_text: str,
+        context_step: str | None = None,
+        ui_variant: str | None = None,
+        user_segment: str | None = None,
+    ) -> Any: ...

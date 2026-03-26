@@ -7,6 +7,7 @@ import { parseVacancy, updateVacancy } from '@/api'
 import { Button, TextAreaWithCounter } from '@/components'
 import VacancyEditor from '@/components/VacancyEditor'
 import type { ParsedVacancy } from '@/api'
+import { trackBehaviorEvent } from '@/features/feedback/analytics'
 
 const MAX_CHARS = 10000
 
@@ -38,6 +39,14 @@ export default function Step2Vacancy() {
       setVacancyData(data.vacancy_id, data.parsed_vacancy)
       setMode('parsed')
       setHasUnsavedChanges(false)
+      trackBehaviorEvent('vacancy_added', {
+        step: 'step_2',
+        properties: {
+          vacancy_id: data.vacancy_id,
+          cache_hit: data.cache_hit,
+          has_source_url: Boolean(data.source_url),
+        },
+      })
     },
   })
 

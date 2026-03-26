@@ -6,6 +6,7 @@ import { useWizard } from '@/hooks'
 import { analyzeMatch } from '@/api'
 import type { Gap } from '@/api'
 import { Button } from '@/components'
+import { trackBehaviorEvent } from '@/features/feedback/analytics'
 
 export default function Step3Analysis() {
   const { t } = useTranslation()
@@ -14,6 +15,10 @@ export default function Step3Analysis() {
   // Analyze mutation (context-aware if improvements were previously applied)
   const analyzeMutation = useMutation({
     mutationFn: () => {
+      trackBehaviorEvent('analysis_started', {
+        step: 'step_3',
+      })
+
       const hasContext = state.appliedCheckboxIds.length > 0 && state.analysis
       return analyzeMatch({
         resume_text: state.resumeText,
@@ -26,6 +31,14 @@ export default function Step3Analysis() {
     },
     onSuccess: (data) => {
       setAnalysis(data.analysis_id, data.analysis)
+      trackBehaviorEvent('analysis_finished', {
+        step: 'step_3',
+        properties: {
+          analysis_id: data.analysis_id,
+          score: data.analysis.score,
+          cache_hit: data.cache_hit,
+        },
+      })
     },
   })
 

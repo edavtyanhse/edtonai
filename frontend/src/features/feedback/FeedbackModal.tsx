@@ -8,22 +8,26 @@ import { useMutation } from '@tanstack/react-query'
 import { X, Send, Loader2, CheckCircle } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { submitFeedback } from './api'
+import { getUiVariant, trackBehaviorEvent } from './analytics'
 import { FEEDBACK_CONFIG } from './config'
 import Button from '@/components/Button'
 
 interface FeedbackModalProps {
   isOpen: boolean
   onClose: () => void
-  source?: 'auto' | 'manual' // auto = after analysis, manual = clicked banner
+  source?: 'auto' | 'manual' | 'result'
 }
 
 export function FeedbackModal({ isOpen, onClose, source: _source = 'manual' }: FeedbackModalProps) {
   const { i18n } = useTranslation()
   const [feedback, setFeedback] = useState('')
+  const [score, setScore] = useState<number | null>(null)
   const [submitted, setSubmitted] = useState(false)
+  const metricType = _source === 'result' ? 'csat' : 'nps'
 
   const handleClose = () => {
     setFeedback('')
+    setScore(null)
     setSubmitted(false)
     onClose()
   }
@@ -36,8 +40,23 @@ export function FeedbackModal({ isOpen, onClose, source: _source = 'manual' }: F
   })
 
   const handleSubmit = () => {
-    if (feedback.trim().length === 0) return
-    mutation.mutate({ feedback_text: feedback })
+    if (feedback.trim().length === 0 || score === null) return
+    mutation.mutate({
+      metric_type: metricType,
+      score,
+      feedback_text: feedback,
+      context_step: _source === 'result' ? 'wizard_result' : 'wizard_done',
+      ui_variant: getUiVariant(),
+      user_segment: 'job_seeker',
+    })
+    trackBehaviorEvent('feedback_submitted', {
+      step: _source === 'result' ? 'step_4_result' : 'step_4_done',
+      properties: {
+        metric_type: metricType,
+        score,
+        source: _source,
+      },
+    })
   }
 
   if (!isOpen) return null
@@ -45,6 +64,10 @@ export function FeedbackModal({ isOpen, onClose, source: _source = 'manual' }: F
   const lang = (i18n.language?.split('-')[0] || 'ru') as 'ru' | 'en'
   const title = lang === 'ru' ? 'Оставьте отзыв' : 'Leave feedback'
   const placeholder = FEEDBACK_CONFIG.placeholder[lang] || FEEDBACK_CONFIG.placeholder['ru']
+
+  const scoreTitle = metricType === 'csat'
+    ? (lang === 'ru' ? 'Оцените качество результата (1–5)' : 'Rate result quality (1-5)')
+    : (lang === 'ru' ? 'Насколько вероятно, что вы порекомендуете сервис? (0–10)' : 'How likely are you to recommend us? (0-10)')
 
   const description = lang === 'en'
     ? 'We are actively developing the product and your opinion is very important to us. Tell us what you liked, what could be improved, or what features you would like to see.'
@@ -83,6 +106,25 @@ export function FeedbackModal({ isOpen, onClose, source: _source = 'manual' }: F
           ) : (
             <>
               <p className="text-sm text-slate-400 mb-4">{description}</p>
+              <div className="mb-4">
+                <p className="text-sm text-slate-300 mb-2">{scoreTitle}</p>
+                <div className="flex flex-wrap gap-2">
+                  {(metricType === 'csat' ? [1, 2, 3, 4, 5] : [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]).map((value) => (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() => setScore(value)}
+                      className={`h-9 w-9 rounded-md border text-sm font-medium transition-colors ${score === value
+                        ? 'bg-brand-600 border-brand-500 text-white'
+                        : 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700'
+                        }`}
+                      disabled={mutation.isPending}
+                    >
+                      {value}
+                    </button>
+                  ))}
+                </div>
+              </div>
               <textarea
                 value={feedback}
                 onChange={(e) => setFeedback(e.target.value)}
@@ -110,7 +152,7 @@ export function FeedbackModal({ isOpen, onClose, source: _source = 'manual' }: F
             </Button>
             <Button
               onClick={handleSubmit}
-              disabled={feedback.trim().length === 0 || mutation.isPending}
+              disabled={feedback.trim().length === 0 || score === null || mutation.isPending}
               icon={mutation.isPending ? <Loader2 className="animate-spin" /> : <Send />}
             >
               {lang === 'ru' ? 'Отправить' : 'Отправить'}

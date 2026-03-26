@@ -18,6 +18,7 @@ from .common import (
 # ── requests ──────────────────────────────────────────────────────
 from .requests import (
     AdaptResumeRequest,
+    AnalyticsEventCreate,
     CoverLetterRequest,
     FeedbackCreate,
     IdealResumeRequest,
@@ -32,6 +33,7 @@ from .requests import (
 # ── responses ─────────────────────────────────────────────────────
 from .responses import (
     AdaptResumeResponse,
+    AnalyticsEventAcceptedResponse,
     CoverLetterResponse,
     FeedbackResponse,
     IdealResumeResponse,
@@ -60,6 +62,7 @@ __all__ = [
     "VacancyPatchRequest",
     "MatchAnalyzeRequest",
     "AdaptResumeRequest",
+    "AnalyticsEventCreate",
     "IdealResumeRequest",
     "CoverLetterRequest",
     "VersionCreateRequest",
@@ -71,6 +74,7 @@ __all__ = [
     "VacancyDetailResponse",
     "MatchAnalyzeResponse",
     "AdaptResumeResponse",
+    "AnalyticsEventAcceptedResponse",
     "IdealResumeResponse",
     "CoverLetterResponse",
     "VersionItemResponse",
