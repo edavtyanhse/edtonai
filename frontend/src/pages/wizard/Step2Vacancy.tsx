@@ -44,7 +44,7 @@ export default function Step2Vacancy() {
         properties: {
           vacancy_id: data.vacancy_id,
           cache_hit: data.cache_hit,
-          has_source_url: Boolean(data.source_url),
+          has_source_url: Boolean(url),
         },
       })
     },

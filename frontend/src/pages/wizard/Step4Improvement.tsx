@@ -1,11 +1,11 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useMutation } from '@tanstack/react-query'
-import { Sparkles, Loader2, ArrowLeft, RotateCcw, Check, X, CheckCircle, XCircle, TrendingUp, TrendingDown, Minus, Eye, Home, Mail } from 'lucide-react'
+import { Sparkles, Loader2, ArrowLeft, RotateCcw, Check, X, CheckCircle, XCircle, TrendingUp, TrendingDown, Minus, Eye, Home, Mail, ChevronDown, Briefcase, FileText } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useWizard } from '@/hooks'
 import { adaptResume, createVersion, analyzeMatch, generateCoverLetter, parseResume } from '@/api'
 import type { CheckboxOption, CoverLetterResponse } from '@/api'
-import { Button, CheckboxList, ConfirmDialog, CoverLetterModal } from '@/components'
+import { Button, CheckboxList, ConfirmDialog, CoverLetterModal, HeadHunterPreview } from '@/components'
 import PdfPreview from '@/components/pdf/PdfPreview'
 import type { ChangeLogEntry, SelectedImprovement } from '@/api'
 import { trackBehaviorEvent } from '@/features/feedback/analytics'
@@ -41,10 +41,24 @@ export default function Step4Improvement() {
   const [lastAppliedChanges, setLastAppliedChanges] = useState<ChangeLogEntry[]>([])
   const [showCoverLetterModal, setShowCoverLetterModal] = useState(false)
   const [coverLetterData, setCoverLetterData] = useState<CoverLetterResponse | null>(null)
+  const [showExportDropdown, setShowExportDropdown] = useState(false)
+  const [showHhPreview, setShowHhPreview] = useState(false)
   const [currentVersionId, setCurrentVersionId] = useState<string | null>(null)
   const [navigateAfterFeedback, setNavigateAfterFeedback] = useState(false)
   // FEEDBACK FEATURE - remove this hook to disable
   const feedback = useFeedback()
+
+  useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setShowExportDropdown(false)
+        setShowPdfPreview(false)
+        setShowHhPreview(false)
+      }
+    }
+    window.addEventListener('keydown', handleEsc)
+    return () => window.removeEventListener('keydown', handleEsc)
+  }, [])
 
   // User inputs for checkboxes that require_user_input
   const [userInputs, setUserInputs] = useState<Record<string, string>>({})
@@ -213,6 +227,7 @@ export default function Step4Improvement() {
   }
 
   const handleOpenPdfPreview = async () => {
+    setShowExportDropdown(false)
     trackBehaviorEvent('export_clicked', {
       step: 'step_4',
       properties: {
@@ -234,6 +249,27 @@ export default function Step4Improvement() {
       setShowPdfPreview(true)
     } catch (error) {
       console.error('Failed to prepare PDF preview:', error)
+    } finally {
+      setIsPreparingPdf(false)
+    }
+  }
+
+  const handleOpenHhPreview = async () => {
+    setShowExportDropdown(false)
+    if (state.parsedResume) {
+      setShowHhPreview(true)
+      return
+    }
+
+    setIsPreparingPdf(true)
+    try {
+      const parseData = await parseResume({
+        resume_text: state.resumeText,
+      })
+      updateParsedResume(parseData.parsed_resume)
+      setShowHhPreview(true)
+    } catch (error) {
+      console.error('Failed to prepare HH preview:', error)
     } finally {
       setIsPreparingPdf(false)
     }
@@ -313,15 +349,64 @@ export default function Step4Improvement() {
           </p>
         </div>
         {mode === 'analysis' && (
-          <div className="flex gap-2">
-            <Button onClick={handleOpenPdfPreview} disabled={isPreparingPdf || reanalyzeMutation.isPending}>
-              {isPreparingPdf ? (
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              ) : (
-                <Eye className="w-4 h-4 mr-2" />
+          <div className="flex gap-2" role="toolbar" aria-label={t('wizard.step4.actions', 'Действия с результатом')}>
+            <div className="relative">
+              <span id="export-dropdown-trigger" className="hidden">Export Dropdown</span>
+              <Button
+                onClick={() => setShowExportDropdown(!showExportDropdown)}
+                disabled={isPreparingPdf || reanalyzeMutation.isPending}
+                className="bg-slate-700 hover:bg-slate-600 border-slate-600"
+                aria-haspopup="true"
+                aria-expanded={showExportDropdown}
+                aria-controls="export-menu"
+              >
+                {isPreparingPdf ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <Eye className="w-4 h-4 mr-2" />
+                )}
+                {t('common.export', 'Экспорт')}
+                <ChevronDown className={`w-4 h-4 ml-2 transition-transform ${showExportDropdown ? 'rotate-180' : ''}`} />
+              </Button>
+
+              {showExportDropdown && (
+                <>
+                  <div
+                    className="fixed inset-0 z-10"
+                    onClick={() => setShowExportDropdown(false)}
+                  />
+                  <div
+                    id="export-menu"
+                    role="menu"
+                    aria-labelledby="export-dropdown-trigger"
+                    className="absolute right-0 mt-2 w-56 bg-slate-800 rounded-lg shadow-xl border border-slate-700 z-20 py-1 overflow-hidden focus:outline-none"
+                  >
+                    <button
+                      className="w-full flex items-center px-4 py-3 text-sm text-slate-200 hover:bg-slate-700 transition-colors gap-3 focus:bg-slate-700 focus:outline-none"
+                      onClick={handleOpenPdfPreview}
+                      role="menuitem"
+                    >
+                      <FileText className="w-4 h-4 text-red-400" />
+                      <div className="text-left">
+                        <div className="font-semibold">{t('wizard.step4.preview_pdf', 'PDF Формат')}</div>
+                        <div className="text-xs text-slate-400">{t('wizard.step4.pdf_desc', 'Для печати и отправки почтой')}</div>
+                      </div>
+                    </button>
+                    <button
+                      className="w-full flex items-center px-4 py-3 text-sm text-slate-200 hover:bg-slate-700 transition-colors gap-3 border-t border-slate-700 focus:bg-slate-700 focus:outline-none"
+                      onClick={handleOpenHhPreview}
+                      role="menuitem"
+                    >
+                      <Briefcase className="w-4 h-4 text-blue-400" />
+                      <div className="text-left">
+                        <div className="font-semibold">{t('wizard.step4.hh_export', 'HeadHunter')}</div>
+                        <div className="text-xs text-slate-400">{t('wizard.step4.hh_export_desc', 'Копирование блоков для hh.ru')}</div>
+                      </div>
+                    </button>
+                  </div>
+                </>
               )}
-              {t('wizard.step4.preview_pdf')}
-            </Button>
+            </div>
             <Button
               onClick={handleGenerateCoverLetter}
               disabled={!currentVersionId || coverLetterMutation.isPending}
@@ -741,6 +826,16 @@ export default function Step4Improvement() {
           <PdfPreview
             data={state.parsedResume}
             onClose={() => setShowPdfPreview(false)}
+          />
+        )
+      }
+
+      {/* HeadHunter Preview Modal - Global */}
+      {
+        showHhPreview && state.parsedResume && (
+          <HeadHunterPreview
+            data={state.parsedResume}
+            onClose={() => setShowHhPreview(false)}
           />
         )
       }
