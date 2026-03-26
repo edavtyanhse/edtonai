@@ -35,7 +35,6 @@ export default function Step4Improvement() {
   const [mode, setMode] = useState<Mode>(state.resultText ? 'review' : 'checkboxes')
   const [showSaveDialog, setShowSaveDialog] = useState(false)
   const [showPdfPreview, setShowPdfPreview] = useState(false)
-  const [isPreparingPdf, setIsPreparingPdf] = useState(false)
   const [versionTitle, setVersionTitle] = useState('')
   const [pendingChanges, setPendingChanges] = useState<PendingChange[]>([])
   const [lastAppliedChanges, setLastAppliedChanges] = useState<ChangeLogEntry[]>([])
@@ -226,7 +225,7 @@ export default function Step4Improvement() {
     coverLetterMutation.mutate()
   }
 
-  const handleOpenPdfPreview = async () => {
+  const handleOpenPdfPreview = () => {
     setShowExportDropdown(false)
     trackBehaviorEvent('export_clicked', {
       step: 'step_4',
@@ -235,44 +234,21 @@ export default function Step4Improvement() {
       },
     })
 
-    if (state.parsedResume) {
-      setShowPdfPreview(true)
+    if (!state.parsedResume) {
+      console.warn('PDF preview: parsedResume not available yet')
       return
     }
-
-    setIsPreparingPdf(true)
-    try {
-      const parseData = await parseResume({
-        resume_text: state.resumeText,
-      })
-      updateParsedResume(parseData.parsed_resume)
-      setShowPdfPreview(true)
-    } catch (error) {
-      console.error('Failed to prepare PDF preview:', error)
-    } finally {
-      setIsPreparingPdf(false)
-    }
+    setShowPdfPreview(true)
   }
 
-  const handleOpenHhPreview = async () => {
+  const handleOpenHhPreview = () => {
     setShowExportDropdown(false)
-    if (state.parsedResume) {
-      setShowHhPreview(true)
+
+    if (!state.parsedResume) {
+      console.warn('HH preview: parsedResume not available yet')
       return
     }
-
-    setIsPreparingPdf(true)
-    try {
-      const parseData = await parseResume({
-        resume_text: state.resumeText,
-      })
-      updateParsedResume(parseData.parsed_resume)
-      setShowHhPreview(true)
-    } catch (error) {
-      console.error('Failed to prepare HH preview:', error)
-    } finally {
-      setIsPreparingPdf(false)
-    }
+    setShowHhPreview(true)
   }
 
   const handleSaveAndAnalyze = () => {
@@ -354,17 +330,13 @@ export default function Step4Improvement() {
               <span id="export-dropdown-trigger" className="hidden">Export Dropdown</span>
               <Button
                 onClick={() => setShowExportDropdown(!showExportDropdown)}
-                disabled={isPreparingPdf || reanalyzeMutation.isPending}
+                disabled={reanalyzeMutation.isPending}
                 className="bg-slate-700 hover:bg-slate-600 border-slate-600"
                 aria-haspopup="true"
                 aria-expanded={showExportDropdown}
                 aria-controls="export-menu"
               >
-                {isPreparingPdf ? (
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                ) : (
-                  <Eye className="w-4 h-4 mr-2" />
-                )}
+                <Eye className="w-4 h-4 mr-2" />
                 {t('common.export', 'Экспорт')}
                 <ChevronDown className={`w-4 h-4 ml-2 transition-transform ${showExportDropdown ? 'rotate-180' : ''}`} />
               </Button>
@@ -382,19 +354,25 @@ export default function Step4Improvement() {
                     className="absolute right-0 mt-2 w-56 bg-slate-800 rounded-lg shadow-xl border border-slate-700 z-20 py-1 overflow-hidden focus:outline-none"
                   >
                     <button
-                      className="w-full flex items-center px-4 py-3 text-sm text-slate-200 hover:bg-slate-700 transition-colors gap-3 focus:bg-slate-700 focus:outline-none"
+                      className={`w-full flex items-center px-4 py-3 text-sm transition-colors gap-3 focus:outline-none ${!state.parsedResume ? 'text-slate-500 cursor-not-allowed' : 'text-slate-200 hover:bg-slate-700 focus:bg-slate-700'}`}
                       onClick={handleOpenPdfPreview}
+                      disabled={!state.parsedResume}
                       role="menuitem"
                     >
                       <FileText className="w-4 h-4 text-red-400" />
                       <div className="text-left">
                         <div className="font-semibold">{t('wizard.step4.preview_pdf', 'PDF Формат')}</div>
-                        <div className="text-xs text-slate-400">{t('wizard.step4.pdf_desc', 'Для печати и отправки почтой')}</div>
+                        <div className="text-xs text-slate-400">
+                          {!state.parsedResume
+                            ? t('wizard.step4.pdf_loading', 'Подготовка данных...')
+                            : t('wizard.step4.pdf_desc', 'Для печати и отправки почтой')}
+                        </div>
                       </div>
                     </button>
                     <button
-                      className="w-full flex items-center px-4 py-3 text-sm text-slate-200 hover:bg-slate-700 transition-colors gap-3 border-t border-slate-700 focus:bg-slate-700 focus:outline-none"
+                      className={`w-full flex items-center px-4 py-3 text-sm transition-colors gap-3 border-t border-slate-700 focus:outline-none ${!state.parsedResume ? 'text-slate-500 cursor-not-allowed' : 'text-slate-200 hover:bg-slate-700 focus:bg-slate-700'}`}
                       onClick={handleOpenHhPreview}
+                      disabled={!state.parsedResume}
                       role="menuitem"
                     >
                       <Briefcase className="w-4 h-4 text-blue-400" />

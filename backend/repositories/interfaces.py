@@ -22,6 +22,8 @@ class IResumeRepository(Protocol):
 
     async def create(self, source_text: str, content_hash: str) -> Any: ...
 
+    async def get_or_create(self, source_text: str, content_hash: str) -> Any: ...
+
     async def update_parsed_data(
         self, resume_id: UUID, parsed_data: dict[str, Any]
     ) -> Any: ...
@@ -41,6 +43,13 @@ class IVacancyRepository(Protocol):
     async def get_by_id(self, vacancy_id: UUID) -> Any: ...
 
     async def create(
+        self,
+        source_text: str,
+        content_hash: str,
+        source_url: str | None = None,
+    ) -> Any: ...
+
+    async def get_or_create(
         self,
         source_text: str,
         content_hash: str,

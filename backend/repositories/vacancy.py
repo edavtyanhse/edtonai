@@ -1,14 +1,18 @@
 """Vacancy repository for database operations."""
 
+import logging
 from datetime import datetime
 from typing import Any
 from uuid import UUID
 
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.domain.mappers import set_vacancy_parsed_data
 from backend.models import VacancyRaw
+
+logger = logging.getLogger(__name__)
 
 
 class VacancyRepository:
@@ -44,6 +48,31 @@ class VacancyRepository:
         self.session.add(vacancy)
         await self.session.flush()
         return vacancy
+
+    async def get_or_create(
+        self,
+        source_text: str,
+        content_hash: str,
+        source_url: str | None = None,
+    ) -> VacancyRaw:
+        """Get existing vacancy by hash or create new one.
+
+        Handles race condition when parallel requests try to create
+        a vacancy with the same content_hash concurrently.
+        """
+        existing = await self.get_by_hash(content_hash)
+        if existing is not None:
+            return existing
+
+        try:
+            return await self.create(source_text, content_hash, source_url)
+        except IntegrityError:
+            logger.info("Race condition on vacancy content_hash, rolling back and re-fetching")
+            await self.session.rollback()
+            existing = await self.get_by_hash(content_hash)
+            if existing is not None:
+                return existing
+            raise
 
     async def update_parsed_data(
         self, vacancy_id: UUID, parsed_data: dict[str, Any]

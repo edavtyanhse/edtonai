@@ -62,11 +62,8 @@ class ResumeService(CachedAIService):
             },
         )
 
-        # Get or create resume record
-        resume = await self.resume_repo.get_by_hash(content_hash)
-        if resume is None:
-            resume = await self.resume_repo.create(resume_text, content_hash)
-            self.logger.info("Created new resume record: %s", resume.id)
+        # Get or create resume record (handles race condition on duplicate hash)
+        resume = await self.resume_repo.get_or_create(resume_text, content_hash)
 
         # Check cache
         cached_result = await self._check_cache(ai_input_hash)

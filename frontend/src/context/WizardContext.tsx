@@ -131,7 +131,8 @@ export function WizardProvider({ children }: { children: ReactNode }) {
     setState((prev) => ({
       ...prev,
       resumeText: newResumeText,  // New base resume text
-      parsedResume: null,         // Force re-parse so PDF preview never uses stale original data
+      // Keep parsedResume — reanalyzeMutation will update it on success.
+      // Clearing it forces preview to call parse API which may fail.
       previousResumeText: prev.resumeText, // Save previous resume text for diff
       resultText: '',              // Clear result
       changeLog: [],               // Clear change log
