@@ -2,6 +2,7 @@
 
 import hashlib
 import hmac
+import logging
 import secrets
 import time
 from urllib.parse import urlencode
@@ -13,6 +14,8 @@ from fastapi.responses import RedirectResponse
 from backend.auth.oauth_service import OAuthService
 from backend.containers import Container
 from backend.core.config import Settings
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/auth/oauth", tags=["oauth"])
 
@@ -75,7 +78,15 @@ async def oauth_callback(
             status_code=302,
         )
 
-    token_pair, user_info = await oauth_service.handle_callback(provider, code)
+    try:
+        token_pair, user_info = await oauth_service.handle_callback(provider, code)
+    except Exception:
+        logger.exception("OAuth callback failed for provider=%s", provider)
+        error_params = urlencode({"error": "Authentication failed. Please try again."})
+        return RedirectResponse(
+            url=f"{settings.frontend_url}/login?{error_params}",
+            status_code=302,
+        )
 
     # Redirect to frontend callback page with tokens
     # Refresh token is passed via URL (one-time) because the cookie domain
