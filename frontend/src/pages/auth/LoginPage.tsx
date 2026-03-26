@@ -10,6 +10,7 @@ export default function LoginPage() {
     const [password, setPassword] = useState('')
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
+    const [emailNotVerified, setEmailNotVerified] = useState(false)
     const navigate = useNavigate()
     const { setAuth } = useAuth()
 
@@ -17,13 +18,19 @@ export default function LoginPage() {
         e.preventDefault()
         setLoading(true)
         setError(null)
+        setEmailNotVerified(false)
 
         try {
             const data = await loginApi(email, password)
             setAuth(data.access_token, data.user)
             navigate('/')
         } catch (err: unknown) {
-            setError(err instanceof Error ? err.message : 'Error logging in')
+            const message = err instanceof Error ? err.message : 'Error logging in'
+            if (message.toLowerCase().includes('email not verified')) {
+                setEmailNotVerified(true)
+            } else {
+                setError(message)
+            }
         } finally {
             setLoading(false)
         }
@@ -41,6 +48,11 @@ export default function LoginPage() {
                 </div>
 
                 <form className="mt-8 space-y-6" onSubmit={handleLogin}>
+                    {emailNotVerified && (
+                        <div className="bg-amber-900/30 text-amber-300 p-3 rounded-lg text-sm border border-amber-500/30">
+                            Please verify your email before signing in. Check your inbox for the verification link.
+                        </div>
+                    )}
                     {error && (
                         <div className="bg-red-900/30 text-red-300 p-3 rounded-lg text-sm border border-red-500/30">
                             {error}

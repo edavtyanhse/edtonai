@@ -1,8 +1,7 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import { Loader2, UserPlus } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { Loader2, UserPlus, Mail } from 'lucide-react'
 import { registerApi } from '@/api/auth'
-import { useAuth } from '@/context/AuthContext'
 import { Button } from '@/components'
 
 export default function RegisterPage() {
@@ -10,8 +9,7 @@ export default function RegisterPage() {
     const [password, setPassword] = useState('')
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
-    const navigate = useNavigate()
-    const { setAuth } = useAuth()
+    const [registered, setRegistered] = useState(false)
 
     const handleRegister = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -19,14 +17,35 @@ export default function RegisterPage() {
         setError(null)
 
         try {
-            const data = await registerApi(email, password)
-            setAuth(data.access_token, data.user)
-            navigate('/')
+            await registerApi(email, password)
+            setRegistered(true)
         } catch (err: unknown) {
             setError(err instanceof Error ? err.message : 'Error registering')
         } finally {
             setLoading(false)
         }
+    }
+
+    if (registered) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-slate-900 px-4">
+                <div className="max-w-md w-full bg-slate-800 p-8 rounded-xl shadow-lg border border-slate-700 text-center space-y-4">
+                    <div className="w-16 h-16 bg-brand-900/30 rounded-full flex items-center justify-center mx-auto border border-brand-500/30">
+                        <Mail className="w-8 h-8 text-brand-400" />
+                    </div>
+                    <h2 className="text-2xl font-bold text-white">Check your email</h2>
+                    <p className="text-slate-400">
+                        We sent a verification link to <span className="text-white font-medium">{email}</span>.
+                        Please check your inbox and click the link to activate your account.
+                    </p>
+                    <div className="pt-4">
+                        <Link to="/login">
+                            <Button className="w-full">Go to Login</Button>
+                        </Link>
+                    </div>
+                </div>
+            </div>
+        )
     }
 
     return (

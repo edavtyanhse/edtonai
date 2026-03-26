@@ -11,6 +11,7 @@ from backend.core.config import Settings
 from backend.domain.auth import RegistrationResult, TokenPair, UserInfo
 from backend.errors.auth import (
     EmailAlreadyExistsError,
+    EmailNotVerifiedError,
     InvalidCredentialsError,
     InvalidTokenError,
     TokenExpiredError,
@@ -85,6 +86,8 @@ class AuthService:
             raise InvalidCredentialsError()
         if not user.is_active:
             raise InvalidCredentialsError()
+        if not user.is_email_verified:
+            raise EmailNotVerifiedError()
 
         token_pair = await self._create_token_pair(user.id, user.email)
         user_info = UserInfo(
