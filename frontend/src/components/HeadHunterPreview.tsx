@@ -50,7 +50,7 @@ export default function HeadHunterPreview({ data, onClose }: Props) {
         }
     }
 
-    const { work_experience, skills, summary, personal_info } = data
+    const { work_experience, skills, summary } = data
 
     const getFullExportText = () => {
         const sections = []
