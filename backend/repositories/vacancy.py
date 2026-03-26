@@ -57,18 +57,24 @@ class VacancyRepository:
     ) -> VacancyRaw:
         """Get existing vacancy by hash or create new one.
 
-        Handles race condition when parallel requests try to create
-        a vacancy with the same content_hash concurrently.
+        Uses a savepoint (begin_nested) so that IntegrityError on duplicate
+        hash rolls back only the INSERT, keeping the session usable.
         """
         existing = await self.get_by_hash(content_hash)
         if existing is not None:
             return existing
 
         try:
-            return await self.create(source_text, content_hash, source_url)
+            async with self.session.begin_nested():
+                vacancy = VacancyRaw(
+                    source_text=source_text,
+                    content_hash=content_hash,
+                    source_url=source_url,
+                )
+                self.session.add(vacancy)
+            return vacancy
         except IntegrityError:
-            logger.info("Race condition on vacancy content_hash, rolling back and re-fetching")
-            await self.session.rollback()
+            logger.info("Race condition on vacancy content_hash, re-fetching")
             existing = await self.get_by_hash(content_hash)
             if existing is not None:
                 return existing

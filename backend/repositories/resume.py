@@ -43,22 +43,25 @@ class ResumeRepository:
     async def get_or_create(self, source_text: str, content_hash: str) -> ResumeRaw:
         """Get existing resume by hash or create new one.
 
-        Handles race condition when parallel requests try to create
-        a resume with the same content_hash concurrently.
+        Uses a savepoint (begin_nested) so that IntegrityError on duplicate
+        hash rolls back only the INSERT, keeping the session usable.
         """
         existing = await self.get_by_hash(content_hash)
         if existing is not None:
             return existing
 
         try:
-            return await self.create(source_text, content_hash)
+            async with self.session.begin_nested():
+                resume = ResumeRaw(source_text=source_text, content_hash=content_hash)
+                self.session.add(resume)
+            # flush happened inside begin_nested commit
+            return resume
         except IntegrityError:
-            logger.info("Race condition on content_hash, rolling back and re-fetching")
-            await self.session.rollback()
+            logger.info("Race condition on resume content_hash, re-fetching")
             existing = await self.get_by_hash(content_hash)
             if existing is not None:
                 return existing
-            raise  # Should not happen, but re-raise if it does
+            raise
 
     async def update_parsed_data(
         self, resume_id: UUID, parsed_data: dict[str, Any]
