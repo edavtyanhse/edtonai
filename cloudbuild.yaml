@@ -67,7 +67,7 @@ steps:
       - '--port'
       - '80'
       - '--set-env-vars'
-      - 'BACKEND_URL=$_BACKEND_URL'
+      - 'BACKEND_URL=$_BACKEND_INTERNAL_URL'
 
 images:
   - '$_AR_HOSTNAME/$PROJECT_ID/$_AR_REPO/backend'
@@ -93,7 +93,8 @@ substitutions:
   # _POSTGRES_PASSWORD
   # _DEEPSEEK_API_KEY
   # _GROQ_API_KEY
-  # _BACKEND_URL (custom domain: https://edtonai.tech/api — goes through nginx proxy)
+  # _BACKEND_URL (public OAuth redirect base: https://edtonai.tech/api)
+  # _BACKEND_INTERNAL_URL (Cloud Run URL for nginx proxy: https://edtonai-backend-qrmdwx6fha-ue.a.run.app)
   # _FRONTEND_URL (custom domain: https://edtonai.tech)
   # _JWT_SECRET_KEY (64+ char random string for signing JWTs)
   # _SMTP_USERNAME (e.g. edtonai@yandex.com)
