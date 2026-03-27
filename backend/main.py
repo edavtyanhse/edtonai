@@ -55,6 +55,10 @@ async def request_id_middleware(request: Request, call_next):
     """Add request_id to each request for tracing."""
     req_id = request.headers.get("X-Request-ID", str(uuid.uuid4())[:8])
     request_id_ctx.set(req_id)
+    # Reset DI session resource per request so each request gets a fresh session.
+    # This prevents PendingRollbackError from poisoning subsequent requests.
+    await container.session.shutdown()
+    await container.session.init()
     response = await call_next(request)
     response.headers["X-Request-ID"] = req_id
     return response
