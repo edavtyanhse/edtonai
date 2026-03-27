@@ -41,6 +41,8 @@ steps:
       - 'build'
       - '-t'
       - '$_AR_HOSTNAME/$PROJECT_ID/$_AR_REPO/frontend'
+      - '--build-arg'
+      - 'VITE_CLARITY_PROJECT_ID=$_VITE_CLARITY_PROJECT_ID'
       - 'frontend/'
 
   - name: 'gcr.io/cloud-builders/docker'
@@ -96,6 +98,7 @@ substitutions:
   # _BACKEND_URL (public OAuth redirect base: https://edtonai.tech/api)
   # _BACKEND_INTERNAL_URL (Cloud Run URL for nginx proxy: https://edtonai-backend-qrmdwx6fha-ue.a.run.app)
   # _FRONTEND_URL (custom domain: https://edtonai.tech)
+  # _VITE_CLARITY_PROJECT_ID (Microsoft Clarity project id)
   # _JWT_SECRET_KEY (64+ char random string for signing JWTs)
   # _SMTP_USERNAME (e.g. edtonai@yandex.com)
   # _SMTP_PASSWORD (Yandex app password)

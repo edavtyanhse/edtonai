@@ -8,6 +8,7 @@ steps:
   - 'VITE_SUPABASE_URL=$_VITE_SUPABASE_URL'
   - '--build-arg'
   - 'VITE_SUPABASE_ANON_KEY=$_VITE_SUPABASE_ANON_KEY'
+    - '--build-arg'
+    - 'VITE_CLARITY_PROJECT_ID=$_VITE_CLARITY_PROJECT_ID'
   - '.'
 images:
-- '$_IMAGE_TAG'
