@@ -111,18 +111,12 @@ export default function RegisterPage() {
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-3 gap-3">
+                    <div className="grid grid-cols-2 gap-3">
                         <a
                             href="/api/auth/oauth/google"
                             className="flex items-center justify-center px-4 py-2 border border-slate-600 rounded-lg text-sm text-slate-300 hover:bg-slate-700 transition-colors"
                         >
                             Google
-                        </a>
-                        <a
-                            href="/api/auth/oauth/vk"
-                            className="flex items-center justify-center px-4 py-2 border border-slate-600 rounded-lg text-sm text-slate-300 hover:bg-slate-700 transition-colors"
-                        >
-                            VK
                         </a>
                         <a
                             href="/api/auth/oauth/yandex"

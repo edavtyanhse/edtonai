@@ -68,6 +68,12 @@ class InMemoryResumeRepo:
         self.by_id[record.id] = record
         return record
 
+    async def get_or_create(self, source_text: str, content_hash: str):
+        existing = await self.get_by_hash(content_hash)
+        if existing:
+            return existing
+        return await self.create(source_text, content_hash)
+
 
 class InMemoryVacancyRepo:
     def __init__(self) -> None:
@@ -92,6 +98,14 @@ class InMemoryVacancyRepo:
         self.by_hash[content_hash] = record
         self.by_id[record.id] = record
         return record
+
+    async def get_or_create(
+        self, source_text: str, content_hash: str, source_url: str | None = None
+    ):
+        existing = await self.get_by_hash(content_hash)
+        if existing:
+            return existing
+        return await self.create(source_text, content_hash, source_url)
 
 
 class InMemoryAIResultRepo:

@@ -28,7 +28,6 @@ from backend.integration.email.client import SmtpEmailClient
 from backend.integration.email.service import EmailService
 from backend.integration.oauth.base import OAuthProvider
 from backend.integration.oauth.google import GoogleOAuthProvider
-from backend.integration.oauth.vk import VkOAuthProvider
 from backend.integration.oauth.yandex import YandexOAuthProvider
 from backend.repositories.ai_result import AIResultRepository
 from backend.repositories.analysis import AnalysisRepository
@@ -81,12 +80,6 @@ def _create_oauth_providers(settings: Settings) -> dict[str, OAuthProvider]:
             client_id=settings.google_oauth_client_id,
             client_secret=settings.google_oauth_client_secret,
             redirect_uri=f"{base}/auth/oauth/google/callback",
-        )
-    if settings.vk_oauth_client_id:
-        result["vk"] = VkOAuthProvider(
-            client_id=settings.vk_oauth_client_id,
-            client_secret=settings.vk_oauth_client_secret,
-            redirect_uri=f"{base}/auth/oauth/vk/callback",
         )
     if settings.yandex_oauth_client_id:
         result["yandex"] = YandexOAuthProvider(

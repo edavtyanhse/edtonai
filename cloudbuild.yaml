@@ -93,8 +93,8 @@ substitutions:
   # _POSTGRES_PASSWORD
   # _DEEPSEEK_API_KEY
   # _GROQ_API_KEY
-  # _BACKEND_URL (custom domain: https://api.edtonai.tech or Cloud Run URL)
-  # _FRONTEND_URL (custom domain: https://edtonai.tech or Cloud Run URL)
+  # _BACKEND_URL (custom domain: https://edtonai.tech/api — goes through nginx proxy)
+  # _FRONTEND_URL (custom domain: https://edtonai.tech)
   # _JWT_SECRET_KEY (64+ char random string for signing JWTs)
   # _SMTP_USERNAME (e.g. edtonai@yandex.com)
   # _SMTP_PASSWORD (Yandex app password)

@@ -97,10 +97,6 @@ class Settings(BaseSettings):
     google_oauth_client_id: str = ""
     google_oauth_client_secret: str = ""
 
-    # OAuth — VK
-    vk_oauth_client_id: str = ""
-    vk_oauth_client_secret: str = ""
-
     # OAuth — Yandex
     yandex_oauth_client_id: str = ""
     yandex_oauth_client_secret: str = ""
