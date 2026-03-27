@@ -10,7 +10,7 @@ from backend.api import v1_router
 from backend.api.v1.health import router as health_router
 from backend.auth.oauth_router import router as oauth_router
 from backend.auth.router import router as auth_router
-from backend.containers import Container
+from backend.containers import Container, request_session
 from backend.core.logging import request_id_ctx, setup_logging
 from backend.errors.handlers import register_exception_handlers
 
@@ -52,19 +52,22 @@ app = FastAPI(
 
 @app.middleware("http")
 async def request_id_middleware(request: Request, call_next):
-    """Add request_id to each request for tracing."""
+    """Add request_id, create per-request DB session with commit/rollback."""
     req_id = request.headers.get("X-Request-ID", str(uuid.uuid4())[:8])
     request_id_ctx.set(req_id)
-    # Reset DI session resource per request so each request gets a fresh session.
-    # This prevents PendingRollbackError from poisoning subsequent requests.
-    if container.session.initialized:
-        shutdown = container.session.shutdown()
-        if shutdown is not None:
-            await shutdown
-    init = container.session.init()
-    if init is not None:
-        await init
-    response = await call_next(request)
+
+    session_factory = container.session_factory()
+    async with session_factory() as session:
+        token = request_session.set(session)
+        try:
+            response = await call_next(request)
+            await session.commit()
+        except Exception:
+            await session.rollback()
+            raise
+        finally:
+            request_session.reset(token)
+
     response.headers["X-Request-ID"] = req_id
     return response
 

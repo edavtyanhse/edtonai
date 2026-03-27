@@ -13,9 +13,12 @@
 
 from __future__ import annotations
 
-from collections.abc import AsyncGenerator
+import contextvars
 
 from dependency_injector import containers, providers
+
+# Per-request session, set by middleware in main.py
+request_session: contextvars.ContextVar = contextvars.ContextVar("request_session")
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from backend.auth.oauth_service import OAuthService
@@ -90,19 +93,6 @@ def _create_oauth_providers(settings: Settings) -> dict[str, OAuthProvider]:
     return result
 
 
-async def _async_session_resource(
-    session_factory: async_sessionmaker[AsyncSession],
-) -> AsyncGenerator[AsyncSession, None]:
-    """Resource provider: open session → yield → commit/rollback → close."""
-    async with session_factory() as session:
-        try:
-            yield session
-            await session.commit()
-        except Exception:
-            await session.rollback()
-            raise
-
-
 # ── Container ─────────────────────────────────────────────────────
 
 
@@ -114,7 +104,7 @@ class Container(containers.DeclarativeContainer):
         Settings (Singleton)
           └─► async_engine (Singleton)
                 └─► session_factory (Singleton)
-                      └─► session (Resource, per-request)
+                      └─► session (Dependency, set per-request by middleware)
                             ├─► Repositories (Factory)
                             │     └─► Services (Factory)
                             └─► AI Providers (Factory)
@@ -153,10 +143,7 @@ class Container(containers.DeclarativeContainer):
         autoflush=False,
     )
 
-    session = providers.Resource(
-        _async_session_resource,
-        session_factory=session_factory,
-    )
+    session = providers.Callable(lambda: request_session.get())
 
     # ── AI Providers ──────────────────────────────────────────────
 
