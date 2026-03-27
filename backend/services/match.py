@@ -9,7 +9,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from backend.core.config import Settings
 from backend.domain.match import MatchAnalysisResult
 from backend.integration.ai.base import AIProvider
-from backend.integration.ai.prompts import ANALYZE_MATCH_PROMPT, ANALYZE_MATCH_WITH_CONTEXT_PROMPT
+from backend.integration.ai.prompts import (
+    ANALYZE_MATCH_PROMPT,
+    ANALYZE_MATCH_WITH_CONTEXT_PROMPT,
+)
 from backend.repositories.interfaces import IAIResultRepository
 from backend.services.base import CachedAIService
 from backend.services.utils import (
@@ -117,13 +120,16 @@ class MatchService(CachedAIService):
 
         # Build prompt & call LLM
         prompt = ANALYZE_MATCH_PROMPT.replace(
-            "{{PARSED_RESUME_JSON}}", json.dumps(parsed_resume, ensure_ascii=False, indent=2)
+            "{{PARSED_RESUME_JSON}}",
+            json.dumps(parsed_resume, ensure_ascii=False, indent=2),
         ).replace(
-            "{{PARSED_VACANCY_JSON}}", json.dumps(parsed_vacancy, ensure_ascii=False, indent=2)
+            "{{PARSED_VACANCY_JSON}}",
+            json.dumps(parsed_vacancy, ensure_ascii=False, indent=2),
         )
 
         analysis_json = await self.ai_provider.generate_json(
-            prompt, prompt_name=self.OPERATION,
+            prompt,
+            prompt_name=self.OPERATION,
         )
         analysis_json = self._clamp_scores(analysis_json)
 
@@ -157,12 +163,14 @@ class MatchService(CachedAIService):
         for cid in applied_checkbox_ids:
             gap = gaps_by_id.get(cid)
             if gap:
-                applied_details.append({
-                    "checkbox_id": cid,
-                    "type": gap.get("type", "unknown"),
-                    "message": gap.get("message", ""),
-                    "target_section": gap.get("target_section", "other"),
-                })
+                applied_details.append(
+                    {
+                        "checkbox_id": cid,
+                        "type": gap.get("type", "unknown"),
+                        "message": gap.get("message", ""),
+                        "target_section": gap.get("target_section", "other"),
+                    }
+                )
 
         # Cache key includes applied improvements
         base_hash = self._compute_match_hash(parsed_resume, parsed_vacancy)
@@ -194,15 +202,27 @@ class MatchService(CachedAIService):
 
         # Build prompt
         prompt = (
-            ANALYZE_MATCH_WITH_CONTEXT_PROMPT
-            .replace("{{PARSED_RESUME_JSON}}", json.dumps(parsed_resume, ensure_ascii=False, indent=2))
-            .replace("{{PARSED_VACANCY_JSON}}", json.dumps(parsed_vacancy, ensure_ascii=False, indent=2))
-            .replace("{{ORIGINAL_ANALYSIS_JSON}}", json.dumps(original_analysis, ensure_ascii=False, indent=2))
-            .replace("{{APPLIED_IMPROVEMENTS_JSON}}", json.dumps(applied_details, ensure_ascii=False, indent=2))
+            ANALYZE_MATCH_WITH_CONTEXT_PROMPT.replace(
+                "{{PARSED_RESUME_JSON}}",
+                json.dumps(parsed_resume, ensure_ascii=False, indent=2),
+            )
+            .replace(
+                "{{PARSED_VACANCY_JSON}}",
+                json.dumps(parsed_vacancy, ensure_ascii=False, indent=2),
+            )
+            .replace(
+                "{{ORIGINAL_ANALYSIS_JSON}}",
+                json.dumps(original_analysis, ensure_ascii=False, indent=2),
+            )
+            .replace(
+                "{{APPLIED_IMPROVEMENTS_JSON}}",
+                json.dumps(applied_details, ensure_ascii=False, indent=2),
+            )
         )
 
         analysis_json = await self.ai_provider.generate_json(
-            prompt, prompt_name="analyze_match_with_context",
+            prompt,
+            prompt_name="analyze_match_with_context",
         )
         analysis_json = self._clamp_scores(analysis_json)
 

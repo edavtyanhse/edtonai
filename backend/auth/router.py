@@ -8,7 +8,11 @@ from fastapi import APIRouter, Cookie, Depends, Query, Response
 from backend.auth.service import AuthService
 from backend.containers import Container
 from backend.core.auth import require_auth
-from backend.schemas.requests.auth import LoginRequest, RegisterRequest, VerifyEmailRequest
+from backend.schemas.requests.auth import (
+    LoginRequest,
+    RegisterRequest,
+    VerifyEmailRequest,
+)
 from backend.schemas.responses.auth import AuthResponse, MessageResponse, UserResponse
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -85,6 +89,7 @@ async def refresh(
     """Refresh access token using refresh token cookie."""
     if not refresh_token:
         from backend.errors.auth import InvalidTokenError
+
         raise InvalidTokenError()
 
     token_pair, user_info = await service.refresh(UUID(refresh_token))

@@ -22,7 +22,9 @@ class GroqProvider(AIProvider):
         self.model = model
         self.provider_name = "groq"
 
-    async def generate_json(self, prompt: str, prompt_name: str | None = None) -> dict[str, Any]:
+    async def generate_json(
+        self, prompt: str, prompt_name: str | None = None
+    ) -> dict[str, Any]:
         """Generate a JSON dictionary using Groq."""
         try:
             logger.info(f"Generating JSON with Groq model: {self.model}")
@@ -32,12 +34,9 @@ class GroqProvider(AIProvider):
                 messages=[
                     {
                         "role": "system",
-                        "content": "You are a helpful assistant that outputs JSON only."
+                        "content": "You are a helpful assistant that outputs JSON only.",
                     },
-                    {
-                        "role": "user",
-                        "content": prompt
-                    }
+                    {"role": "user", "content": prompt},
                 ],
                 temperature=settings.ai_temperature,
                 max_tokens=settings.ai_max_tokens,

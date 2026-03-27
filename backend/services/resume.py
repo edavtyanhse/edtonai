@@ -85,7 +85,9 @@ class ResumeService(CachedAIService):
 
         # Call LLM
         prompt = PARSE_RESUME_PROMPT.replace("{{RESUME_TEXT}}", resume_text)
-        parsed_json = await self.ai_provider.generate_json(prompt, prompt_name=self.OPERATION)
+        parsed_json = await self.ai_provider.generate_json(
+            prompt, prompt_name=self.OPERATION
+        )
 
         # Save to cache
         await self._save_to_cache(ai_input_hash, parsed_json)

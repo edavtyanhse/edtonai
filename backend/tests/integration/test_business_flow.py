@@ -8,14 +8,14 @@ MOCK_PARSED_RESUME = {
     "personal_info": {"name": "Test User", "title": "Developer"},
     "skills": [{"name": "Python", "category": "language"}],
     "work_experience": [{"company": "Tech Corp", "title": "Senior Dev"}],
-    "education": [{"institution": "University", "degree": "BS CS"}]
+    "education": [{"institution": "University", "degree": "BS CS"}],
 }
 
 MOCK_PARSED_VACANCY = {
     "job_title": "Senior Python Developer",
     "company": "AI Startup",
     "required_skills": [{"name": "Python"}, {"name": "FastAPI"}],
-    "responsibilities": ["Write code", "Fix bugs"]
+    "responsibilities": ["Write code", "Fix bugs"],
 }
 
 MOCK_MATCH_ANALYSIS = {
@@ -24,15 +24,16 @@ MOCK_MATCH_ANALYSIS = {
         "skill_fit": {"value": 45, "comment": "Good skills"},
         "experience_fit": {"value": 20, "comment": "Relevant exp"},
         "ats_fit": {"value": 10, "comment": "Keywords match"},
-        "clarity_evidence": {"value": 10, "comment": "Clear"}
+        "clarity_evidence": {"value": 10, "comment": "Clear"},
     },
     "matched_required_skills": ["Python"],
     "missing_required_skills": ["FastAPI"],
     "matched_preferred_skills": [],
     "missing_preferred_skills": [],
     "gaps": [],
-    "checkbox_options": []
+    "checkbox_options": [],
 }
+
 
 @pytest.mark.anyio
 async def test_parse_resume_flow(client: AsyncClient, mock_ai_provider):
@@ -41,7 +42,9 @@ async def test_parse_resume_flow(client: AsyncClient, mock_ai_provider):
 
     response = await client.post(
         "/v1/resumes/parse",
-        json={"resume_text": f"I am a developer with Python skills @ Tech Corp {uuid.uuid4()}"}
+        json={
+            "resume_text": f"I am a developer with Python skills @ Tech Corp {uuid.uuid4()}"
+        },
     )
 
     assert response.status_code == 200
@@ -63,7 +66,7 @@ async def test_parse_vacancy_flow(client: AsyncClient, mock_ai_provider):
 
     response = await client.post(
         "/v1/vacancies/parse",
-        json={"vacancy_text": f"We need a Python developer {uuid.uuid4()}"}
+        json={"vacancy_text": f"We need a Python developer {uuid.uuid4()}"},
     )
 
     assert response.status_code == 200
@@ -86,13 +89,10 @@ async def test_analyze_match_flow(client: AsyncClient, mock_ai_provider):
     # Needs a real resume and vacancy text, but we mock the AI response anyway
     payload = {
         "resume_text": f"resume content {uuid.uuid4()}",
-        "vacancy_text": f"vacancy content {uuid.uuid4()}"
+        "vacancy_text": f"vacancy content {uuid.uuid4()}",
     }
 
-    response = await client.post(
-        "/v1/match/analyze",
-        json=payload
-    )
+    response = await client.post("/v1/match/analyze", json=payload)
 
     assert response.status_code == 200
     data = response.json()

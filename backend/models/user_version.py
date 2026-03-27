@@ -98,4 +98,6 @@ class UserVersion(Base):
     )
 
     # Relationships
-    analysis = relationship("backend.models.ai_result.AIResult", foreign_keys=[analysis_id])
+    analysis = relationship(
+        "backend.models.ai_result.AIResult", foreign_keys=[analysis_id]
+    )

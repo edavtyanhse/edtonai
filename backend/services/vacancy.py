@@ -66,11 +66,16 @@ class VacancyService(CachedAIService):
             },
         )
 
-        # Get or create vacancy record (handles race condition on duplicate hash)
-        vacancy = await self.vacancy_repo.get_or_create(
-            vacancy_text, content_hash, source_url=source_url,
-        )
-        if source_url and not vacancy.source_url:
+        # Get or create vacancy record
+        vacancy = await self.vacancy_repo.get_by_hash(content_hash)
+        if vacancy is None:
+            vacancy = await self.vacancy_repo.create(
+                vacancy_text,
+                content_hash,
+                source_url=source_url,
+            )
+            self.logger.info("Created new vacancy record: %s", vacancy.id)
+        elif source_url and not vacancy.source_url:
             # Backfill source_url if missing
             vacancy.source_url = source_url
             await self.session.flush()
@@ -95,7 +100,9 @@ class VacancyService(CachedAIService):
 
         # Call LLM
         prompt = PARSE_VACANCY_PROMPT.replace("{{VACANCY_TEXT}}", vacancy_text)
-        parsed_json = await self.ai_provider.generate_json(prompt, prompt_name=self.OPERATION)
+        parsed_json = await self.ai_provider.generate_json(
+            prompt, prompt_name=self.OPERATION
+        )
 
         # Save to cache
         await self._save_to_cache(ai_input_hash, parsed_json)

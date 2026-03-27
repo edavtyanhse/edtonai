@@ -33,7 +33,9 @@ class DeepSeekProvider(AIProvider):
         self.completions_url = f"{self.base_url}/chat/completions"
         self.logger = logging.getLogger(__name__)
 
-    async def generate_json(self, prompt: str, prompt_name: str | None = None) -> dict[str, Any]:
+    async def generate_json(
+        self, prompt: str, prompt_name: str | None = None
+    ) -> dict[str, Any]:
         prompt_name = prompt_name or "anonymous_prompt"
         input_hash = hashlib.sha256(prompt.encode("utf-8")).hexdigest()
 
@@ -104,7 +106,9 @@ class DeepSeekProvider(AIProvider):
                 )
                 if attempt < self.max_retries:
                     continue
-                raise AIRequestError(f"DeepSeek request failed after retries: {exc}") from exc
+                raise AIRequestError(
+                    f"DeepSeek request failed after retries: {exc}"
+                ) from exc
 
         raise AIRequestError(f"DeepSeek request failed: {last_error}")
 
@@ -114,7 +118,9 @@ class DeepSeekProvider(AIProvider):
         """Stream response chunks to avoid connection timeout on long generations."""
         content_parts: list[str] = []
 
-        async with client.stream("POST", self.completions_url, headers=headers, json=payload) as response:
+        async with client.stream(
+            "POST", self.completions_url, headers=headers, json=payload
+        ) as response:
             response.raise_for_status()
 
             async for line in response.aiter_lines():
@@ -149,14 +155,20 @@ class DeepSeekProvider(AIProvider):
         except json.JSONDecodeError:
             validated_text = await self._validate_with_model(raw_output)
             if validated_text is None:
-                raise AIResponseFormatError("LLM output is not valid JSON and could not be recovered")
+                raise AIResponseFormatError(
+                    "LLM output is not valid JSON and could not be recovered"
+                )
             try:
                 return json.loads(validated_text)
             except json.JSONDecodeError as exc:
-                raise AIResponseFormatError("Validated LLM output is still not valid JSON") from exc
+                raise AIResponseFormatError(
+                    "Validated LLM output is still not valid JSON"
+                ) from exc
 
     async def _validate_with_model(self, raw_output: str) -> str | None:
-        validation_prompt = VALIDATE_JSON_PROMPT.replace("{{RAW_MODEL_OUTPUT}}", raw_output)
+        validation_prompt = VALIDATE_JSON_PROMPT.replace(
+            "{{RAW_MODEL_OUTPUT}}", raw_output
+        )
         try:
             validated_output, _ = await self._call_model(validation_prompt)
             return validated_output.strip() if validated_output else None

@@ -6,7 +6,10 @@ import httpx
 
 from backend.domain.oauth import OAuthUserInfo
 from backend.integration.oauth.base import OAuthProvider
-from backend.integration.oauth.errors import OAuthEmailNotProvidedError, OAuthProviderError
+from backend.integration.oauth.errors import (
+    OAuthEmailNotProvidedError,
+    OAuthProviderError,
+)
 
 _AUTHORIZE_URL = "https://oauth.vk.com/authorize"
 _TOKEN_URL = "https://oauth.vk.com/access_token"

@@ -36,10 +36,16 @@ class IdealResumeOptions(BaseModel):
 class ChangeLogEntry(BaseModel):
     """Single change made during adaptation."""
 
-    checkbox_id: str = Field(..., description="ID of the checkbox that triggered this change")
+    checkbox_id: str = Field(
+        ..., description="ID of the checkbox that triggered this change"
+    )
     what_changed: str = Field(..., description="Description of what was changed")
-    where: str = Field(..., description="Section: summary | skills | experience | education | other")
-    before_excerpt: str | None = Field(default=None, description="Original text fragment")
+    where: str = Field(
+        ..., description="Section: summary | skills | experience | education | other"
+    )
+    before_excerpt: str | None = Field(
+        default=None, description="Original text fragment"
+    )
     after_excerpt: str | None = Field(default=None, description="New text fragment")
 
 

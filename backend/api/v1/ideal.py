@@ -35,15 +35,17 @@ async def generate_ideal_resume(
         )
 
     result = await service.generate_ideal(
-            vacancy_text=request.vacancy_text,
-            vacancy_id=request.vacancy_id,
-            options=request.options.model_dump() if request.options else {},
-        )
+        vacancy_text=request.vacancy_text,
+        vacancy_id=request.vacancy_id,
+        options=request.options.model_dump() if request.options else {},
+    )
 
     return IdealResumeResponse(
         ideal_id=result.ideal_id,
         vacancy_id=result.vacancy_id,
         ideal_resume_text=result.ideal_resume_text,
-        metadata=IdealResumeMetadata(**result.metadata) if result.metadata else IdealResumeMetadata(),
+        metadata=IdealResumeMetadata(**result.metadata)
+        if result.metadata
+        else IdealResumeMetadata(),
         cache_hit=result.cache_hit,
     )

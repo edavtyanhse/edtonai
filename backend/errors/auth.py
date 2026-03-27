@@ -43,5 +43,9 @@ class EmailAlreadyExistsError(AppError):
     status_code: int = 409
 
     def __init__(self, email: str | None = None) -> None:
-        detail = f"Email already registered: {email}" if email else "Email already registered"
+        detail = (
+            f"Email already registered: {email}"
+            if email
+            else "Email already registered"
+        )
         super().__init__(detail)

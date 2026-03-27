@@ -47,7 +47,9 @@ class Settings(BaseSettings):
         )
 
     # AI provider
-    ai_provider: str = "deepseek"  # Deprecated, kept for backward compatibility if needed
+    ai_provider: str = (
+        "deepseek"  # Deprecated, kept for backward compatibility if needed
+    )
 
     # AI Configuration
     ai_provider_parsing: str = "groq"

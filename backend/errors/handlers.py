@@ -45,9 +45,13 @@ def register_exception_handlers(app: FastAPI) -> None:
         )
 
     @app.exception_handler(AIResponseFormatError)
-    async def ai_format_error_handler(request: Request, exc: AIResponseFormatError) -> JSONResponse:
+    async def ai_format_error_handler(
+        request: Request, exc: AIResponseFormatError
+    ) -> JSONResponse:
         """Handle malformed AI JSON responses → HTTP 502."""
-        logger.error("AIResponseFormatError | path=%s error=%s", request.url.path, str(exc))
+        logger.error(
+            "AIResponseFormatError | path=%s error=%s", request.url.path, str(exc)
+        )
         return JSONResponse(
             status_code=502,
             content={"detail": f"AI provider returned invalid response: {exc}"},
@@ -70,7 +74,9 @@ def register_exception_handlers(app: FastAPI) -> None:
         )
 
     @app.exception_handler(Exception)
-    async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONResponse:
+    async def unhandled_exception_handler(
+        request: Request, exc: Exception
+    ) -> JSONResponse:
         """Catch-all for unhandled exceptions → HTTP 500 with logging.
 
         Prevents raw tracebacks from leaking to clients.

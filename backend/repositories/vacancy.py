@@ -102,9 +102,15 @@ class VacancyRepository:
             return None
 
         allowed_fields = [
-            "job_title", "company", "employment_type", "location",
-            "required_skills", "preferred_skills", "experience_requirements",
-            "responsibilities", "ats_keywords"
+            "job_title",
+            "company",
+            "employment_type",
+            "location",
+            "required_skills",
+            "preferred_skills",
+            "experience_requirements",
+            "responsibilities",
+            "ats_keywords",
         ]
         if field not in allowed_fields:
             raise ValueError(f"Field {field} is not allowed")

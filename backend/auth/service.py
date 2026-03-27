@@ -164,4 +164,6 @@ class AuthService:
 
     async def _create_token_pair(self, user_id: UUID, email: str) -> TokenPair:
         """Create access + refresh token pair (delegates to shared helper)."""
-        return await create_token_pair(user_id, email, self._refresh_repo, self._settings)
+        return await create_token_pair(
+            user_id, email, self._refresh_repo, self._settings
+        )

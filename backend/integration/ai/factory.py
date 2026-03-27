@@ -7,6 +7,7 @@ from backend.integration.ai.groq import GroqProvider
 
 TaskType = Literal["parsing", "reasoning"]
 
+
 def get_ai_provider(task_type: TaskType = "reasoning") -> AIProvider:
     """Factory to get the configured AI provider instance for a specific task."""
 
@@ -23,4 +24,4 @@ def get_ai_provider(task_type: TaskType = "reasoning") -> AIProvider:
     elif provider_name == "deepseek":
         return DeepSeekProvider()
     else:
-         raise ValueError(f"Unsupported AI provider: {provider_name}")
+        raise ValueError(f"Unsupported AI provider: {provider_name}")

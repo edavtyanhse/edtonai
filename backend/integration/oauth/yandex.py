@@ -6,7 +6,10 @@ import httpx
 
 from backend.domain.oauth import OAuthUserInfo
 from backend.integration.oauth.base import OAuthProvider
-from backend.integration.oauth.errors import OAuthEmailNotProvidedError, OAuthProviderError
+from backend.integration.oauth.errors import (
+    OAuthEmailNotProvidedError,
+    OAuthProviderError,
+)
 
 _AUTHORIZE_URL = "https://oauth.yandex.ru/authorize"
 _TOKEN_URL = "https://oauth.yandex.ru/token"
@@ -45,7 +48,9 @@ class YandexOAuthProvider(OAuthProvider):
                 headers={"Content-Type": "application/x-www-form-urlencoded"},
             )
             if token_resp.status_code != 200:
-                raise OAuthProviderError(f"Yandex token exchange failed: {token_resp.text}")
+                raise OAuthProviderError(
+                    f"Yandex token exchange failed: {token_resp.text}"
+                )
 
             access_token = token_resp.json().get("access_token")
             if not access_token:
@@ -66,7 +71,11 @@ class YandexOAuthProvider(OAuthProvider):
                 raise OAuthEmailNotProvidedError("Yandex")
 
             avatar_id = data.get("default_avatar_id")
-            avatar_url = f"https://avatars.yandex.net/get-yapic/{avatar_id}/islands-200" if avatar_id else None
+            avatar_url = (
+                f"https://avatars.yandex.net/get-yapic/{avatar_id}/islands-200"
+                if avatar_id
+                else None
+            )
 
             return OAuthUserInfo(
                 provider="yandex",

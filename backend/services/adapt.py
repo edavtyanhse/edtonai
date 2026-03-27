@@ -9,6 +9,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.core.config import Settings
 from backend.domain.adapt import AdaptResumeResult, SelectedImprovement
+from backend.errors.business import (
+    ResumeNotFoundError,
+    VacancyNotFoundError,
+    ValidationError,
+)
 from backend.integration.ai.base import AIProvider
 from backend.integration.ai.prompts import GENERATE_UPDATED_RESUME_PROMPT
 from backend.repositories.interfaces import (
@@ -17,7 +22,6 @@ from backend.repositories.interfaces import (
     IResumeVersionRepository,
     IVacancyRepository,
 )
-from backend.errors.business import ResumeNotFoundError, ValidationError, VacancyNotFoundError
 from backend.services.base import CachedAIService
 from backend.services.interfaces import IMatchService, IResumeService, IVacancyService
 from backend.services.utils import prompt_template_sha256
@@ -108,7 +112,9 @@ class AdaptResumeService(CachedAIService):
             "language": options.get("language"),
             "provider": self.provider_name,
             "model": self.model_name,
-            "prompt_template_sha256": prompt_template_sha256(GENERATE_UPDATED_RESUME_PROMPT),
+            "prompt_template_sha256": prompt_template_sha256(
+                GENERATE_UPDATED_RESUME_PROMPT
+            ),
             "temperature": self.settings.ai_temperature,
             "max_tokens": self.settings.ai_max_tokens,
         }
@@ -306,8 +312,9 @@ class AdaptResumeService(CachedAIService):
         ]
 
         return (
-            GENERATE_UPDATED_RESUME_PROMPT
-            .replace("{{ORIGINAL_RESUME_TEXT}}", original_resume_text)
+            GENERATE_UPDATED_RESUME_PROMPT.replace(
+                "{{ORIGINAL_RESUME_TEXT}}", original_resume_text
+            )
             .replace(
                 "{{PARSED_RESUME_JSON}}",
                 json.dumps(parsed_resume, ensure_ascii=False, indent=2),

@@ -82,7 +82,12 @@ class TestResumeService:
 
     @pytest.fixture
     def service(
-        self, mock_session, mock_resume_repo, mock_ai_result_repo, mock_ai_provider, mock_settings,
+        self,
+        mock_session,
+        mock_resume_repo,
+        mock_ai_result_repo,
+        mock_ai_provider,
+        mock_settings,
     ):
         return ResumeService(
             session=mock_session,
@@ -94,7 +99,10 @@ class TestResumeService:
 
     @pytest.mark.anyio
     async def test_parse_calls_ai_on_cache_miss(
-        self, service, mock_ai_provider, mock_ai_result_repo,
+        self,
+        service,
+        mock_ai_provider,
+        mock_ai_result_repo,
     ):
         """When cache is empty, AI provider should be called."""
         mock_ai_provider.generate_json.return_value = {
@@ -110,7 +118,11 @@ class TestResumeService:
 
     @pytest.mark.anyio
     async def test_parse_returns_cached_on_hit(
-        self, service, mock_ai_provider, mock_ai_result_repo, mock_resume_repo,
+        self,
+        service,
+        mock_ai_provider,
+        mock_ai_result_repo,
+        mock_resume_repo,
     ):
         """When cache has a result, AI provider should NOT be called."""
         cached = MagicMock()
@@ -168,7 +180,12 @@ class TestVacancyService:
 
     @pytest.fixture
     def service(
-        self, mock_session, mock_vacancy_repo, mock_ai_result_repo, mock_ai_provider, mock_settings,
+        self,
+        mock_session,
+        mock_vacancy_repo,
+        mock_ai_result_repo,
+        mock_ai_provider,
+        mock_settings,
     ):
         return VacancyService(
             session=mock_session,
@@ -180,7 +197,10 @@ class TestVacancyService:
 
     @pytest.mark.anyio
     async def test_parse_calls_ai_on_cache_miss(
-        self, service, mock_ai_provider, mock_ai_result_repo,
+        self,
+        service,
+        mock_ai_provider,
+        mock_ai_result_repo,
     ):
         mock_ai_provider.generate_json.return_value = {
             "job_title": "Developer",
@@ -195,7 +215,11 @@ class TestVacancyService:
 
     @pytest.mark.anyio
     async def test_parse_returns_cached_on_hit(
-        self, service, mock_ai_provider, mock_ai_result_repo, mock_vacancy_repo,
+        self,
+        service,
+        mock_ai_provider,
+        mock_ai_result_repo,
+        mock_vacancy_repo,
     ):
         cached = MagicMock()
         cached.output_json = {
@@ -232,7 +256,11 @@ class TestMatchService:
 
     @pytest.fixture
     def service(
-        self, mock_session, mock_ai_result_repo, mock_ai_provider, mock_settings,
+        self,
+        mock_session,
+        mock_ai_result_repo,
+        mock_ai_provider,
+        mock_settings,
     ):
         return MatchService(
             session=mock_session,
@@ -243,7 +271,10 @@ class TestMatchService:
 
     @pytest.mark.anyio
     async def test_analyze_calls_ai_on_cache_miss(
-        self, service, mock_ai_provider, mock_ai_result_repo,
+        self,
+        service,
+        mock_ai_provider,
+        mock_ai_result_repo,
     ):
         mock_ai_provider.generate_json.return_value = {
             "score": 80,
@@ -261,7 +292,10 @@ class TestMatchService:
 
     @pytest.mark.anyio
     async def test_analyze_returns_cached_on_hit(
-        self, service, mock_ai_provider, mock_ai_result_repo,
+        self,
+        service,
+        mock_ai_provider,
+        mock_ai_result_repo,
     ):
         cached = MagicMock()
         cached.id = uuid.uuid4()

@@ -40,9 +40,7 @@ def compute_hash(text: str) -> str:
 
 def prompt_template_sha256(prompt_template: str) -> str:
     """Hash prompt template to invalidate caches when prompts change."""
-    return hashlib.sha256(
-        prompt_template.encode("utf-8", errors="replace")
-    ).hexdigest()
+    return hashlib.sha256(prompt_template.encode("utf-8", errors="replace")).hexdigest()
 
 
 def get_provider_name(provider: Any) -> str:

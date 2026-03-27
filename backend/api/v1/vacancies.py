@@ -34,10 +34,13 @@ async def parse_vacancy(
     source_url = request.url
     if not text and source_url:
         from backend.integration.scraper import WebScraper
+
         text = await WebScraper.fetch_text(source_url)
 
     if not text or len(text) < 10:
-        raise HTTPException(status_code=422, detail="Vacancy text is empty or too short")
+        raise HTTPException(
+            status_code=422, detail="Vacancy text is empty or too short"
+        )
 
     result = await service.parse_and_cache(text, source_url=source_url)
 

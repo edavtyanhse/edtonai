@@ -2,12 +2,55 @@
 
 Дата: 2026-03-26
 
-## Статус реализации (обновлено)
-- ✅ Backend: расширен `feedback` API под CSAT/NPS (тип метрики, score, контекст, вариант A/B, сегмент).
-- ✅ Backend: добавлен endpoint `/v1/analytics/events` для логирования событий поведения.
-- ✅ Frontend: feedback modal поддерживает CSAT (1-5) и NPS (0-10).
-- ✅ Frontend: добавлены события воронки (`step_entered`, `resume_uploaded`, `vacancy_added`, `analysis_started`, `analysis_finished`, `export_clicked`, `feedback_submitted`).
-- ⏳ DB: требуется применить миграцию [backend/db/migrations/007_extend_feedback_for_nps_csat.sql](backend/db/migrations/007_extend_feedback_for_nps_csat.sql).
+## Чеклист реализации (трекер прогресса)
+
+### Блок A — Что уже реализовано в коде
+- [x] Backend: расширен `feedback` API под CSAT/NPS (тип метрики, score, контекст шага, вариант A/B, сегмент).
+- [x] Backend: добавлен endpoint `POST /v1/analytics/events` для приема событий поведения.
+- [x] Backend: добавлено логирование событий с префиксом `ANALYTICS_EVENT` для выгрузки из Cloud Logging.
+- [x] Frontend: feedback modal поддерживает CSAT (1-5) и NPS (0-10).
+- [x] Frontend: добавлены события воронки:
+  - [x] `step_entered`
+  - [x] `resume_uploaded`
+  - [x] `vacancy_added`
+  - [x] `analysis_started`
+  - [x] `analysis_finished`
+  - [x] `export_clicked`
+  - [x] `feedback_submitted`
+- [x] DB: миграция применена — [backend/db/migrations/007_extend_feedback_for_nps_csat.sql](backend/db/migrations/007_extend_feedback_for_nps_csat.sql).
+- [x] Изменения запушены в `main` (commit: `c908d22`).
+
+### Блок B — Что осталось сделать (чтобы закрыть критерии 9–10)
+
+#### B1. A/B тест (минимально жизнеспособный)
+- [ ] (Отложено) Вариант A: оставить текущий CTA на финальном шаге.
+- [ ] (Отложено) Вариант B: изменить CTA на ценностный (`Скачать адаптированное резюме` + `PDF за 1 клик`).
+- [ ] (Отложено) Привязать реальное отличие UI к `ui_variant` (сейчас вариант логируется, но UI почти не отличается).
+- [ ] (Отложено) Снять пилотные данные по вариантам A/B (10-20 пользователей).
+- [ ] (Отложено) Подготовить таблицу сравнения: completion rate, CSAT, время до клика.
+
+#### B2. Поведенческая аналитика и воронка
+- [ ] Проверить поступление событий в Cloud Logging на проде.
+- [x] Настроить спецификацию Saved Query в документации для `ANALYTICS_EVENT`.
+- [ ] Настроить sink Cloud Logging -> BigQuery для аналитических событий.
+- [ ] Собрать воронку по `session_id` (upload -> analysis -> export -> feedback).
+- [ ] Визуализировать воронку в Looker Studio (график + таблица конверсий).
+
+#### B3. Интервью (демо-вариант)
+- [x] Подготовить 8 синтетических интервью (3 junior, 3 middle, 2 career-switcher) в отчетной документации.
+- [x] Для каждого интервью заполнить: контекст, боль, цитата, решение.
+- [x] Явно пометить в отчете: «учебная выборка / демо-данные».
+
+#### B4. Тепловые карты
+- [x] Подключить Microsoft Clarity на frontend (инициализация по env `VITE_CLARITY_PROJECT_ID`).
+- [ ] Проверить запись минимум 5 сессий.
+- [ ] Сделать 2-3 скриншота heatmap/session replay для отчета.
+- [ ] Сформулировать 2-3 UX-находки по данным тепловых карт.
+
+#### B5. Итоговый аналитический отчет и защита
+- [x] Обновить `docs/RESEARCH_AND_FEEDBACK.md`: добавить блоки по воронке из логов, интервью и тепловым картам.
+- [ ] Добавить 3 кейса «проблема -> изменение в продукте -> метрика до/после».
+- [ ] Подготовить 2 слайда в презентацию: `Feedback Loop` и `Impact on Product`.
 
 ## 1) Что именно требует критерий 10
 Для оценки 10 по MUP по блоку фидбека нужны одновременно:

@@ -61,7 +61,9 @@ class InMemoryResumeRepo:
         return self.by_id.get(resume_id)
 
     async def create(self, source_text: str, content_hash: str):
-        record = FakeResumeRecord(id=uuid4(), source_text=source_text, content_hash=content_hash)
+        record = FakeResumeRecord(
+            id=uuid4(), source_text=source_text, content_hash=content_hash
+        )
         self.by_hash[content_hash] = record
         self.by_id[record.id] = record
         return record
@@ -78,7 +80,9 @@ class InMemoryVacancyRepo:
     async def get_by_id(self, vacancy_id: UUID):
         return self.by_id.get(vacancy_id)
 
-    async def create(self, source_text: str, content_hash: str, source_url: str | None = None):
+    async def create(
+        self, source_text: str, content_hash: str, source_url: str | None = None
+    ):
         record = FakeVacancyRecord(
             id=uuid4(),
             source_text=source_text,

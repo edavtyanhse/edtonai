@@ -12,7 +12,9 @@ class ResumeParseResponse(BaseModel):
 
     resume_id: UUID = Field(..., description="UUID of stored resume")
     resume_hash: str = Field(..., description="SHA256 hash of normalized text")
-    parsed_resume: dict[str, Any] = Field(..., description="Structured resume JSON from LLM")
+    parsed_resume: dict[str, Any] = Field(
+        ..., description="Structured resume JSON from LLM"
+    )
     cache_hit: bool = Field(..., description="True if result was from cache")
 
 

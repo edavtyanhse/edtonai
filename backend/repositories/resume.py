@@ -85,8 +85,14 @@ class ResumeRepository:
             return None
 
         allowed_fields = [
-            "personal_info", "summary", "skills", "work_experience",
-            "education", "certifications", "languages", "raw_sections"
+            "personal_info",
+            "summary",
+            "skills",
+            "work_experience",
+            "education",
+            "certifications",
+            "languages",
+            "raw_sections",
         ]
         if field not in allowed_fields:
             raise ValueError(f"Field {field} is not allowed")

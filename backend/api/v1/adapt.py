@@ -43,7 +43,9 @@ async def adapt_resume(
         )
 
     # Validate that at least one improvement is selected
-    has_improvements = bool(request.selected_improvements) or bool(request.selected_checkbox_ids)
+    has_improvements = bool(request.selected_improvements) or bool(
+        request.selected_checkbox_ids
+    )
     if not has_improvements:
         raise HTTPException(
             status_code=400,
@@ -63,15 +65,15 @@ async def adapt_resume(
         ]
 
     result = await service.adapt_and_version(
-            resume_text=request.resume_text,
-            resume_id=request.resume_id,
-            vacancy_text=request.vacancy_text,
-            vacancy_id=request.vacancy_id,
-            selected_improvements=selected_improvements,
-            selected_checkbox_ids=request.selected_checkbox_ids,  # Legacy support
-            base_version_id=request.base_version_id,
-            options=request.options.model_dump() if request.options else {},
-        )
+        resume_text=request.resume_text,
+        resume_id=request.resume_id,
+        vacancy_text=request.vacancy_text,
+        vacancy_id=request.vacancy_id,
+        selected_improvements=selected_improvements,
+        selected_checkbox_ids=request.selected_checkbox_ids,  # Legacy support
+        base_version_id=request.base_version_id,
+        options=request.options.model_dump() if request.options else {},
+    )
 
     return AdaptResumeResponse(
         version_id=result.version_id,

@@ -17,7 +17,9 @@ class OAuthEmailNotProvidedError(OAuthError):
     """Provider did not return an email address."""
 
     def __init__(self, provider: str) -> None:
-        super().__init__(f"{provider} did not provide an email address. Email is required for registration.")
+        super().__init__(
+            f"{provider} did not provide an email address. Email is required for registration."
+        )
 
 
 class UnsupportedOAuthProviderError(OAuthError):

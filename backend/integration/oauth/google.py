@@ -6,7 +6,10 @@ import httpx
 
 from backend.domain.oauth import OAuthUserInfo
 from backend.integration.oauth.base import OAuthProvider
-from backend.integration.oauth.errors import OAuthEmailNotProvidedError, OAuthProviderError
+from backend.integration.oauth.errors import (
+    OAuthEmailNotProvidedError,
+    OAuthProviderError,
+)
 
 _AUTHORIZE_URL = "https://accounts.google.com/o/oauth2/v2/auth"
 _TOKEN_URL = "https://oauth2.googleapis.com/token"
@@ -47,7 +50,9 @@ class GoogleOAuthProvider(OAuthProvider):
                 },
             )
             if token_resp.status_code != 200:
-                raise OAuthProviderError(f"Google token exchange failed: {token_resp.text}")
+                raise OAuthProviderError(
+                    f"Google token exchange failed: {token_resp.text}"
+                )
 
             access_token = token_resp.json().get("access_token")
             if not access_token:

@@ -89,9 +89,7 @@ class UserVersionRepository:
 
         return versions, total
 
-    async def delete_by_id(
-        self, version_id: UUID, user_id: str | None = None
-    ) -> bool:
+    async def delete_by_id(self, version_id: UUID, user_id: str | None = None) -> bool:
         """Delete user version by ID. Returns True if deleted.
 
         If user_id is provided, only deletes if the version belongs to that user.

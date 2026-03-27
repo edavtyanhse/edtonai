@@ -14,7 +14,9 @@ class OAuthAccountRepository:
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
 
-    async def get_by_provider_uid(self, provider: str, provider_user_id: str) -> OAuthAccount | None:
+    async def get_by_provider_uid(
+        self, provider: str, provider_user_id: str
+    ) -> OAuthAccount | None:
         """Find existing OAuth link by provider + external user ID."""
         result = await self._session.execute(
             select(OAuthAccount).where(

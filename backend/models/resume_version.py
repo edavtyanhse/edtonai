@@ -110,5 +110,7 @@ class ResumeVersion(Base):
     # Relationships
     resume = relationship("ResumeRaw", foreign_keys=[resume_id])
     vacancy = relationship("VacancyRaw", foreign_keys=[vacancy_id])
-    parent_version = relationship("ResumeVersion", remote_side=[id], foreign_keys=[parent_version_id])
+    parent_version = relationship(
+        "ResumeVersion", remote_side=[id], foreign_keys=[parent_version_id]
+    )
     analysis = relationship("AIResult", foreign_keys=[analysis_id])

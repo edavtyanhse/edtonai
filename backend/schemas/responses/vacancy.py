@@ -12,9 +12,13 @@ class VacancyParseResponse(BaseModel):
 
     vacancy_id: UUID = Field(..., description="UUID of stored vacancy")
     vacancy_hash: str = Field(..., description="SHA256 hash of normalized text")
-    parsed_vacancy: dict[str, Any] = Field(..., description="Structured vacancy JSON from LLM")
+    parsed_vacancy: dict[str, Any] = Field(
+        ..., description="Structured vacancy JSON from LLM"
+    )
     cache_hit: bool = Field(..., description="True if result was from cache")
-    raw_text: str = Field(..., description="The raw vacancy text (either provided or scraped)")
+    raw_text: str = Field(
+        ..., description="The raw vacancy text (either provided or scraped)"
+    )
 
 
 class VacancyDetailResponse(BaseModel):

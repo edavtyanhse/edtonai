@@ -1,4 +1,3 @@
-
 import logging
 import re
 from typing import Any
@@ -49,7 +48,9 @@ class WebScraper:
         For all other URLs, falls back to HTML scraping.
         """
         if not url.startswith(("http://", "https://")):
-            raise ScraperError("URL must start with http:// or https://", status_code=422)
+            raise ScraperError(
+                "URL must start with http:// or https://", status_code=422
+            )
 
         # Try HH.ru API path first
         vacancy_id = cls._extract_hh_vacancy_id(url)

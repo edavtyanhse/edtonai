@@ -9,7 +9,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.core.config import Settings
 from backend.domain.cover_letter import CoverLetterResult
+from backend.errors.business import (
+    AccessDeniedError,
+    NotFoundError,
+    VacancyNotFoundError,
+    ValidationError,
+    VersionNotFoundError,
+)
 from backend.integration.ai.base import AIProvider
+from backend.integration.ai.errors import AIResponseFormatError
 from backend.integration.ai.prompts import COVER_LETTER_PROMPT
 from backend.repositories.interfaces import (
     IAIResultRepository,
@@ -17,14 +25,6 @@ from backend.repositories.interfaces import (
     IUserVersionRepository,
     IVacancyRepository,
 )
-from backend.errors.business import (
-    AccessDeniedError,
-    NotFoundError,
-    ValidationError,
-    VersionNotFoundError,
-    VacancyNotFoundError,
-)
-from backend.integration.ai.errors import AIResponseFormatError
 from backend.services.base import CachedAIService
 
 
@@ -117,7 +117,9 @@ class CoverLetterService(CachedAIService):
             raise VersionNotFoundError(str(resume_version_id))
 
         # Check ownership for UserVersion only (ResumeVersion doesn't have user_id in DB).
-        if is_user_version and str(getattr(resume_version, "user_id", None)) != str(user_id):
+        if is_user_version and str(getattr(resume_version, "user_id", None)) != str(
+            user_id
+        ):
             raise AccessDeniedError("You do not own this resume version")
 
         # Step 2: Prepare data (vacancy text and analysis ID)
@@ -171,9 +173,7 @@ class CoverLetterService(CachedAIService):
         # Step 5: Check cache
         cached_result = await self._check_cache(input_hash)
         if cached_result is not None:
-            self.logger.info(
-                "Cache hit for cover letter: %s", input_hash[:16]
-            )
+            self.logger.info("Cache hit for cover letter: %s", input_hash[:16])
             output = cached_result.output_json or {}
             structure = output.get("structure") or {}
             if not isinstance(structure, dict):
@@ -184,44 +184,61 @@ class CoverLetterService(CachedAIService):
                 vacancy_id=vacancy_id,
                 cover_letter_text=str(output.get("cover_letter_text", "")),
                 structure=cast(dict[str, str], structure),
-                key_points_used=list(output.get("key_points_used", [])) if isinstance(output.get("key_points_used", []), list) else [],
-                alignment_notes=list(output.get("alignment_notes", [])) if isinstance(output.get("alignment_notes", []), list) else [],
+                key_points_used=list(output.get("key_points_used", []))
+                if isinstance(output.get("key_points_used", []), list)
+                else [],
+                alignment_notes=list(output.get("alignment_notes", []))
+                if isinstance(output.get("alignment_notes", []), list)
+                else [],
                 cache_hit=True,
             )
 
         # Step 6: Build prompt
-        prompt = COVER_LETTER_PROMPT.replace(
-            "{{RESUME_TEXT}}", resume_text
-        ).replace(
-            "{{VACANCY_TEXT}}", vacancy_text
-        ).replace(
-            "{{MATCH_ANALYSIS_JSON}}",
-            json.dumps(match_analysis, ensure_ascii=False, indent=2),
+        prompt = (
+            COVER_LETTER_PROMPT.replace("{{RESUME_TEXT}}", resume_text)
+            .replace("{{VACANCY_TEXT}}", vacancy_text)
+            .replace(
+                "{{MATCH_ANALYSIS_JSON}}",
+                json.dumps(match_analysis, ensure_ascii=False, indent=2),
+            )
         )
 
         # Step 7: Call LLM
-        self.logger.info(
-            "Generating cover letter for version %s", resume_version_id
-        )
+        self.logger.info("Generating cover letter for version %s", resume_version_id)
         cover_letter_json = await self.ai_provider.generate_json(
             prompt, prompt_name=self.OPERATION
         )
 
         # Validate structure
-        required_keys = ["cover_letter_text", "structure", "key_points_used", "alignment_notes"]
+        required_keys = [
+            "cover_letter_text",
+            "structure",
+            "key_points_used",
+            "alignment_notes",
+        ]
         missing_keys = [k for k in required_keys if k not in cover_letter_json]
         if missing_keys:
-            raise AIResponseFormatError(f"LLM returned incomplete JSON. Missing keys: {missing_keys}")
+            raise AIResponseFormatError(
+                f"LLM returned incomplete JSON. Missing keys: {missing_keys}"
+            )
         structure = cover_letter_json.get("structure") or {}
         if not isinstance(structure, dict):
-            raise AIResponseFormatError("LLM returned invalid JSON: structure must be an object")
+            raise AIResponseFormatError(
+                "LLM returned invalid JSON: structure must be an object"
+            )
         for k in ("opening", "body", "closing"):
             if k not in structure:
-                raise AIResponseFormatError(f"LLM returned incomplete JSON. Missing structure key: {k}")
+                raise AIResponseFormatError(
+                    f"LLM returned incomplete JSON. Missing structure key: {k}"
+                )
 
         # Step 8: Save to cache
         ai_result = await self._save_to_cache(input_hash, cover_letter_json)
-        self.logger.info("Saved cover letter to cache: %s (model: %s)", input_hash[:16], self.model_name)
+        self.logger.info(
+            "Saved cover letter to cache: %s (model: %s)",
+            input_hash[:16],
+            self.model_name,
+        )
 
         return CoverLetterResult(
             cover_letter_id=ai_result.id,

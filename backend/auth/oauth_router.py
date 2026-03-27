@@ -41,7 +41,9 @@ def _verify_state(state: str, secret: str) -> bool:
         return False
     if time.time() - timestamp > _STATE_TTL:
         return False
-    expected = hmac.new(secret.encode(), f"{nonce}.{timestamp}".encode(), hashlib.sha256).hexdigest()[:16]
+    expected = hmac.new(
+        secret.encode(), f"{nonce}.{timestamp}".encode(), hashlib.sha256
+    ).hexdigest()[:16]
     return hmac.compare_digest(sig, expected)
 
 
@@ -92,11 +94,13 @@ async def oauth_callback(
     # Refresh token is passed via URL (one-time) because the cookie domain
     # (backend) differs from where /auth/refresh is called (frontend proxy).
     # The frontend callback page will call /auth/set-cookie to store it properly.
-    params = urlencode({
-        "access_token": token_pair.access_token,
-        "refresh_token": token_pair.refresh_token,
-        "expires_in": str(token_pair.expires_in),
-    })
+    params = urlencode(
+        {
+            "access_token": token_pair.access_token,
+            "refresh_token": token_pair.refresh_token,
+            "expires_in": str(token_pair.expires_in),
+        }
+    )
 
     return RedirectResponse(
         url=f"{settings.frontend_url}/oauth/callback?{params}",

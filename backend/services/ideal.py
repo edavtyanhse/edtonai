@@ -9,10 +9,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.core.config import Settings
 from backend.domain.ideal import IdealResumeResult
+from backend.errors.business import VacancyNotFoundError, ValidationError
 from backend.integration.ai.base import AIProvider
 from backend.integration.ai.prompts import IDEAL_RESUME_PROMPT
 from backend.repositories.interfaces import IIdealResumeRepository, IVacancyRepository
-from backend.errors.business import ValidationError, VacancyNotFoundError
 from backend.services.base import CachedAIService
 from backend.services.interfaces import IVacancyService
 from backend.services.utils import compute_hash
@@ -168,14 +168,10 @@ class IdealResumeService(CachedAIService):
             "seniority": options.get("seniority", "any"),
         }
 
-        return (
-            IDEAL_RESUME_PROMPT
-            .replace(
-                "{{PARSED_VACANCY_JSON}}",
-                json.dumps(parsed_vacancy, ensure_ascii=False, indent=2),
-            )
-            .replace(
-                "{{IDEAL_OPTIONS_JSON}}",
-                json.dumps(options_json, ensure_ascii=False, indent=2),
-            )
+        return IDEAL_RESUME_PROMPT.replace(
+            "{{PARSED_VACANCY_JSON}}",
+            json.dumps(parsed_vacancy, ensure_ascii=False, indent=2),
+        ).replace(
+            "{{IDEAL_OPTIONS_JSON}}",
+            json.dumps(options_json, ensure_ascii=False, indent=2),
         )

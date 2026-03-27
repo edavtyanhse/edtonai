@@ -89,9 +89,7 @@ class CachedAIService:
             If ``ai_result_repo`` was not provided.
         """
         if self.ai_result_repo is None:
-            raise RuntimeError(
-                "Cannot save to cache: ai_result_repo is not configured"
-            )
+            raise RuntimeError("Cannot save to cache: ai_result_repo is not configured")
         return await self.ai_result_repo.save(
             operation=self.OPERATION,
             input_hash=input_hash,

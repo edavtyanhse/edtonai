@@ -5,6 +5,7 @@ import jwt
 # The secret from backend.env
 SECRET_STR = "sviXIxL2LAzLtQp/ewp7jOsnN2tJ3/2MGr3NFdb852JL+/X1LYve//bS4oTdbFOEtBBISOctmoxrTF1HUYlvdA=="
 
+
 def test():
     print(f"Secret string length: {len(SECRET_STR)}")
 
@@ -24,7 +25,9 @@ def test():
 
     # Verify with STRING (Current Code)
     try:
-        jwt.decode(token_bytes, SECRET_STR, algorithms=["HS256"], audience="authenticated")
+        jwt.decode(
+            token_bytes, SECRET_STR, algorithms=["HS256"], audience="authenticated"
+        )
         print("[FAIL] Current Code worked? (Unexpected if key is bytes)")
     except jwt.InvalidSignatureError:
         print("[SUCCESS] Current Code Failed (Expected behavior: Signature mismatch)")
@@ -33,21 +36,28 @@ def test():
 
     # Verify with BYTES (Proposed Fix)
     try:
-        jwt.decode(token_bytes, secret_bytes, algorithms=["HS256"], audience="authenticated")
+        jwt.decode(
+            token_bytes, secret_bytes, algorithms=["HS256"], audience="authenticated"
+        )
         print("[PASS] Proposed Fix Verification Succeeded")
     except Exception as e:
         print(f"[FAIL] Proposed Fix Failed: {e}")
 
     # Simulate Supabase: Sign with STRING (Alternative hypothesis)
     print("\n--- Scenario B: Supabase signs with RAW STRING ---")
-    token_str = jwt.encode(payload, SECRET_STR, algorithm="HS256") # PyJWT encodes str to utf-8 bytes
+    token_str = jwt.encode(
+        payload, SECRET_STR, algorithm="HS256"
+    )  # PyJWT encodes str to utf-8 bytes
 
     # Verify with STRING (Current Code)
     try:
-        jwt.decode(token_str, SECRET_STR, algorithms=["HS256"], audience="authenticated")
+        jwt.decode(
+            token_str, SECRET_STR, algorithms=["HS256"], audience="authenticated"
+        )
         print("[PASS] Current Code Succeeded")
     except Exception as e:
         print(f"[FAIL] Current Code Failed: {e}")
+
 
 if __name__ == "__main__":
     test()

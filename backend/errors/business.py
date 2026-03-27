@@ -27,7 +27,9 @@ class VacancyNotFoundError(NotFoundError):
     """Vacancy not found."""
 
     def __init__(self, vacancy_id: str | None = None) -> None:
-        detail = f"Vacancy not found: {vacancy_id}" if vacancy_id else "Vacancy not found"
+        detail = (
+            f"Vacancy not found: {vacancy_id}" if vacancy_id else "Vacancy not found"
+        )
         super().__init__(detail)
 
 
@@ -35,7 +37,11 @@ class VersionNotFoundError(NotFoundError):
     """Resume version not found."""
 
     def __init__(self, version_id: str | None = None) -> None:
-        detail = f"Resume version not found: {version_id}" if version_id else "Resume version not found"
+        detail = (
+            f"Resume version not found: {version_id}"
+            if version_id
+            else "Resume version not found"
+        )
         super().__init__(detail)
 
 

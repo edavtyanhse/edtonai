@@ -5,7 +5,9 @@ import bcrypt
 
 def hash_password(plain: str) -> str:
     """Hash a plaintext password with bcrypt (12 rounds)."""
-    return bcrypt.hashpw(plain.encode("utf-8"), bcrypt.gensalt(rounds=12)).decode("utf-8")
+    return bcrypt.hashpw(plain.encode("utf-8"), bcrypt.gensalt(rounds=12)).decode(
+        "utf-8"
+    )
 
 
 def verify_password(plain: str, hashed: str) -> bool:

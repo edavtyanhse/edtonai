@@ -22,24 +22,26 @@ from backend.auth.oauth_service import OAuthService
 from backend.auth.service import AuthService
 from backend.core.config import Settings
 from backend.integration.ai.base import AIProvider
+from backend.integration.ai.deepseek import DeepSeekProvider
+from backend.integration.ai.groq import GroqProvider
 from backend.integration.email.client import SmtpEmailClient
 from backend.integration.email.service import EmailService
 from backend.integration.oauth.base import OAuthProvider
 from backend.integration.oauth.google import GoogleOAuthProvider
 from backend.integration.oauth.vk import VkOAuthProvider
 from backend.integration.oauth.yandex import YandexOAuthProvider
-from backend.integration.ai.deepseek import DeepSeekProvider
-from backend.integration.ai.groq import GroqProvider
 from backend.repositories.ai_result import AIResultRepository
 from backend.repositories.analysis import AnalysisRepository
 from backend.repositories.email_verification import EmailVerificationRepository
 from backend.repositories.feedback import FeedbackRepository
-from backend.repositories.oauth_account import OAuthAccountRepository
 from backend.repositories.ideal_resume import IdealResumeRepository
-from backend.repositories.refresh_token_repo import RefreshTokenRepository as RefreshTokenRepo
+from backend.repositories.oauth_account import OAuthAccountRepository
+from backend.repositories.refresh_token_repo import (
+    RefreshTokenRepository as RefreshTokenRepo,
+)
 from backend.repositories.resume import ResumeRepository
-from backend.repositories.user import UserRepository
 from backend.repositories.resume_version import ResumeVersionRepository
+from backend.repositories.user import UserRepository
 from backend.repositories.user_version import UserVersionRepository
 from backend.repositories.vacancy import VacancyRepository
 from backend.services.adapt import AdaptResumeService
@@ -262,7 +264,9 @@ class Container(containers.DeclarativeContainer):
 
     user_repo = providers.Factory(UserRepository, session=session)
     refresh_token_repo = providers.Factory(RefreshTokenRepo, session=session)
-    email_verification_repo = providers.Factory(EmailVerificationRepository, session=session)
+    email_verification_repo = providers.Factory(
+        EmailVerificationRepository, session=session
+    )
 
     email_client = providers.Singleton(
         SmtpEmailClient,
