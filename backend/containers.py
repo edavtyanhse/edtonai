@@ -140,6 +140,8 @@ class Container(containers.DeclarativeContainer):
         url=config.provided.database_url,
         echo=False,
         future=True,
+        pool_pre_ping=True,
+        pool_recycle=300,
         connect_args=providers.Dict(statement_cache_size=0),
     )
 

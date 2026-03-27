@@ -57,7 +57,13 @@ async def request_id_middleware(request: Request, call_next):
     request_id_ctx.set(req_id)
     # Reset DI session resource per request so each request gets a fresh session.
     # This prevents PendingRollbackError from poisoning subsequent requests.
-    container.session.reset()
+    if container.session.initialized:
+        shutdown = container.session.shutdown()
+        if shutdown is not None:
+            await shutdown
+    init = container.session.init()
+    if init is not None:
+        await init
     response = await call_next(request)
     response.headers["X-Request-ID"] = req_id
     return response
