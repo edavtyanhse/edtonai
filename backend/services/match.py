@@ -63,11 +63,33 @@ class MatchService(CachedAIService):
 
     @staticmethod
     def _clamp_scores(analysis: dict[str, Any]) -> dict[str, Any]:
-        """Clamp score_breakdown values to their max limits and recalculate total."""
+        """Recalculate formula-based scores from actual data, then clamp to limits."""
         if "score_breakdown" not in analysis:
             return analysis
 
         sb = analysis["score_breakdown"]
+
+        # Recalculate ats_fit from actual coverage ratio (formula: ratio * 15)
+        ats = analysis.get("ats", {})
+        coverage = ats.get("coverage_ratio")
+        if coverage is not None and isinstance(sb.get("ats_fit"), dict):
+            sb["ats_fit"]["value"] = round(coverage * 15)
+
+        # Recalculate skill_fit from actual matched/missing lists
+        # Formula: (matched_required / total_required) * 40 + (matched_preferred / total_preferred) * 10
+        matched_req = len(analysis.get("matched_required_skills", []))
+        missing_req = len(analysis.get("missing_required_skills", []))
+        total_req = matched_req + missing_req
+        matched_pref = len(analysis.get("matched_preferred_skills", []))
+        missing_pref = len(analysis.get("missing_preferred_skills", []))
+        total_pref = matched_pref + missing_pref
+
+        if total_req > 0 and isinstance(sb.get("skill_fit"), dict):
+            req_score = round((matched_req / total_req) * 40)
+            pref_score = round((matched_pref / total_pref) * 10) if total_pref > 0 else 10
+            sb["skill_fit"]["value"] = req_score + pref_score
+
+        # Clamp to limits
         for category, limit in _SCORE_LIMITS.items():
             entry = sb.get(category)
             if isinstance(entry, dict) and "value" in entry:
@@ -225,6 +247,23 @@ class MatchService(CachedAIService):
             prompt_name="analyze_match_with_context",
         )
         analysis_json = self._clamp_scores(analysis_json)
+
+        # Ensure score never decreases after improvements
+        original_score = original_analysis.get("score", 0)
+        if analysis_json.get("score", 0) < original_score:
+            analysis_json["score"] = original_score
+            # Also floor each breakdown category to its original value
+            orig_sb = original_analysis.get("score_breakdown", {})
+            new_sb = analysis_json.get("score_breakdown", {})
+            for cat in _SCORE_LIMITS:
+                orig_val = orig_sb.get(cat, {}).get("value", 0)
+                new_val = new_sb.get(cat, {}).get("value", 0)
+                if new_val < orig_val and cat in new_sb:
+                    new_sb[cat]["value"] = orig_val
+            # Recalculate total after floor
+            analysis_json["score"] = sum(
+                new_sb.get(cat, {}).get("value", 0) for cat in _SCORE_LIMITS
+            )
 
         # Save to cache
         ai_result = await self._save_to_cache(input_hash, analysis_json)

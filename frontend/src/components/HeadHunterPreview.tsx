@@ -59,7 +59,7 @@ export default function HeadHunterPreview({ data, onClose }: Props) {
             sections.push('--- ОПЫТ РАБОТЫ ---')
             work_experience.forEach(exp => {
                 sections.push(`${exp.company} | ${exp.title}`)
-                sections.push(`${exp.start_date} - ${exp.end_date || 'н.в.'}`)
+                sections.push(`${exp.start_date} - ${exp.end_date || 'Present'}`)
                 const lines = []
                 if (exp.responsibilities) lines.push(...exp.responsibilities)
                 if (exp.achievements) lines.push(...exp.achievements)
@@ -169,7 +169,7 @@ export default function HeadHunterPreview({ data, onClose }: Props) {
                                 if (exp.responsibilities) lines.push(...exp.responsibilities)
                                 if (exp.achievements) {
                                     if (exp.responsibilities?.length) lines.push('') // spacer
-                                    lines.push('Достижения:')
+                                    lines.push(t('wizard.step4.achievements', 'Achievements:'))
                                     lines.push(...exp.achievements)
                                 }
                                 const textToCopy = lines.map(l => l.startsWith('•') || l.endsWith(':') || l === '' ? l : `• ${l}`).join('\n')
@@ -184,7 +184,7 @@ export default function HeadHunterPreview({ data, onClose }: Props) {
                                                     <span className="text-blue-400 font-medium">{exp.title}</span>
                                                     <span className="text-slate-600">•</span>
                                                     <span className="text-slate-400 text-xs">
-                                                        {exp.start_date} — {exp.end_date || 'н.в'}
+                                                        {exp.start_date} — {exp.end_date || t('common.present', 'Present')}
                                                     </span>
                                                 </div>
                                             </div>
