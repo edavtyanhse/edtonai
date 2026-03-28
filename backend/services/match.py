@@ -241,6 +241,7 @@ class MatchService(CachedAIService):
             prompt_name=self.OPERATION,
         )
         analysis_json = self._clamp_scores(analysis_json)
+        analysis_json = self._ensure_gaps_for_missing_skills(analysis_json)
 
         # Save to cache
         ai_result = await self._save_to_cache(input_hash, analysis_json)
