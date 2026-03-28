@@ -6,7 +6,7 @@ import {
   ArrowLeft, Sparkles, Loader2, Copy, Save, FileText, Settings,
   Eye, ChevronDown, Download, Check, Link as LinkIcon
 } from 'lucide-react'
-import { generateIdeal, createVersion, parseResume } from '@/api'
+import { generateIdeal, createVersion, parseResume, parseVacancy } from '@/api'
 import type { ParsedResume } from '@/api'
 import { Button, TextAreaWithCounter, ConfirmDialog, HeadHunterPreview } from '@/components'
 import PdfPreview from '@/components/pdf/PdfPreview'
@@ -72,15 +72,29 @@ export default function IdealResumePage() {
   })
 
   const generateMutation = useMutation({
-    mutationFn: () =>
-      generateIdeal({
-        vacancy_text: vacancyText || undefined,
+    mutationFn: async () => {
+      // If URL provided, first parse the vacancy to get real content
+      const isUrl = vacancyUrl && (vacancyUrl.includes('hh.ru') || vacancyUrl.startsWith('http'))
+      let resolvedVacancyText = vacancyText
+      let vacancyId: string | undefined
+
+      if (isUrl) {
+        const parsed = await parseVacancy({ vacancy_text: '', url: vacancyUrl })
+        vacancyId = parsed.vacancy_id
+        resolvedVacancyText = parsed.raw_text
+        setVacancyText(resolvedVacancyText)
+      }
+
+      return generateIdeal({
+        vacancy_text: vacancyId ? undefined : resolvedVacancyText || undefined,
+        vacancy_id: vacancyId,
         options: {
           language: options.language || undefined,
           template: options.template || undefined,
           seniority: options.seniority || undefined,
         },
-      }),
+      })
+    },
     onSuccess: (data) => {
       setResultText(data.ideal_resume_text)
       setMetadata(data.metadata)
@@ -131,13 +145,10 @@ export default function IdealResumePage() {
 
   const handleUrlPaste = (url: string) => {
     setVacancyUrl(url)
-    // Auto-fill info message
-    if (url && url.includes('hh.ru')) {
-      setVacancyText(url)
-    }
   }
 
-  const isGenerateDisabled = vacancyText.length < 10 || vacancyText.length > MAX_CHARS
+  const hasUrl = vacancyUrl && (vacancyUrl.includes('hh.ru') || vacancyUrl.startsWith('http'))
+  const isGenerateDisabled = (!hasUrl && vacancyText.length < 10) || vacancyText.length > MAX_CHARS
 
   return (
     <div className="min-h-screen bg-slate-900 text-white">
