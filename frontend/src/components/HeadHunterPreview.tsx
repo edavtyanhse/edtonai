@@ -168,8 +168,6 @@ export default function HeadHunterPreview({ data, onClose }: Props) {
                                 const lines = []
                                 if (exp.responsibilities) lines.push(...exp.responsibilities)
                                 if (exp.achievements) {
-                                    if (exp.responsibilities?.length) lines.push('') // spacer
-                                    lines.push(t('wizard.step4.achievements', 'Achievements:'))
                                     lines.push(...exp.achievements)
                                 }
                                 const textToCopy = lines.map(l => l.startsWith('•') || l.endsWith(':') || l === '' ? l : `• ${l}`).join('\n')
