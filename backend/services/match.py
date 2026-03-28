@@ -86,7 +86,9 @@ class MatchService(CachedAIService):
 
         if total_req > 0 and isinstance(sb.get("skill_fit"), dict):
             req_score = round((matched_req / total_req) * 40)
-            pref_score = round((matched_pref / total_pref) * 10) if total_pref > 0 else 10
+            pref_score = (
+                round((matched_pref / total_pref) * 10) if total_pref > 0 else 10
+            )
             sb["skill_fit"]["value"] = req_score + pref_score
 
         # Clamp to limits
@@ -120,23 +122,27 @@ class MatchService(CachedAIService):
                 while gap_id in existing_gap_ids:
                     next_id += 1
                     gap_id = f"gap-{next_id:03d}"
-                gaps.append({
-                    "id": gap_id,
-                    "type": "missing_skill",
-                    "severity": "high",
-                    "message": f"Отсутствует: {skill}",
-                    "suggestion": f"Добавить {skill}",
-                    "target_section": "skills",
-                })
-                checkboxes.append({
-                    "id": gap_id,
-                    "label": f"Добавить {skill}",
-                    "description": f"Добавить {skill} в резюме",
-                    "category": "skills",
-                    "impact": "high",
-                    "requires_user_input": True,
-                    "user_input_placeholder": f"Опишите ваш опыт: {skill}",
-                })
+                gaps.append(
+                    {
+                        "id": gap_id,
+                        "type": "missing_skill",
+                        "severity": "high",
+                        "message": f"Отсутствует: {skill}",
+                        "suggestion": f"Добавить {skill}",
+                        "target_section": "skills",
+                    }
+                )
+                checkboxes.append(
+                    {
+                        "id": gap_id,
+                        "label": f"Добавить {skill}",
+                        "description": f"Добавить {skill} в резюме",
+                        "category": "skills",
+                        "impact": "high",
+                        "requires_user_input": True,
+                        "user_input_placeholder": f"Опишите ваш опыт: {skill}",
+                    }
+                )
                 existing_gap_ids.add(gap_id)
                 next_id += 1
 
@@ -146,23 +152,27 @@ class MatchService(CachedAIService):
                 while gap_id in existing_gap_ids:
                     next_id += 1
                     gap_id = f"gap-{next_id:03d}"
-                gaps.append({
-                    "id": gap_id,
-                    "type": "missing_skill",
-                    "severity": "medium",
-                    "message": f"Отсутствует (желательно): {skill}",
-                    "suggestion": f"Добавить {skill}",
-                    "target_section": "skills",
-                })
-                checkboxes.append({
-                    "id": gap_id,
-                    "label": f"Добавить {skill}",
-                    "description": f"Добавить {skill} в резюме",
-                    "category": "skills",
-                    "impact": "medium",
-                    "requires_user_input": True,
-                    "user_input_placeholder": f"Опишите ваш опыт: {skill}",
-                })
+                gaps.append(
+                    {
+                        "id": gap_id,
+                        "type": "missing_skill",
+                        "severity": "medium",
+                        "message": f"Отсутствует (желательно): {skill}",
+                        "suggestion": f"Добавить {skill}",
+                        "target_section": "skills",
+                    }
+                )
+                checkboxes.append(
+                    {
+                        "id": gap_id,
+                        "label": f"Добавить {skill}",
+                        "description": f"Добавить {skill} в резюме",
+                        "category": "skills",
+                        "impact": "medium",
+                        "requires_user_input": True,
+                        "user_input_placeholder": f"Опишите ваш опыт: {skill}",
+                    }
+                )
                 existing_gap_ids.add(gap_id)
                 next_id += 1
 
@@ -172,7 +182,8 @@ class MatchService(CachedAIService):
 
     @staticmethod
     def _filter_new_gaps(
-        analysis: dict[str, Any], original_analysis: dict[str, Any],
+        analysis: dict[str, Any],
+        original_analysis: dict[str, Any],
     ) -> dict[str, Any]:
         """Remove gaps from re-analysis that weren't in the original analysis."""
         original_gap_ids = {g["id"] for g in original_analysis.get("gaps", [])}
@@ -180,7 +191,8 @@ class MatchService(CachedAIService):
             g for g in analysis.get("gaps", []) if g["id"] in original_gap_ids
         ]
         analysis["checkbox_options"] = [
-            c for c in analysis.get("checkbox_options", [])
+            c
+            for c in analysis.get("checkbox_options", [])
             if c["id"] in original_gap_ids
         ]
         return analysis
