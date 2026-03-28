@@ -100,9 +100,96 @@ class MatchService(CachedAIService):
         )
         return analysis
 
+    @staticmethod
+    def _ensure_gaps_for_missing_skills(analysis: dict[str, Any]) -> dict[str, Any]:
+        """Ensure every missing_required_skill has a corresponding gap and checkbox."""
+        gaps = analysis.get("gaps", [])
+        checkboxes = analysis.get("checkbox_options", [])
+        existing_gap_ids = {g["id"] for g in gaps}
+
+        missing_required = analysis.get("missing_required_skills", [])
+        missing_preferred = analysis.get("missing_preferred_skills", [])
+
+        # Check which missing skills already have a gap (by checking message content)
+        gap_texts = " ".join(g.get("message", "") for g in gaps).lower()
+
+        next_id = len(gaps) + 1
+        for skill in missing_required:
+            if skill.lower() not in gap_texts:
+                gap_id = f"gap-{next_id:03d}"
+                while gap_id in existing_gap_ids:
+                    next_id += 1
+                    gap_id = f"gap-{next_id:03d}"
+                gaps.append({
+                    "id": gap_id,
+                    "type": "missing_skill",
+                    "severity": "high",
+                    "message": f"Отсутствует: {skill}",
+                    "suggestion": f"Добавить {skill}",
+                    "target_section": "skills",
+                })
+                checkboxes.append({
+                    "id": gap_id,
+                    "label": f"Добавить {skill}",
+                    "description": f"Добавить {skill} в резюме",
+                    "category": "skills",
+                    "impact": "high",
+                    "requires_user_input": True,
+                    "user_input_placeholder": f"Опишите ваш опыт: {skill}",
+                })
+                existing_gap_ids.add(gap_id)
+                next_id += 1
+
+        for skill in missing_preferred:
+            if skill.lower() not in gap_texts:
+                gap_id = f"gap-{next_id:03d}"
+                while gap_id in existing_gap_ids:
+                    next_id += 1
+                    gap_id = f"gap-{next_id:03d}"
+                gaps.append({
+                    "id": gap_id,
+                    "type": "missing_skill",
+                    "severity": "medium",
+                    "message": f"Отсутствует (желательно): {skill}",
+                    "suggestion": f"Добавить {skill}",
+                    "target_section": "skills",
+                })
+                checkboxes.append({
+                    "id": gap_id,
+                    "label": f"Добавить {skill}",
+                    "description": f"Добавить {skill} в резюме",
+                    "category": "skills",
+                    "impact": "medium",
+                    "requires_user_input": True,
+                    "user_input_placeholder": f"Опишите ваш опыт: {skill}",
+                })
+                existing_gap_ids.add(gap_id)
+                next_id += 1
+
+        analysis["gaps"] = gaps
+        analysis["checkbox_options"] = checkboxes
+        return analysis
+
+    @staticmethod
+    def _filter_new_gaps(
+        analysis: dict[str, Any], original_analysis: dict[str, Any],
+    ) -> dict[str, Any]:
+        """Remove gaps from re-analysis that weren't in the original analysis."""
+        original_gap_ids = {g["id"] for g in original_analysis.get("gaps", [])}
+        analysis["gaps"] = [
+            g for g in analysis.get("gaps", []) if g["id"] in original_gap_ids
+        ]
+        analysis["checkbox_options"] = [
+            c for c in analysis.get("checkbox_options", [])
+            if c["id"] in original_gap_ids
+        ]
+        return analysis
+
     def _post_process_output(self, output_json: dict[str, Any]) -> dict[str, Any]:
-        """Clamp scores before the result is saved to cache."""
-        return self._clamp_scores(output_json)
+        """Clamp scores and ensure gaps consistency."""
+        output_json = self._clamp_scores(output_json)
+        output_json = self._ensure_gaps_for_missing_skills(output_json)
+        return output_json
 
     # ── Public API ────────────────────────────────────────────────
 
@@ -247,6 +334,9 @@ class MatchService(CachedAIService):
             prompt_name="analyze_match_with_context",
         )
         analysis_json = self._clamp_scores(analysis_json)
+
+        # Remove gaps that weren't in the original analysis (no surprise new gaps)
+        analysis_json = self._filter_new_gaps(analysis_json, original_analysis)
 
         # Ensure score never decreases after improvements
         original_score = original_analysis.get("score", 0)
