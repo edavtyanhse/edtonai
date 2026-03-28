@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useMutation } from '@tanstack/react-query'
 import { Sparkles, Loader2, ArrowLeft, RotateCcw, Check, X, CheckCircle, XCircle, TrendingUp, TrendingDown, Minus, Eye, Home, Mail, ChevronDown, Briefcase, FileText } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
@@ -22,6 +23,7 @@ import { diffWords } from 'diff'
 
 export default function Step4Improvement() {
   const { t } = useTranslation()
+  const navigate = useNavigate()
   const {
     state,
     setSelectedCheckboxes,
@@ -761,7 +763,7 @@ export default function Step4Improvement() {
                   if (shown) {
                     setNavigateAfterFeedback(true)
                   } else {
-                    window.location.href = '/'
+                    navigate('/')
                   }
                 }}
                 className="bg-slate-700 hover:bg-slate-600"
@@ -837,7 +839,7 @@ export default function Step4Improvement() {
           onClose={() => {
             feedback.closeFeedback()
             if (navigateAfterFeedback) {
-              window.location.href = '/'
+              navigate('/')
             }
           }}
           source={feedback.source}
