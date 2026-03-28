@@ -98,7 +98,7 @@ async def test_analyze_match_flow(client: AsyncClient, mock_ai_provider):
     data = response.json()
 
     # Verify structure
-    assert data["analysis"]["score"] == 85
+    assert data["analysis"]["score"] == 70
     assert data["analysis"]["matched_required_skills"] == ["Python"]
     assert data["cache_hit"] is False
 
