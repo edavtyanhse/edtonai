@@ -167,12 +167,18 @@ ATS Fit (15):
 - (covered_keywords / total_keywords) * 15 (если keywords нет — 15)
 
 Clarity & Evidence (10):
-- конкретика, подтверждение навыков опытом, чёткость формулировок
+- Качество буллетов: формат XYZ (Accomplished X measured by Y by doing Z) vs обязанности
+- Конкретика: есть ли цифры, метрики, масштаб? Или общие фразы?
+- Seniority calibration: глаголы соответствуют уровню? (IC: built/developed, Manager: led/managed, Director: directed/scaled)
+- "So What?" тест: каждый буллет отвечает на "почему это важно?"
+- Penalize: buzzword-heavy формулировки без конкретики ("leveraged synergies")
 
 Итоговый score — сумма, округлённая до целого.
 
 КРИТИЧЕСКИ ВАЖНЫЕ ПРАВИЛА для gaps и checkbox_options:
 0) EXHAUSTIVE SEARCH (ВАЖНО): Ты обязан найти и перечислить АБСОЛЮТНО ВСЕ отсутствующие навыки и ключевые слова в ПЕРВОМ же проходе. Не скрывай мелкие проблемы. Не ограничивай количество gaps. Если навыка нет — это gap.
+   ДОПОЛНИТЕЛЬНО: ищи weak_wording gaps — буллеты, которые описывают обязанности вместо достижений.
+   Пример: "Responsible for data analysis" → gap с предложением переписать в формате XYZ.
 1) gaps и checkbox_options СВЯЗАНЫ 1:1. Каждый gap ДОЛЖЕН иметь соответствующий checkbox_option с тем же id.
 2) Для КАЖДОГО gap создавай checkbox_option — все проблемы должны быть исправляемы пользователем.
 3) QUANTITY CHECK (CRITICAL):
@@ -344,10 +350,13 @@ GENERATE_UPDATED_RESUME_PROMPT = """
    ✅ ОБЯЗАТЕЛЬНО: если checkbox говорит "добавить навык X" — слово X ДОЛЖНО БУКВАЛЬНО ПРИСУТСТВОВАТЬ в updated_resume_text.
 
 2) ДОБАВЛЕНИЕ НАВЫКОВ — КОНКРЕТНЫЙ АЛГОРИТМ:
-   - Если в резюме есть секция Skills/Навыки — ДОБАВЬ навык туда.
+   - Если в резюме есть секция Skills/Навыки — ДОБАВЬ навык туда НА ЯЗЫКЕ РЕЗЮМЕ.
    - Если секции нет — СОЗДАЙ секцию "Skills" или "Навыки" и впиши навыки.
-   - Каждый недостающий навык из selected_improvements ДОЛЖЕН появиться БУКВАЛЬНО как текст в resume.
-   - Пример: если gap = "Отсутствует навык Docker", то в тексте резюме ОБЯЗАТЕЛЬНО должно быть слово "Docker".
+   - ПЕРЕВОДИ название навыка на язык резюме:
+     Если резюме на English и gap говорит "машинное обучение" → пиши "machine learning"
+     Если резюме на English и gap говорит "финансовое моделирование" → пиши "financial modeling"
+     Если резюме на English и gap говорит "прогнозирование" → пиши "forecasting"
+   - Каждый недостающий навык ДОЛЖЕН появиться в тексте НА ЯЗЫКЕ РЕЗЮМЕ.
 
 3) ДОБАВЛЕНИЕ ATS-КЛЮЧЕВЫХ СЛОВ:
    - Впиши ключевое слово в наиболее подходящую секцию (опыт, навыки, summary).
@@ -377,14 +386,44 @@ GENERATE_UPDATED_RESUME_PROMPT = """
    a) Найди соответствующий gap в analysis.gaps по checkbox_id.
    b) Определи target_section (skills/experience/summary/other).
    c) Внеси КОНКРЕТНОЕ изменение в текст (на языке резюме!):
-      - missing_skill → добавь название навыка в секцию Skills И органично упомяни в релевантном опыте
-      - ats_keyword → впиши ключевое слово ЕСТЕСТВЕННО в подходящий контекст (не шаблоном "Experienced in X")
-      - experience_gap → добавь конкретный буллет-поинт в подходящую позицию в опыте работы
+      - missing_skill → добавь навык в секцию Skills И органично упомяни в релевантном опыте
+      - ats_keyword → впиши ключевое слово ЕСТЕСТВЕННО в буллет опыта (не в Skills-only)
+      - experience_gap → добавь конкретный буллет-поинт в НАИБОЛЕЕ РЕЛЕВАНТНУЮ позицию
       - weak_wording → перепиши конкретную фразу
-      ❌ НЕ приклеивай фразы в конец секций шаблоном. Интегрируй изменения ОРГАНИЧНО в существующий текст.
+      ❌ НЕ приклеивай фразы в конец секций шаблоном. Интегрируй ОРГАНИЧНО.
+      ❌ НЕ добавляй все новые буллеты в одну позицию — РАСПРЕДЕЛЯЙ по разным ролям,
+         выбирая ту, где навык наиболее релевантен.
    d) Если requires_user_input=true и есть user_input — используй текст пользователя.
-   e) Если requires_user_input=true и user_input пуст — сгенерируй МИНИМАЛЬНЫЙ общий текст.
-      Не выдумывай конкретные компании, проекты, цифры.
+   e) Если requires_user_input=true и user_input пуст — сгенерируй буллет в формате XYZ:
+      "Accomplished [X] as measured by [Y] by doing [Z]".
+      Не выдумывай конкретные компании, проекты, цифры — но покажи JUDGMENT:
+      не просто "использовал инструмент", а "обнаружил что [инсайт], применил [подход], получил [результат]".
+
+═══════════════════════════════════════════
+КАЧЕСТВО БУЛЛЕТОВ (применяй при создании новых)
+═══════════════════════════════════════════
+
+При написании НОВЫХ буллетов (для experience_gap или missing_skill):
+1) Формула XYZ: "Accomplished [X] measured by [Y] by doing [Z]"
+   ❌ "Responsible for data analysis" (обязанность)
+   ✅ "Built predictive models to identify at-risk accounts, reducing churn by 15%" (достижение)
+
+2) "So What?" тест: буллет должен выдержать вопрос "и что из этого?"
+   ❌ "Used BI tools for reporting" → So what?
+   ✅ "Designed executive dashboards in Tableau that surfaced a $2M pricing gap, leading to revised strategy"
+
+3) Seniority-appropriate verbs:
+   IC: built, developed, implemented, designed, analyzed, created
+   Manager: led, managed, coordinated, mentored, oversaw
+   Director+: directed, scaled, established, championed, transformed
+   Подбирай глаголы по уровню кандидата (определи из parsed_resume).
+
+4) Keywords в контексте: ATS ключевые слова вставляй В БУЛЛЕТЫ опыта (не только в Skills).
+   ATS ранжируют, а не отсекают — keywords в контексте достижений весят больше.
+
+5) Без "AI-smell": буллеты должны звучать как написанные человеком.
+   ❌ "Leveraged cross-functional synergies to drive stakeholder alignment" (buzzword soup)
+   ✅ "Aligned product, engineering, and design teams on quarterly roadmap priorities"
 Шаг 3: ВЕРИФИКАЦИЯ (КРИТИЧЕСКИЙ ШАГ — НЕ ПРОПУСКАЙ):
    Для КАЖДОГО элемента change_log проверь:
    - after_excerpt — эта цитата БУКВАЛЬНО присутствует в updated_resume_text?
