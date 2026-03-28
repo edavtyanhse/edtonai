@@ -45,7 +45,7 @@ export function trackBehaviorEvent(
     step?: string
     userSegment?: string
     properties?: Record<string, unknown>
-  },
+  }
 ): void {
   const payload: AnalyticsEventPayload = {
     event_name: eventName,

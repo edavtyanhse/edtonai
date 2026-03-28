@@ -13,18 +13,17 @@ interface FeedbackBannerProps {
 
 export function FeedbackBanner({ onClick }: FeedbackBannerProps) {
   const { i18n } = useTranslation()
-  
+
   if (!FEEDBACK_CONFIG.enabled) return null
 
   const lang = (i18n.language?.split('-')[0] || 'ru') as 'ru' | 'en'
 
-  const title = lang === 'ru'
-    ? 'Помогите нам стать лучше!'
-    : 'Help us improve!'
+  const title = lang === 'ru' ? 'Помогите нам стать лучше!' : 'Help us improve!'
 
-  const description = lang === 'ru'
-    ? 'Мы активно развиваем продукт и сейчас собираем обратную связь. Расскажите, что вам понравилось, что можно улучшить или какие функции вы хотели бы видеть — это займёт меньше минуты.'
-    : 'We are actively developing the product and collecting feedback. Tell us what you liked, what could be improved, or what features you would like to see — it takes less than a minute.'
+  const description =
+    lang === 'ru'
+      ? 'Мы активно развиваем продукт и сейчас собираем обратную связь. Расскажите, что вам понравилось, что можно улучшить или какие функции вы хотели бы видеть — это займёт меньше минуты.'
+      : 'We are actively developing the product and collecting feedback. Tell us what you liked, what could be improved, or what features you would like to see — it takes less than a minute.'
 
   const buttonText = lang === 'ru' ? 'Оставить отзыв' : 'Leave feedback'
 

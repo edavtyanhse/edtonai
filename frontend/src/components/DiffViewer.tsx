@@ -15,7 +15,10 @@ export default function DiffViewer({
   const [granularity, setGranularity] = useState<DiffGranularity>('word')
   const [showOnlyChanges, setShowOnlyChanges] = useState(initialShowOnlyChanges)
 
-  const result = useMemo(() => computeDiff(before, after, granularity), [before, after, granularity])
+  const result = useMemo(
+    () => computeDiff(before, after, granularity),
+    [before, after, granularity]
+  )
 
   const filteredSegments = useMemo(() => {
     if (!showOnlyChanges) return result.segments

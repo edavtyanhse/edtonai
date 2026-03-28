@@ -26,7 +26,7 @@ export function useFeedback() {
   const showFeedbackAuto = (): boolean => {
     if (!FEEDBACK_CONFIG.enabled || !FEEDBACK_CONFIG.showAfterAnalysis) return false
     if (hasShownAuto) return false
-    
+
     setSource('auto')
     setIsOpen(true)
     setHasShownAuto(true)

@@ -1,10 +1,5 @@
 import { createContext } from 'react'
-import type {
-  ParsedResume,
-  ParsedVacancy,
-  MatchAnalysis,
-  ChangeLogEntry,
-} from '@/api'
+import type { ParsedResume, ParsedVacancy, MatchAnalysis, ChangeLogEntry } from '@/api'
 
 interface WizardState {
   // Step 1 - Resume

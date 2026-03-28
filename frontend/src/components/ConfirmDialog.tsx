@@ -41,8 +41,9 @@ export default function ConfirmDialog({
 
         <div className="flex items-start gap-4">
           <div
-            className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${variant === 'danger' ? 'bg-red-900/20' : 'bg-blue-900/20'
-              }`}
+            className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${
+              variant === 'danger' ? 'bg-red-900/20' : 'bg-blue-900/20'
+            }`}
           >
             <AlertTriangle
               className={`w-5 h-5 ${variant === 'danger' ? 'text-red-400' : 'text-blue-400'}`}
@@ -56,7 +57,11 @@ export default function ConfirmDialog({
         </div>
 
         <div className="mt-6 flex justify-end gap-3">
-          <Button variant="secondary" onClick={onClose} className="border-slate-600 text-slate-300 hover:bg-slate-700 hover:text-white">
+          <Button
+            variant="secondary"
+            onClick={onClose}
+            className="border-slate-600 text-slate-300 hover:bg-slate-700 hover:text-white"
+          >
             {cancelText}
           </Button>
           <Button

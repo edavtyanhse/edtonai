@@ -66,24 +66,20 @@ export default function CheckboxList({
   )
 
   const categoryLabels: Record<string, string> = {
-    'skills': 'Навыки',
-    'experience': 'Опыт',
-    'ats': 'ATS оптимизация',
-    'format': 'Форматирование',
-    'content': 'Контент',
-    'education': 'Образование',
-    'other': 'Другое',
+    skills: 'Навыки',
+    experience: 'Опыт',
+    ats: 'ATS оптимизация',
+    format: 'Форматирование',
+    content: 'Контент',
+    education: 'Образование',
+    other: 'Другое',
   }
 
   // Category order for display
   const categoryOrder = ['skills', 'experience', 'ats', 'education', 'format', 'content', 'other']
 
   if (options.length === 0) {
-    return (
-      <div className="p-8 text-center text-slate-400">
-        Нет доступных улучшений
-      </div>
-    )
+    return <div className="p-8 text-center text-slate-400">Нет доступных улучшений</div>
   }
 
   return (
@@ -105,12 +101,13 @@ export default function CheckboxList({
                 return (
                   <div
                     key={option.id}
-                    className={`rounded-lg border transition-all ${isSelected
-                      ? option.requires_user_input
-                        ? 'border-amber-500/50 bg-amber-900/10'
-                        : 'border-blue-500/50 bg-blue-900/10'
-                      : 'border-slate-700 hover:border-slate-600 bg-slate-800 hover:bg-slate-700'
-                      }`}
+                    className={`rounded-lg border transition-all ${
+                      isSelected
+                        ? option.requires_user_input
+                          ? 'border-amber-500/50 bg-amber-900/10'
+                          : 'border-blue-500/50 bg-blue-900/10'
+                        : 'border-slate-700 hover:border-slate-600 bg-slate-800 hover:bg-slate-700'
+                    }`}
                   >
                     {/* Main checkbox row */}
                     <label className="flex items-start gap-3 p-3 cursor-pointer">
@@ -121,29 +118,33 @@ export default function CheckboxList({
                         className="sr-only"
                       />
                       <div
-                        className={`flex-shrink-0 w-5 h-5 rounded border-2 flex items-center justify-center mt-0.5 transition-colors ${isSelected
-                          ? option.requires_user_input
-                            ? 'bg-amber-600 border-amber-600'
-                            : 'bg-blue-600 border-blue-600'
-                          : 'border-slate-500 bg-slate-800'
-                          }`}
+                        className={`flex-shrink-0 w-5 h-5 rounded border-2 flex items-center justify-center mt-0.5 transition-colors ${
+                          isSelected
+                            ? option.requires_user_input
+                              ? 'bg-amber-600 border-amber-600'
+                              : 'bg-blue-600 border-blue-600'
+                            : 'border-slate-500 bg-slate-800'
+                        }`}
                       >
                         {isSelected && <Check className="w-3 h-3 text-white" />}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="text-sm font-medium text-white">
-                            {option.label}
-                          </span>
+                          <span className="text-sm font-medium text-white">{option.label}</span>
                           <span
-                            className={`text-xs px-1.5 py-0.5 rounded ${option.impact === 'high'
-                              ? 'bg-red-900/30 text-red-300'
-                              : option.impact === 'medium'
-                                ? 'bg-yellow-900/30 text-yellow-300'
-                                : 'bg-slate-700 text-slate-300'
-                              }`}
+                            className={`text-xs px-1.5 py-0.5 rounded ${
+                              option.impact === 'high'
+                                ? 'bg-red-900/30 text-red-300'
+                                : option.impact === 'medium'
+                                  ? 'bg-yellow-900/30 text-yellow-300'
+                                  : 'bg-slate-700 text-slate-300'
+                            }`}
                           >
-                            {option.impact === 'high' ? 'важно' : option.impact === 'medium' ? 'средне' : 'низкий'}
+                            {option.impact === 'high'
+                              ? 'важно'
+                              : option.impact === 'medium'
+                                ? 'средне'
+                                : 'низкий'}
                           </span>
                           {option.requires_user_input && (
                             <span className="text-xs px-1.5 py-0.5 rounded bg-amber-900/30 text-amber-300">
@@ -204,10 +205,11 @@ export default function CheckboxList({
                             <button
                               type="button"
                               onClick={() => handleAiGenerate(option.id)}
-                              className={`flex items-center gap-1 px-2 py-1 text-xs rounded transition-colors ${willUseAi
-                                ? 'bg-purple-900/30 text-purple-300 border border-purple-500/50'
-                                : 'bg-slate-700 text-slate-300 hover:bg-purple-900/20 hover:text-purple-300 border border-slate-600'
-                                }`}
+                              className={`flex items-center gap-1 px-2 py-1 text-xs rounded transition-colors ${
+                                willUseAi
+                                  ? 'bg-purple-900/30 text-purple-300 border border-purple-500/50'
+                                  : 'bg-slate-700 text-slate-300 hover:bg-purple-900/20 hover:text-purple-300 border border-slate-600'
+                              }`}
                             >
                               <Sparkles className="w-3 h-3" />
                               Исправить с помощью ИИ

@@ -24,7 +24,10 @@ export default function VacancyEditor({ data, onChange, readonly = false }: Vaca
     onChange({ ...data, [field]: value })
   }
 
-  const updateExperienceRequirements = (field: keyof ExperienceRequirements, value: string | number) => {
+  const updateExperienceRequirements = (
+    field: keyof ExperienceRequirements,
+    value: string | number
+  ) => {
     onChange({
       ...data,
       experience_requirements: {
@@ -203,10 +206,11 @@ function InputField({
       <label className="block text-sm font-medium text-slate-300 mb-1">{label}</label>
       <input
         type="text"
-        className={`w-full px-3 py-2 border rounded-lg transition-colors ${readonly
-          ? 'bg-slate-900/50 border-slate-700 cursor-not-allowed text-slate-400'
-          : 'bg-slate-900 border-slate-700 text-white focus:ring-2 focus:ring-brand-500 focus:border-transparent placeholder:text-slate-500'
-          }`}
+        className={`w-full px-3 py-2 border rounded-lg transition-colors ${
+          readonly
+            ? 'bg-slate-900/50 border-slate-700 cursor-not-allowed text-slate-400'
+            : 'bg-slate-900 border-slate-700 text-white focus:ring-2 focus:ring-brand-500 focus:border-transparent placeholder:text-slate-500'
+        }`}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         readOnly={readonly}
@@ -317,17 +321,22 @@ function VacancySkillTagEditor({
 
   const getTypeColor = (type?: string) => {
     switch (type) {
-      case 'hard': return 'bg-blue-100 text-blue-800'
-      case 'soft': return 'bg-pink-100 text-pink-800'
-      case 'domain': return 'bg-purple-100 text-purple-800'
-      case 'tool': return 'bg-orange-100 text-orange-800'
-      default: return variantStyles[variant]
+      case 'hard':
+        return 'bg-blue-100 text-blue-800'
+      case 'soft':
+        return 'bg-pink-100 text-pink-800'
+      case 'domain':
+        return 'bg-purple-100 text-purple-800'
+      case 'tool':
+        return 'bg-orange-100 text-orange-800'
+      default:
+        return variantStyles[variant]
     }
   }
 
   const handleAdd = () => {
     const trimmed = input.trim()
-    if (trimmed && !skills.some(s => s.name === trimmed)) {
+    if (trimmed && !skills.some((s) => s.name === trimmed)) {
       onChange([...skills, { name: trimmed, type: 'hard' }])
       setInput('')
     }
@@ -441,7 +450,10 @@ function ListEditor({
               />
             )}
             {!readonly && (
-              <button onClick={() => handleRemove(index)} className="text-red-400 hover:text-red-300">
+              <button
+                onClick={() => handleRemove(index)}
+                className="text-red-400 hover:text-red-300"
+              >
                 <X className="w-4 h-4" />
               </button>
             )}

@@ -1,4 +1,3 @@
-
 export { default as Workspace } from './Workspace'
 export { default as History } from './History'
 export { default as Compare } from './Compare'

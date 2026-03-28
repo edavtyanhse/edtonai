@@ -1,29 +1,29 @@
-import React from 'react';
+import React from 'react'
 
-export type Language = 'en' | 'ru';
+export type Language = 'en' | 'ru'
 
 export interface AnalysisResult {
-    score: number;
-    suggestions: string[];
-    strengths: string[];
-    missingKeywords: string[];
-    isLoading: boolean;
-    error?: string;
+  score: number
+  suggestions: string[]
+  strengths: string[]
+  missingKeywords: string[]
+  isLoading: boolean
+  error?: string
 }
 
 export interface DemoState {
-    resumeText: string;
-    jobDescription: string;
+  resumeText: string
+  jobDescription: string
 }
 
 export interface Feature {
-    title: string;
-    description: string;
-    icon: React.ElementType;
+  title: string
+  description: string
+  icon: React.ElementType
 }
 
 export interface Step {
-    number: string;
-    title: string;
-    description: string;
+  number: string
+  title: string
+  description: string
 }

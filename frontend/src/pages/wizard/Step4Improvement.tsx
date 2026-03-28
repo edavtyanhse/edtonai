@@ -1,12 +1,36 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useMutation } from '@tanstack/react-query'
-import { Sparkles, Loader2, ArrowLeft, RotateCcw, Check, X, CheckCircle, XCircle, TrendingUp, TrendingDown, Minus, Eye, Home, Mail, ChevronDown, Briefcase, FileText } from 'lucide-react'
+import {
+  Sparkles,
+  Loader2,
+  ArrowLeft,
+  RotateCcw,
+  Check,
+  X,
+  CheckCircle,
+  XCircle,
+  TrendingUp,
+  TrendingDown,
+  Minus,
+  Eye,
+  Home,
+  Mail,
+  ChevronDown,
+  Briefcase,
+  FileText,
+} from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useWizard } from '@/hooks'
 import { adaptResume, createVersion, analyzeMatch, generateCoverLetter, parseResume } from '@/api'
 import type { CheckboxOption, CoverLetterResponse } from '@/api'
-import { Button, CheckboxList, ConfirmDialog, CoverLetterModal, HeadHunterPreview } from '@/components'
+import {
+  Button,
+  CheckboxList,
+  ConfirmDialog,
+  CoverLetterModal,
+  HeadHunterPreview,
+} from '@/components'
 import PdfPreview from '@/components/pdf/PdfPreview'
 import type { ChangeLogEntry, SelectedImprovement } from '@/api'
 import { trackBehaviorEvent } from '@/features/feedback/analytics'
@@ -78,7 +102,7 @@ export default function Step4Improvement() {
       return {
         checkbox_id: checkboxId,
         user_input: userInput || null,
-        ai_generate: option?.requires_user_input ? (aiGenerate || !userInput) : false,
+        ai_generate: option?.requires_user_input ? aiGenerate || !userInput : false,
       }
     })
   }
@@ -111,14 +135,14 @@ export default function Step4Improvement() {
       const analysisPromise = analyzeMatch({
         resume_text: newResumeText,
         vacancy_text: state.vacancyText,
-      }).catch(e => {
+      }).catch((e) => {
         console.error('Analysis failed:', e)
         return null
       })
 
       const parsePromise = parseResume({
         resume_text: newResumeText,
-      }).catch(e => {
+      }).catch((e) => {
         console.error('Parse resume failed:', e)
         return null
       })
@@ -172,7 +196,7 @@ export default function Step4Improvement() {
 
       // Save the changes we just applied to show them in the UI
       // Filter only confirmed or pending (effectively confirmed) changes
-      const applied = pendingChanges.filter(c => c.status !== 'rejected')
+      const applied = pendingChanges.filter((c) => c.status !== 'rejected')
       setLastAppliedChanges(applied)
 
       // Apply improved resume as new base
@@ -184,7 +208,7 @@ export default function Step4Improvement() {
       console.error('Failed to save version, but proceeding to analysis', error)
       setShowSaveDialog(false)
 
-      const applied = pendingChanges.filter(c => c.status !== 'rejected')
+      const applied = pendingChanges.filter((c) => c.status !== 'rejected')
       setLastAppliedChanges(applied)
 
       applyImprovedResume(resumeText)
@@ -198,24 +222,18 @@ export default function Step4Improvement() {
 
   const handleConfirmChange = (index: number) => {
     setPendingChanges((prev) =>
-      prev.map((change, i) =>
-        i === index ? { ...change, status: 'confirmed' as const } : change
-      )
+      prev.map((change, i) => (i === index ? { ...change, status: 'confirmed' as const } : change))
     )
   }
 
   const handleRejectChange = (index: number) => {
     setPendingChanges((prev) =>
-      prev.map((change, i) =>
-        i === index ? { ...change, status: 'rejected' as const } : change
-      )
+      prev.map((change, i) => (i === index ? { ...change, status: 'rejected' as const } : change))
     )
   }
 
   const handleConfirmAll = () => {
-    setPendingChanges((prev) =>
-      prev.map((change) => ({ ...change, status: 'confirmed' as const }))
-    )
+    setPendingChanges((prev) => prev.map((change) => ({ ...change, status: 'confirmed' as const })))
   }
 
   const handleFinalizeChanges = () => {
@@ -285,9 +303,8 @@ export default function Step4Improvement() {
   const allReviewed = pendingChanges.length > 0 && pendingCount === 0
 
   const analysis = state.analysis
-  const scoreDiff = state.previousScore !== null && analysis
-    ? analysis.score - state.previousScore
-    : null
+  const scoreDiff =
+    state.previousScore !== null && analysis ? analysis.score - state.previousScore : null
 
   const isProcessing = saveVersionMutation.isPending || reanalyzeMutation.isPending
 
@@ -300,7 +317,9 @@ export default function Step4Improvement() {
         </div>
         <div className="text-center space-y-2">
           <h3 className="text-xl font-medium text-white">
-            {saveVersionMutation.isPending ? t('wizard.step4.applying') : t('wizard.step1.analyzing')}
+            {saveVersionMutation.isPending
+              ? t('wizard.step4.applying')
+              : t('wizard.step1.analyzing')}
           </h3>
           <p className="text-yellow-400 max-w-md mx-auto text-sm">
             ⏳ {t('wizard.step4.applying_warning')}
@@ -327,9 +346,15 @@ export default function Step4Improvement() {
           </p>
         </div>
         {mode === 'analysis' && (
-          <div className="flex gap-2" role="toolbar" aria-label={t('wizard.step4.actions', 'Действия с результатом')}>
+          <div
+            className="flex gap-2"
+            role="toolbar"
+            aria-label={t('wizard.step4.actions', 'Действия с результатом')}
+          >
             <div className="relative">
-              <span id="export-dropdown-trigger" className="hidden">Export Dropdown</span>
+              <span id="export-dropdown-trigger" className="hidden">
+                Export Dropdown
+              </span>
               <Button
                 onClick={() => setShowExportDropdown(!showExportDropdown)}
                 disabled={reanalyzeMutation.isPending}
@@ -340,7 +365,9 @@ export default function Step4Improvement() {
               >
                 <Eye className="w-4 h-4 mr-2" />
                 {t('common.export', 'Экспорт')}
-                <ChevronDown className={`w-4 h-4 ml-2 transition-transform ${showExportDropdown ? 'rotate-180' : ''}`} />
+                <ChevronDown
+                  className={`w-4 h-4 ml-2 transition-transform ${showExportDropdown ? 'rotate-180' : ''}`}
+                />
               </Button>
 
               {showExportDropdown && (
@@ -363,7 +390,9 @@ export default function Step4Improvement() {
                     >
                       <FileText className="w-4 h-4 text-red-400" />
                       <div className="text-left">
-                        <div className="font-semibold">{t('wizard.step4.preview_pdf', 'PDF Формат')}</div>
+                        <div className="font-semibold">
+                          {t('wizard.step4.preview_pdf', 'PDF Формат')}
+                        </div>
                         <div className="text-xs text-slate-400">
                           {!state.parsedResume
                             ? t('wizard.step4.pdf_loading', 'Подготовка данных...')
@@ -379,8 +408,12 @@ export default function Step4Improvement() {
                     >
                       <Briefcase className="w-4 h-4 text-blue-400" />
                       <div className="text-left">
-                        <div className="font-semibold">{t('wizard.step4.hh_export', 'HeadHunter')}</div>
-                        <div className="text-xs text-slate-400">{t('wizard.step4.hh_export_desc', 'Копирование блоков для hh.ru')}</div>
+                        <div className="font-semibold">
+                          {t('wizard.step4.hh_export', 'HeadHunter')}
+                        </div>
+                        <div className="text-xs text-slate-400">
+                          {t('wizard.step4.hh_export_desc', 'Копирование блоков для hh.ru')}
+                        </div>
                       </div>
                     </button>
                   </div>
@@ -428,7 +461,9 @@ export default function Step4Improvement() {
               userInputs={userInputs}
               onUserInputChange={(id, value) => setUserInputs((prev) => ({ ...prev, [id]: value }))}
               aiGenerateFlags={aiGenerateFlags}
-              onAiGenerateChange={(id, value) => setAiGenerateFlags((prev) => ({ ...prev, [id]: value }))}
+              onAiGenerateChange={(id, value) =>
+                setAiGenerateFlags((prev) => ({ ...prev, [id]: value }))
+              }
             />
           </div>
 
@@ -442,7 +477,11 @@ export default function Step4Improvement() {
 
           {/* Navigation */}
           <div className="flex justify-between pt-4">
-            <Button variant="ghost" onClick={goToPrevStep} className="text-slate-400 hover:text-white">
+            <Button
+              variant="ghost"
+              onClick={goToPrevStep}
+              className="text-slate-400 hover:text-white"
+            >
               <ArrowLeft className="w-4 h-4 mr-2" />
               {t('common.back_to_step')} 3
             </Button>
@@ -473,7 +512,12 @@ export default function Step4Improvement() {
               {t('wizard.step4.confirmed')}: {confirmedCount} / {pendingChanges.length}
               {pendingCount > 0 && ` • ${t('wizard.step4.pending')}: ${pendingCount}`}
             </span>
-            <Button variant="ghost" size="sm" onClick={handleConfirmAll} disabled={pendingCount === 0}>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleConfirmAll}
+              disabled={pendingCount === 0}
+            >
               <Check className="w-4 h-4 mr-1" />
               {t('wizard.step4.confirm_all')}
             </Button>
@@ -485,12 +529,13 @@ export default function Step4Improvement() {
             {pendingChanges.map((change, index) => (
               <div
                 key={index}
-                className={`bg-slate-800 border rounded-lg p-4 transition-colors ${change.status === 'confirmed'
-                  ? 'border-green-500/30 bg-green-900/20'
-                  : change.status === 'rejected'
-                    ? 'border-red-500/30 bg-red-900/20 opacity-60'
-                    : 'border-slate-700'
-                  }`}
+                className={`bg-slate-800 border rounded-lg p-4 transition-colors ${
+                  change.status === 'confirmed'
+                    ? 'border-green-500/30 bg-green-900/20'
+                    : change.status === 'rejected'
+                      ? 'border-red-500/30 bg-red-900/20 opacity-60'
+                      : 'border-slate-700'
+                }`}
               >
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1">
@@ -550,7 +595,11 @@ export default function Step4Improvement() {
 
           {/* Actions */}
           <div className="flex justify-between pt-4">
-            <Button variant="ghost" onClick={handleBackToCheckboxes} className="text-slate-400 hover:text-white">
+            <Button
+              variant="ghost"
+              onClick={handleBackToCheckboxes}
+              className="text-slate-400 hover:text-white"
+            >
               <ArrowLeft className="w-4 h-4 mr-2" />
               {t('wizard.step4.back_edit')}
             </Button>
@@ -567,7 +616,6 @@ export default function Step4Improvement() {
       ) : (
         /* mode === 'analysis' - Full analysis view */
         <div className="space-y-6">
-
           {/* 1. Score Panel - Full Width with ScoreCard bars */}
           <div className="bg-slate-800 border border-slate-700 rounded-lg p-6">
             <div className="flex items-center justify-between mb-4">
@@ -575,12 +623,13 @@ export default function Step4Improvement() {
               <div className="flex items-center gap-4">
                 {state.previousScore !== null && scoreDiff !== null && (
                   <div className="flex items-center gap-2 text-sm">
-                    <span className="text-gray-500">{t('wizard.step4.before')}: {state.previousScore}</span>
+                    <span className="text-gray-500">
+                      {t('wizard.step4.before')}: {state.previousScore}
+                    </span>
                     <span className="text-gray-400">→</span>
                     {scoreDiff > 0 ? (
                       <span className="flex items-center text-green-500">
-                        <TrendingUp className="w-4 h-4 mr-1" />
-                        +{scoreDiff}
+                        <TrendingUp className="w-4 h-4 mr-1" />+{scoreDiff}
                       </span>
                     ) : scoreDiff < 0 ? (
                       <span className="flex items-center text-red-500">
@@ -589,13 +638,14 @@ export default function Step4Improvement() {
                       </span>
                     ) : (
                       <span className="flex items-center text-gray-500">
-                        <Minus className="w-4 h-4 mr-1" />
-                        0
+                        <Minus className="w-4 h-4 mr-1" />0
                       </span>
                     )}
                   </div>
                 )}
-                <div className={`text-4xl font-bold ${analysis && analysis.score >= 70 ? 'text-green-500' : analysis && analysis.score >= 50 ? 'text-yellow-500' : 'text-red-500'}`}>
+                <div
+                  className={`text-4xl font-bold ${analysis && analysis.score >= 70 ? 'text-green-500' : analysis && analysis.score >= 50 ? 'text-yellow-500' : 'text-red-500'}`}
+                >
                   {analysis?.score || 0}
                   <span className="text-lg text-gray-400">/100</span>
                 </div>
@@ -648,8 +698,7 @@ export default function Step4Improvement() {
                 <Sparkles className="w-4 h-4 text-blue-400" />
                 {state.previousResumeText
                   ? t('wizard.step4.optimization_result')
-                  : t('wizard.step4.current_resume')
-                }
+                  : t('wizard.step4.current_resume')}
               </h3>
               <div className="bg-slate-800 border border-slate-700 rounded-lg overflow-hidden">
                 <ResumeDiffViewer
@@ -678,7 +727,9 @@ export default function Step4Improvement() {
                       ))}
                     </div>
                   ) : (
-                    <p className="text-sm text-green-300/70 italic">{t('wizard.step4.general_improvements')}</p>
+                    <p className="text-sm text-green-300/70 italic">
+                      {t('wizard.step4.general_improvements')}
+                    </p>
                   )}
                 </div>
               )}
@@ -710,9 +761,10 @@ export default function Step4Improvement() {
                 {analysis?.missing_required_skills.map((skill: string) => (
                   <SkillBadge key={skill} skill={skill} matched={false} />
                 ))}
-                {analysis?.matched_required_skills.length === 0 && analysis?.missing_required_skills.length === 0 && (
-                  <p className="text-sm text-gray-500">{t('wizard.step3.no_data')}</p>
-                )}
+                {analysis?.matched_required_skills.length === 0 &&
+                  analysis?.missing_required_skills.length === 0 && (
+                    <p className="text-sm text-gray-500">{t('wizard.step3.no_data')}</p>
+                  )}
               </div>
             </div>
 
@@ -729,9 +781,10 @@ export default function Step4Improvement() {
                 {analysis?.missing_preferred_skills.map((skill: string) => (
                   <SkillBadge key={skill} skill={skill} matched={false} />
                 ))}
-                {analysis?.matched_preferred_skills.length === 0 && analysis?.missing_preferred_skills.length === 0 && (
-                  <p className="text-sm text-gray-400 italic">{t('wizard.step3.no_data')}</p>
-                )}
+                {analysis?.matched_preferred_skills.length === 0 &&
+                  analysis?.missing_preferred_skills.length === 0 && (
+                    <p className="text-sm text-gray-400 italic">{t('wizard.step3.no_data')}</p>
+                  )}
               </div>
             </div>
           </div>
@@ -739,7 +792,11 @@ export default function Step4Improvement() {
           {/* 4. Actions Footer */}
           <div className="flex justify-between items-center pt-6 border-t border-slate-800">
             <div className="flex gap-2">
-              <Button variant="outline" onClick={reset} className="text-slate-400 hover:text-white border-slate-700 hover:bg-slate-800">
+              <Button
+                variant="outline"
+                onClick={reset}
+                className="text-slate-400 hover:text-white border-slate-700 hover:bg-slate-800"
+              >
                 <RotateCcw className="w-4 h-4 mr-2" />
                 {t('wizard.step4.start_over')}
               </Button>
@@ -785,40 +842,36 @@ export default function Step4Improvement() {
                 However, ConfirmDialog MUST be global as it's triggered from Review mode.
             */}
 
-
       {/* Save dialog - Global */}
       <ConfirmDialog
         isOpen={showSaveDialog}
         title={t('wizard.step4.apply_final')}
         message={
           <p className="text-slate-300">
-            {t('wizard.step4.final_confirm_message', 'Apply confirmed changes? The updated resume will become the base for further improvements.')}
+            {t(
+              'wizard.step4.final_confirm_message',
+              'Apply confirmed changes? The updated resume will become the base for further improvements.'
+            )}
           </p>
         }
-        confirmText={saveVersionMutation.isPending || reanalyzeMutation.isPending ? t('wizard.step4.applying') : t('wizard.step4.apply_final')}
+        confirmText={
+          saveVersionMutation.isPending || reanalyzeMutation.isPending
+            ? t('wizard.step4.applying')
+            : t('wizard.step4.apply_final')
+        }
         onConfirm={handleSaveAndAnalyze}
         onClose={() => setShowSaveDialog(false)}
       />
 
       {/* PDF Preview Dialog - Global */}
-      {
-        showPdfPreview && state.parsedResume && (
-          <PdfPreview
-            data={state.parsedResume}
-            onClose={() => setShowPdfPreview(false)}
-          />
-        )
-      }
+      {showPdfPreview && state.parsedResume && (
+        <PdfPreview data={state.parsedResume} onClose={() => setShowPdfPreview(false)} />
+      )}
 
       {/* HeadHunter Preview Modal - Global */}
-      {
-        showHhPreview && state.parsedResume && (
-          <HeadHunterPreview
-            data={state.parsedResume}
-            onClose={() => setShowHhPreview(false)}
-          />
-        )
-      }
+      {showHhPreview && state.parsedResume && (
+        <HeadHunterPreview data={state.parsedResume} onClose={() => setShowHhPreview(false)} />
+      )}
 
       {/* Cover Letter Modal */}
       {showCoverLetterModal && coverLetterData && (
@@ -845,7 +898,7 @@ export default function Step4Improvement() {
           source={feedback.source}
         />
       )}
-    </div >
+    </div>
   )
 }
 // ========================================
@@ -875,12 +928,17 @@ function ScoreCard({
       </div>
       <div className="w-full bg-gray-200 rounded-full h-2">
         <div
-          className={`h-2 rounded-full ${percentage >= 70 ? 'bg-green-500' : percentage >= 50 ? 'bg-yellow-500' : 'bg-red-500'
-            }`}
+          className={`h-2 rounded-full ${
+            percentage >= 70 ? 'bg-green-500' : percentage >= 50 ? 'bg-yellow-500' : 'bg-red-500'
+          }`}
           style={{ width: `${percentage}%` }}
         />
       </div>
-      {comment && <p className="text-xs text-gray-500 mt-1 truncate" title={comment}>{comment}</p>}
+      {comment && (
+        <p className="text-xs text-gray-500 mt-1 truncate" title={comment}>
+          {comment}
+        </p>
+      )}
     </div>
   )
 }
@@ -891,12 +949,35 @@ function formatResumeText(text: string): string {
 
   // Section keywords to detect
   const sections = [
-    'EDUCATION', 'EXPERIENCE', 'WORK EXPERIENCE', 'SKILLS', 'SKILLS & LANGUAGES',
-    'SUMMARY', 'SUMMARY:', 'ABOUT', 'CONTACT', 'CONTACTS', 'PERSONAL',
-    'PROJECTS', 'CERTIFICATIONS', 'LANGUAGES', 'AWARDS', 'PUBLICATIONS',
-    'INTERESTS', 'OBJECTIVE',
-    'ПРОФИЛЬ', 'ОПЫТ', 'ОПЫТ РАБОТЫ', 'ОБРАЗОВАНИЕ', 'НАВЫКИ',
-    'ПРОЕКТЫ', 'СЕРТИФИКАТЫ', 'ЯЗЫКИ', 'О СЕБЕ', 'КОНТАКТЫ', 'ДОСТИЖЕНИЯ'
+    'EDUCATION',
+    'EXPERIENCE',
+    'WORK EXPERIENCE',
+    'SKILLS',
+    'SKILLS & LANGUAGES',
+    'SUMMARY',
+    'SUMMARY:',
+    'ABOUT',
+    'CONTACT',
+    'CONTACTS',
+    'PERSONAL',
+    'PROJECTS',
+    'CERTIFICATIONS',
+    'LANGUAGES',
+    'AWARDS',
+    'PUBLICATIONS',
+    'INTERESTS',
+    'OBJECTIVE',
+    'ПРОФИЛЬ',
+    'ОПЫТ',
+    'ОПЫТ РАБОТЫ',
+    'ОБРАЗОВАНИЕ',
+    'НАВЫКИ',
+    'ПРОЕКТЫ',
+    'СЕРТИФИКАТЫ',
+    'ЯЗЫКИ',
+    'О СЕБЕ',
+    'КОНТАКТЫ',
+    'ДОСТИЖЕНИЯ',
   ]
 
   let formatted = text
@@ -904,7 +985,10 @@ function formatResumeText(text: string): string {
   // Insert line breaks before section headers
   for (const section of sections) {
     // Match section preceded by space/pipe/start, case-insensitive
-    const regex = new RegExp(`(\\s*\\|?\\s*)(${section.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\$&')})(?=\\s)`, 'gi')
+    const regex = new RegExp(
+      `(\\s*\\|?\\s*)(${section.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\$&')})(?=\\s)`,
+      'gi'
+    )
     formatted = formatted.replace(regex, '\n\n$2')
   }
 
@@ -912,7 +996,10 @@ function formatResumeText(text: string): string {
   formatted = formatted.replace(/\s*•\s*/g, '\n• ')
 
   // Insert line breaks before date-like company entries (e.g. "CompanyName   Месяц 20XX")
-  formatted = formatted.replace(/\s{2,}((?:Январь|Февраль|Март|Апрель|Май|Июнь|Июль|Август|Сентябрь|Октябрь|Ноябрь|Декабрь|January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{4})/gi, '\n$1')
+  formatted = formatted.replace(
+    /\s{2,}((?:Январь|Февраль|Март|Апрель|Май|Июнь|Июль|Август|Сентябрь|Октябрь|Ноябрь|Декабрь|January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{4})/gi,
+    '\n$1'
+  )
 
   // Insert line break before "Languages:" and "Technical Skills:"
   formatted = formatted.replace(/\s+(Languages:|Technical Skills:)/g, '\n$1')
@@ -923,14 +1010,15 @@ function formatResumeText(text: string): string {
   return formatted
 }
 
-function ResumeDiffViewer({ oldText, newText }: { oldText: string, newText: string }) {
+function ResumeDiffViewer({ oldText, newText }: { oldText: string; newText: string }) {
   // Format both texts before comparing
   const formattedOld = formatResumeText(oldText)
   const formattedNew = formatResumeText(newText)
   const hasDiff = formattedOld !== formattedNew
 
   // Section heading patterns for visual styling
-  const sectionPattern = /^(EDUCATION|EXPERIENCE|WORK EXPERIENCE|SKILLS|SKILLS & LANGUAGES|SUMMARY:?|ABOUT|CONTACT|CONTACTS|PERSONAL|PROJECTS|CERTIFICATIONS|LANGUAGES|AWARDS|PUBLICATIONS|INTERESTS|OBJECTIVE|ПРОФИЛЬ|ОПЫТ|ОПЫТ РАБОТЫ|ОБРАЗОВАНИЕ|НАВЫКИ|ПРОЕКТЫ|СЕРТИФИКАТЫ|ЯЗЫКИ|О СЕБЕ|КОНТАКТЫ|ДОСТИЖЕНИЯ)\s*$/i
+  const sectionPattern =
+    /^(EDUCATION|EXPERIENCE|WORK EXPERIENCE|SKILLS|SKILLS & LANGUAGES|SUMMARY:?|ABOUT|CONTACT|CONTACTS|PERSONAL|PROJECTS|CERTIFICATIONS|LANGUAGES|AWARDS|PUBLICATIONS|INTERESTS|OBJECTIVE|ПРОФИЛЬ|ОПЫТ|ОПЫТ РАБОТЫ|ОБРАЗОВАНИЕ|НАВЫКИ|ПРОЕКТЫ|СЕРТИФИКАТЫ|ЯЗЫКИ|О СЕБЕ|КОНТАКТЫ|ДОСТИЖЕНИЯ)\s*$/i
 
   const isSectionHeading = (line: string) => sectionPattern.test(line.trim())
 
@@ -944,7 +1032,9 @@ function ResumeDiffViewer({ oldText, newText }: { oldText: string, newText: stri
           if (isSectionHeading(line)) {
             return (
               <div key={i} className="mt-5 mb-1.5 pb-1 border-b border-slate-600">
-                <span className="text-xs font-bold uppercase tracking-widest text-blue-400">{line.trim()}</span>
+                <span className="text-xs font-bold uppercase tracking-widest text-blue-400">
+                  {line.trim()}
+                </span>
               </div>
             )
           }
@@ -966,7 +1056,11 @@ function ResumeDiffViewer({ oldText, newText }: { oldText: string, newText: stri
   const allSegments: Segment[] = []
 
   diffs.forEach((part) => {
-    const type = part.added ? 'added' as const : part.removed ? 'removed' as const : 'unchanged' as const
+    const type = part.added
+      ? ('added' as const)
+      : part.removed
+        ? ('removed' as const)
+        : ('unchanged' as const)
     allSegments.push({ text: part.value, type })
   })
 
@@ -975,7 +1069,7 @@ function ResumeDiffViewer({ oldText, newText }: { oldText: string, newText: stri
   type LineSegment = { text: string; type: 'added' | 'removed' | 'unchanged' }
   const lines: LineSegment[][] = [[]]
 
-  allSegments.forEach(seg => {
+  allSegments.forEach((seg) => {
     const parts = seg.text.split('\n')
     parts.forEach((part, idx) => {
       if (idx > 0) {
@@ -989,7 +1083,7 @@ function ResumeDiffViewer({ oldText, newText }: { oldText: string, newText: stri
   })
 
   const hasChanges = (segments: LineSegment[]) =>
-    segments.some(s => s.type === 'added' || s.type === 'removed')
+    segments.some((s) => s.type === 'added' || s.type === 'removed')
 
   return (
     <div className="bg-slate-900 p-4 overflow-auto max-h-[600px] custom-scrollbar font-mono">
@@ -997,17 +1091,24 @@ function ResumeDiffViewer({ oldText, newText }: { oldText: string, newText: stri
         // Empty line
         if (lineSegments.length === 0) return <div key={lineIdx} className="h-3" />
 
-        const fullText = lineSegments.map(s => s.text).join('')
+        const fullText = lineSegments.map((s) => s.text).join('')
 
         // Section heading
         if (isSectionHeading(fullText)) {
-          const hasAdded = lineSegments.some(s => s.type === 'added')
-          const hasRemoved = lineSegments.some(s => s.type === 'removed')
+          const hasAdded = lineSegments.some((s) => s.type === 'added')
+          const hasRemoved = lineSegments.some((s) => s.type === 'removed')
           return (
-            <div key={lineIdx} className={`mt-5 mb-1.5 pb-1 border-b border-slate-600 ${hasAdded ? 'border-green-500/40' : hasRemoved ? 'border-red-500/40' : ''
-              }`}>
-              <span className={`text-xs font-bold uppercase tracking-widest ${hasAdded ? 'text-green-400' : hasRemoved ? 'text-red-400' : 'text-blue-400'
-                }`}>
+            <div
+              key={lineIdx}
+              className={`mt-5 mb-1.5 pb-1 border-b border-slate-600 ${
+                hasAdded ? 'border-green-500/40' : hasRemoved ? 'border-red-500/40' : ''
+              }`}
+            >
+              <span
+                className={`text-xs font-bold uppercase tracking-widest ${
+                  hasAdded ? 'text-green-400' : hasRemoved ? 'text-red-400' : 'text-blue-400'
+                }`}
+              >
                 {fullText.trim()}
               </span>
             </div>
@@ -1020,20 +1121,27 @@ function ResumeDiffViewer({ oldText, newText }: { oldText: string, newText: stri
         return (
           <div
             key={lineIdx}
-            className={`${isBullet ? 'pl-4' : 'pl-3'} py-0.5 my-0.5 ${lineChanged ? 'border-l-3 border-blue-500/50 bg-blue-900/10 rounded-r' : ''
-              }`}
+            className={`${isBullet ? 'pl-4' : 'pl-3'} py-0.5 my-0.5 ${
+              lineChanged ? 'border-l-3 border-blue-500/50 bg-blue-900/10 rounded-r' : ''
+            }`}
           >
             {lineSegments.map((seg, segIdx) => {
               if (seg.type === 'added') {
                 return (
-                  <span key={segIdx} className="bg-green-800/50 text-green-300 text-[13px] leading-relaxed px-0.5 rounded">
+                  <span
+                    key={segIdx}
+                    className="bg-green-800/50 text-green-300 text-[13px] leading-relaxed px-0.5 rounded"
+                  >
                     {seg.text}
                   </span>
                 )
               }
               if (seg.type === 'removed') {
                 return (
-                  <span key={segIdx} className="bg-red-800/40 text-red-400 line-through text-[13px] leading-relaxed px-0.5 rounded opacity-70">
+                  <span
+                    key={segIdx}
+                    className="bg-red-800/40 text-red-400 line-through text-[13px] leading-relaxed px-0.5 rounded opacity-70"
+                  >
                     {seg.text}
                   </span>
                 )
@@ -1054,10 +1162,11 @@ function ResumeDiffViewer({ oldText, newText }: { oldText: string, newText: stri
 function SkillBadge({ skill, matched }: { skill: string; matched: boolean }) {
   return (
     <div
-      className={`px-3 py-2 rounded-lg border flex items-center gap-2 ${matched
-        ? 'bg-green-900/20 border-green-500/30 text-green-200'
-        : 'bg-red-900/20 border-red-500/30 text-red-200'
-        }`}
+      className={`px-3 py-2 rounded-lg border flex items-center gap-2 ${
+        matched
+          ? 'bg-green-900/20 border-green-500/30 text-green-200'
+          : 'bg-red-900/20 border-red-500/30 text-red-200'
+      }`}
     >
       {matched ? (
         <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />

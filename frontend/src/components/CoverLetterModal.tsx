@@ -69,9 +69,7 @@ export function CoverLetterModal({
           {isLoading ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
-              <span className="ml-3 text-gray-600 dark:text-gray-400">
-                Генерируем письмо...
-              </span>
+              <span className="ml-3 text-gray-600 dark:text-gray-400">Генерируем письмо...</span>
             </div>
           ) : (
             <div className="space-y-6">
@@ -101,9 +99,7 @@ export function CoverLetterModal({
                       <h4 className="font-medium text-green-900 dark:text-green-200 mb-2">
                         Основная часть
                       </h4>
-                      <p className="text-sm text-gray-700 dark:text-gray-300">
-                        {structure.body}
-                      </p>
+                      <p className="text-sm text-gray-700 dark:text-gray-300">{structure.body}</p>
                     </div>
                     <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4">
                       <h4 className="font-medium text-purple-900 dark:text-purple-200 mb-2">

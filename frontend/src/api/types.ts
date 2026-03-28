@@ -92,7 +92,7 @@ export interface ExperienceRequirements {
 
 export interface VacancySkill {
   name: string
-  type?: string  // hard | soft | domain | tool
+  type?: string // hard | soft | domain | tool
   evidence?: string
 }
 

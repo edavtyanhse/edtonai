@@ -1,6 +1,14 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import Layout from './components/Layout'
-import { WizardPage, History, Compare, Workspace, IdealResumePage, LoginPage, RegisterPage } from './pages'
+import {
+  WizardPage,
+  History,
+  Compare,
+  Workspace,
+  IdealResumePage,
+  LoginPage,
+  RegisterPage,
+} from './pages'
 import VerifyEmailPage from './pages/auth/VerifyEmailPage'
 import OAuthCallbackPage from './pages/auth/OAuthCallbackPage'
 import LandingPage from './pages/LandingPage'
@@ -20,34 +28,49 @@ function App() {
         <Route path="/oauth/callback" element={<OAuthCallbackPage />} />
 
         {/* Protected routes */}
-        <Route path="/wizard" element={
-          <RequireAuth>
-            <WizardPage />
-          </RequireAuth>
-        } />
+        <Route
+          path="/wizard"
+          element={
+            <RequireAuth>
+              <WizardPage />
+            </RequireAuth>
+          }
+        />
 
-        <Route path="/ideal-resume" element={
-          <RequireAuth>
-            <IdealResumePage />
-          </RequireAuth>
-        } />
+        <Route
+          path="/ideal-resume"
+          element={
+            <RequireAuth>
+              <IdealResumePage />
+            </RequireAuth>
+          }
+        />
 
         <Route element={<Layout />}>
-          <Route path="workspace" element={
-            <RequireAuth>
-              <Workspace />
-            </RequireAuth>
-          } />
-          <Route path="history" element={
-            <RequireAuth>
-              <History />
-            </RequireAuth>
-          } />
-          <Route path="compare" element={
-            <RequireAuth>
-              <Compare />
-            </RequireAuth>
-          } />
+          <Route
+            path="workspace"
+            element={
+              <RequireAuth>
+                <Workspace />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="history"
+            element={
+              <RequireAuth>
+                <History />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="compare"
+            element={
+              <RequireAuth>
+                <Compare />
+              </RequireAuth>
+            }
+          />
         </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />

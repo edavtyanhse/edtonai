@@ -31,7 +31,9 @@ async function authFetch<T>(path: string, body?: unknown): Promise<T> {
     try {
       const err = await response.json()
       detail = typeof err.detail === 'string' ? err.detail : detail
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
     throw new Error(detail)
   }
 

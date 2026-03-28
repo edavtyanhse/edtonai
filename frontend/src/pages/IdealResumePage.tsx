@@ -3,8 +3,18 @@ import { useNavigate } from 'react-router-dom'
 import { useMutation } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import {
-  ArrowLeft, Sparkles, Loader2, Copy, Save, FileText, Settings,
-  Eye, ChevronDown, Download, Check, Link as LinkIcon
+  ArrowLeft,
+  Sparkles,
+  Loader2,
+  Copy,
+  Save,
+  FileText,
+  Settings,
+  Eye,
+  ChevronDown,
+  Download,
+  Check,
+  Link as LinkIcon,
 } from 'lucide-react'
 import { generateIdeal, createVersion, parseResume, parseVacancy } from '@/api'
 import type { ParsedResume } from '@/api'
@@ -22,19 +32,41 @@ interface Options {
 }
 
 // Section heading detection for formatting
-const SECTION_PATTERN = /^(EDUCATION|EXPERIENCE|WORK EXPERIENCE|SKILLS|SKILLS & LANGUAGES|SUMMARY:?|ABOUT|PROJECTS|CERTIFICATIONS|LANGUAGES|ПРОФИЛЬ|ОПЫТ|ОПЫТ РАБОТЫ|ОБРАЗОВАНИЕ|НАВЫКИ|ПРОЕКТЫ|СЕРТИФИКАТЫ|ЯЗЫКИ|О СЕБЕ|КОНТАКТЫ|ДОСТИЖЕНИЯ)\s*$/i
+const SECTION_PATTERN =
+  /^(EDUCATION|EXPERIENCE|WORK EXPERIENCE|SKILLS|SKILLS & LANGUAGES|SUMMARY:?|ABOUT|PROJECTS|CERTIFICATIONS|LANGUAGES|ПРОФИЛЬ|ОПЫТ|ОПЫТ РАБОТЫ|ОБРАЗОВАНИЕ|НАВЫКИ|ПРОЕКТЫ|СЕРТИФИКАТЫ|ЯЗЫКИ|О СЕБЕ|КОНТАКТЫ|ДОСТИЖЕНИЯ)\s*$/i
 
 function formatResumeText(text: string): string {
   if (!text) return ''
   const sections = [
-    'EDUCATION', 'EXPERIENCE', 'WORK EXPERIENCE', 'SKILLS', 'SKILLS & LANGUAGES',
-    'SUMMARY', 'SUMMARY:', 'ABOUT', 'PROJECTS', 'CERTIFICATIONS', 'LANGUAGES',
-    'ПРОФИЛЬ', 'ОПЫТ', 'ОПЫТ РАБОТЫ', 'ОБРАЗОВАНИЕ', 'НАВЫКИ',
-    'ПРОЕКТЫ', 'СЕРТИФИКАТЫ', 'ЯЗЫКИ', 'О СЕБЕ', 'КОНТАКТЫ', 'ДОСТИЖЕНИЯ'
+    'EDUCATION',
+    'EXPERIENCE',
+    'WORK EXPERIENCE',
+    'SKILLS',
+    'SKILLS & LANGUAGES',
+    'SUMMARY',
+    'SUMMARY:',
+    'ABOUT',
+    'PROJECTS',
+    'CERTIFICATIONS',
+    'LANGUAGES',
+    'ПРОФИЛЬ',
+    'ОПЫТ',
+    'ОПЫТ РАБОТЫ',
+    'ОБРАЗОВАНИЕ',
+    'НАВЫКИ',
+    'ПРОЕКТЫ',
+    'СЕРТИФИКАТЫ',
+    'ЯЗЫКИ',
+    'О СЕБЕ',
+    'КОНТАКТЫ',
+    'ДОСТИЖЕНИЯ',
   ]
   let formatted = text
   for (const section of sections) {
-    const regex = new RegExp(`(\\s*\\|?\\s*)(${section.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})(?=\\s)`, 'gi')
+    const regex = new RegExp(
+      `(\\s*\\|?\\s*)(${section.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})(?=\\s)`,
+      'gi'
+    )
     formatted = formatted.replace(regex, '\n\n$2')
   }
   formatted = formatted.replace(/\s*•\s*/g, '\n• ')
@@ -136,7 +168,9 @@ export default function IdealResumePage() {
         setParsedResume(resp.parsed_resume)
         if (type === 'pdf') setShowPdfPreview(true)
         else setShowHhPreview(true)
-      } catch { /* ignore */ }
+      } catch {
+        /* ignore */
+      }
     } else {
       if (type === 'pdf') setShowPdfPreview(true)
       else setShowHhPreview(true)
@@ -157,7 +191,7 @@ export default function IdealResumePage() {
         <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button
-              onClick={() => mode === 'result' ? setMode('input') : navigate('/')}
+              onClick={() => (mode === 'result' ? setMode('input') : navigate('/'))}
               className="p-2 hover:bg-slate-800 rounded-lg transition-colors"
             >
               <ArrowLeft className="w-5 h-5 text-slate-400 hover:text-white" />
@@ -168,7 +202,10 @@ export default function IdealResumePage() {
               </h1>
               <p className="text-sm text-slate-400">
                 {mode === 'input'
-                  ? t('ideal.subtitle_input', 'Paste a vacancy to generate a perfect resume template')
+                  ? t(
+                      'ideal.subtitle_input',
+                      'Paste a vacancy to generate a perfect resume template'
+                    )
                   : t('ideal.subtitle_result', 'Generated ideal resume')}
               </p>
             </div>
@@ -205,11 +242,18 @@ export default function IdealResumePage() {
                   </div>
                 )}
               </div>
-              <Button variant="outline" onClick={handleCopy} className="text-slate-300 border-slate-600 hover:bg-slate-700">
+              <Button
+                variant="outline"
+                onClick={handleCopy}
+                className="text-slate-300 border-slate-600 hover:bg-slate-700"
+              >
                 {copied ? <Check className="w-4 h-4 mr-1" /> : <Copy className="w-4 h-4 mr-1" />}
                 {copied ? t('common.copied', 'Copied!') : t('common.copy', 'Copy')}
               </Button>
-              <Button onClick={() => setShowSaveDialog(true)} className="bg-blue-600 hover:bg-blue-700">
+              <Button
+                onClick={() => setShowSaveDialog(true)}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
                 <Save className="w-4 h-4 mr-1" />
                 {t('common.save', 'Save')}
               </Button>
@@ -247,7 +291,9 @@ export default function IdealResumePage() {
                 onChange={setVacancyText}
                 maxLength={MAX_CHARS}
                 label={t('ideal.vacancy_text', 'Vacancy text')}
-                placeholder={t('ideal.vacancy_placeholder', `Paste vacancy text here...
+                placeholder={t(
+                  'ideal.vacancy_placeholder',
+                  `Paste vacancy text here...
 
 For example:
 Senior Python Developer
@@ -255,7 +301,8 @@ Company XYZ
 Requirements:
 - 5+ years of Python experience
 - FastAPI, PostgreSQL, Docker
-...`)}
+...`
+                )}
                 minHeight={250}
               />
             </div>
@@ -268,9 +315,13 @@ Requirements:
               >
                 <div className="flex items-center gap-2">
                   <Settings className="w-5 h-5 text-slate-400" />
-                  <span className="font-medium text-white">{t('ideal.settings', 'Generation Settings')}</span>
+                  <span className="font-medium text-white">
+                    {t('ideal.settings', 'Generation Settings')}
+                  </span>
                 </div>
-                <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${showOptions ? 'rotate-180' : ''}`} />
+                <ChevronDown
+                  className={`w-4 h-4 text-slate-400 transition-transform ${showOptions ? 'rotate-180' : ''}`}
+                />
               </button>
               {showOptions && (
                 <div className="px-6 pb-6 space-y-4 border-t border-slate-700 pt-4">
@@ -282,7 +333,7 @@ Requirements:
                       { value: 'en' as const, label: 'English' },
                     ]}
                     selected={options.language}
-                    onChange={(v) => setOptions(p => ({ ...p, language: v }))}
+                    onChange={(v) => setOptions((p) => ({ ...p, language: v }))}
                   />
                   <OptionGroup
                     label={t('ideal.template', 'Template')}
@@ -291,7 +342,7 @@ Requirements:
                       { value: 'harvard' as const, label: 'Harvard' },
                     ]}
                     selected={options.template}
-                    onChange={(v) => setOptions(p => ({ ...p, template: v }))}
+                    onChange={(v) => setOptions((p) => ({ ...p, template: v }))}
                   />
                   <OptionGroup
                     label={t('ideal.seniority', 'Experience Level')}
@@ -302,7 +353,7 @@ Requirements:
                       { value: 'senior' as const, label: 'Senior' },
                     ]}
                     selected={options.seniority}
-                    onChange={(v) => setOptions(p => ({ ...p, seniority: v }))}
+                    onChange={(v) => setOptions((p) => ({ ...p, seniority: v }))}
                   />
                 </div>
               )}
@@ -347,10 +398,14 @@ Requirements:
                 <div className="bg-slate-800/50 px-6 py-3 border-b border-slate-700 flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Sparkles className="w-5 h-5 text-blue-400" />
-                    <span className="font-semibold text-white">{t('ideal.result_title', 'Ideal Resume')}</span>
+                    <span className="font-semibold text-white">
+                      {t('ideal.result_title', 'Ideal Resume')}
+                    </span>
                   </div>
                   {generateMutation.data?.cache_hit && (
-                    <span className="text-xs text-slate-400 bg-slate-700 px-2 py-1 rounded">cached</span>
+                    <span className="text-xs text-slate-400 bg-slate-700 px-2 py-1 rounded">
+                      cached
+                    </span>
                   )}
                 </div>
                 <div className="max-h-[600px] overflow-y-auto custom-scrollbar p-4 font-mono">
@@ -367,7 +422,10 @@ Requirements:
                     </h3>
                     <div className="flex flex-wrap gap-1.5">
                       {metadata.keywords_used.map((kw, i) => (
-                        <span key={i} className="text-xs px-2 py-1 bg-blue-500/15 text-blue-300 rounded-md border border-blue-500/20">
+                        <span
+                          key={i}
+                          className="text-xs px-2 py-1 bg-blue-500/15 text-blue-300 rounded-md border border-blue-500/20"
+                        >
                           {kw}
                         </span>
                       ))}
@@ -411,7 +469,11 @@ Requirements:
 
             {/* Back */}
             <div className="flex justify-start">
-              <Button variant="outline" onClick={() => setMode('input')} className="text-slate-300 border-slate-600">
+              <Button
+                variant="outline"
+                onClick={() => setMode('input')}
+                className="text-slate-300 border-slate-600"
+              >
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 {t('ideal.edit_vacancy', 'Edit Vacancy')}
               </Button>
@@ -436,7 +498,9 @@ Requirements:
             />
           </div>
         }
-        confirmText={saveVersionMutation.isPending ? t('common.saving', 'Saving...') : t('common.save', 'Save')}
+        confirmText={
+          saveVersionMutation.isPending ? t('common.saving', 'Saving...') : t('common.save', 'Save')
+        }
         onConfirm={() => saveVersionMutation.mutate()}
         onClose={() => setShowSaveDialog(false)}
       />
@@ -477,10 +541,11 @@ function OptionGroup<T>({
           <button
             key={opt.label}
             onClick={() => onChange(opt.value)}
-            className={`px-4 py-2 rounded-lg text-sm transition-colors ${selected === opt.value
-              ? 'bg-blue-500/20 text-blue-300 border-2 border-blue-500/50'
-              : 'bg-slate-900 text-slate-400 border-2 border-transparent hover:bg-slate-700'
-              }`}
+            className={`px-4 py-2 rounded-lg text-sm transition-colors ${
+              selected === opt.value
+                ? 'bg-blue-500/20 text-blue-300 border-2 border-blue-500/50'
+                : 'bg-slate-900 text-slate-400 border-2 border-transparent hover:bg-slate-700'
+            }`}
           >
             {opt.label}
           </button>
@@ -501,7 +566,9 @@ function FormattedResumeView({ text }: { text: string }) {
         if (SECTION_PATTERN.test(line.trim())) {
           return (
             <div key={i} className="mt-5 mb-1.5 pb-1 border-b border-slate-600">
-              <span className="text-xs font-bold uppercase tracking-widest text-blue-400">{line.trim()}</span>
+              <span className="text-xs font-bold uppercase tracking-widest text-blue-400">
+                {line.trim()}
+              </span>
             </div>
           )
         }

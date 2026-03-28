@@ -141,9 +141,6 @@ export async function getVersion(id: string, signal?: AbortSignal): Promise<Vers
   return apiClient.get<VersionDetail>(`/v1/versions/${id}`, { signal })
 }
 
-export async function deleteVersion(
-  id: string,
-  signal?: AbortSignal
-): Promise<void> {
+export async function deleteVersion(id: string, signal?: AbortSignal): Promise<void> {
   return apiClient.delete(`/v1/versions/${id}`, { signal })
 }

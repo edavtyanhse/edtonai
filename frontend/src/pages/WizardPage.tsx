@@ -24,7 +24,11 @@ function WizardContent() {
     { id: 1, title: t('wizard.steps.resume'), subtitle: t('wizard.steps.subtitle_parsing') },
     { id: 2, title: t('wizard.steps.vacancy'), subtitle: t('wizard.steps.subtitle_parsing') },
     { id: 3, title: t('wizard.steps.analysis'), subtitle: t('wizard.steps.subtitle_analysis') },
-    { id: 4, title: t('wizard.steps.improvement'), subtitle: t('wizard.steps.subtitle_improvement') },
+    {
+      id: 4,
+      title: t('wizard.steps.improvement'),
+      subtitle: t('wizard.steps.subtitle_improvement'),
+    },
   ]
 
   const renderStep = () => {

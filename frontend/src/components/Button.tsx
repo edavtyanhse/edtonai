@@ -34,8 +34,7 @@ export default function Button({
       'bg-slate-800 text-white hover:bg-slate-700 border border-slate-700 hover:border-slate-600 focus:ring-slate-500',
     danger:
       'bg-red-500/10 text-red-400 hover:bg-red-500/20 border border-red-500/20 focus:ring-red-500',
-    ghost:
-      'text-slate-400 hover:text-white hover:bg-slate-800/50 focus:ring-slate-500',
+    ghost: 'text-slate-400 hover:text-white hover:bg-slate-800/50 focus:ring-slate-500',
     outline:
       'bg-transparent border border-slate-700 text-slate-300 hover:bg-slate-800 hover:text-white focus:ring-brand-500',
   }
@@ -59,7 +58,9 @@ export default function Button({
         cloneElement(icon as React.ReactElement, {
           className: 'w-4 h-4',
         })
-      ) : icon}
+      ) : (
+        icon
+      )}
       {children}
     </button>
   )

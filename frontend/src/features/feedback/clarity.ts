@@ -7,7 +7,12 @@ type ClarityFn = ((...args: unknown[]) => void) & {
 }
 
 export function initClarity(): void {
-  if (!CLARITY_PROJECT_ID || initialized || typeof window === 'undefined' || typeof document === 'undefined') {
+  if (
+    !CLARITY_PROJECT_ID ||
+    initialized ||
+    typeof window === 'undefined' ||
+    typeof document === 'undefined'
+  ) {
     return
   }
 

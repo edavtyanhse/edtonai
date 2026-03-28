@@ -1,7 +1,17 @@
 import { useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useMutation } from '@tanstack/react-query'
-import { FileText, Loader2, ArrowRight, ArrowLeft, Edit3, Save, Check, UploadCloud, X } from 'lucide-react'
+import {
+  FileText,
+  Loader2,
+  ArrowRight,
+  ArrowLeft,
+  Edit3,
+  Save,
+  Check,
+  UploadCloud,
+  X,
+} from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useWizard } from '@/hooks'
 import { parseResume, updateResume } from '@/api'
@@ -27,29 +37,33 @@ export default function Step1Resume() {
   const [fileError, setFileError] = useState<string | null>(null)
 
   // File upload handler
-  const onDrop = useCallback(async (acceptedFiles: File[]) => {
-    const file = acceptedFiles[0]
-    if (!file) return
+  const onDrop = useCallback(
+    async (acceptedFiles: File[]) => {
+      const file = acceptedFiles[0]
+      if (!file) return
 
-    setIsProcessingFile(true)
-    setFileError(null)
+      setIsProcessingFile(true)
+      setFileError(null)
 
-    try {
-      const text = await extractTextFromFile(file)
-      if (text.length < 50) {
-        throw new Error(t('common.error'))
+      try {
+        const text = await extractTextFromFile(file)
+        if (text.length < 50) {
+          throw new Error(t('common.error'))
+        }
+        setLocalText(text.length > MAX_CHARS ? text.slice(0, MAX_CHARS) : text)
+      } catch (err: unknown) {
+        setFileError(err instanceof Error ? err.message : t('common.error'))
+      } finally {
+        setIsProcessingFile(false)
       }
-      setLocalText(text.length > MAX_CHARS ? text.slice(0, MAX_CHARS) : text)
-    } catch (err: unknown) {
-      setFileError(err instanceof Error ? err.message : t('common.error'))
-    } finally {
-      setIsProcessingFile(false)
-    }
-  }, [t])
+    },
+    [t]
+  )
 
   // Parse mutation
   const parseMutation = useMutation({
-    mutationFn: (text: string = localText) => parseResume({ resume_text: typeof text === 'string' ? text : localText }),
+    mutationFn: (text: string = localText) =>
+      parseResume({ resume_text: typeof text === 'string' ? text : localText }),
     onSuccess: (data) => {
       setResumeText(localText)
       setResumeData(data.resume_id, data.parsed_resume)
@@ -68,8 +82,7 @@ export default function Step1Resume() {
 
   // Save mutation (separate from navigation)
   const saveMutation = useMutation({
-    mutationFn: (parsed: ParsedResume) =>
-      updateResume(state.resumeId!, { parsed_data: parsed }),
+    mutationFn: (parsed: ParsedResume) => updateResume(state.resumeId!, { parsed_data: parsed }),
     onSuccess: (data) => {
       if (data.parsed_data) {
         updateParsedResume(data.parsed_data)
@@ -110,10 +123,11 @@ export default function Step1Resume() {
 
     return (
       <div
-        className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors cursor-pointer relative ${hasFile
-          ? 'border-green-500/50 bg-green-900/10'
-          : 'border-slate-600 hover:border-slate-500 hover:bg-slate-800/50'
-          }`}
+        className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors cursor-pointer relative ${
+          hasFile
+            ? 'border-green-500/50 bg-green-900/10'
+            : 'border-slate-600 hover:border-slate-500 hover:bg-slate-800/50'
+        }`}
         onDragOver={(e) => e.preventDefault()}
         onDrop={(e) => {
           e.preventDefault()
@@ -162,9 +176,7 @@ export default function Step1Resume() {
               <UploadCloud className="w-6 h-6 text-blue-400" />
             </div>
             <h3 className="text-sm font-medium text-white">{t('wizard.step1.upload_tab')}</h3>
-            <p className="text-xs text-slate-400 mt-1">
-              {t('wizard.step1.supports')}
-            </p>
+            <p className="text-xs text-slate-400 mt-1">{t('wizard.step1.supports')}</p>
           </>
         )}
 
@@ -178,7 +190,6 @@ export default function Step1Resume() {
     )
   }
 
-
   const isParseDisabled = localText.length < 10 || localText.length > MAX_CHARS
 
   return (
@@ -187,12 +198,14 @@ export default function Step1Resume() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-white">{t('wizard.step1.title')}</h1>
-          <p className="text-slate-400 mt-1">
-            {t('wizard.step1.description')}
-          </p>
+          <p className="text-slate-400 mt-1">{t('wizard.step1.description')}</p>
         </div>
         {mode === 'parsed' && (
-          <Button variant="ghost" onClick={handleEditText} className="text-slate-400 hover:text-white">
+          <Button
+            variant="ghost"
+            onClick={handleEditText}
+            className="text-slate-400 hover:text-white"
+          >
             <Edit3 className="w-4 h-4 mr-2" />
             {t('common.back_to_step')} 1
           </Button>
@@ -202,7 +215,6 @@ export default function Step1Resume() {
       {/* Content */}
       {mode === 'input' ? (
         <div className="space-y-4">
-
           {/* Include File Upload Area here */}
           <FileUploadArea />
 
@@ -263,10 +275,7 @@ export default function Step1Resume() {
       ) : (
         <div className="space-y-4">
           {state.parsedResume && (
-            <ResumeEditor
-              data={state.parsedResume}
-              onChange={handleParsedChange}
-            />
+            <ResumeEditor data={state.parsedResume} onChange={handleParsedChange} />
           )}
 
           {/* Unsaved changes indicator */}
@@ -277,7 +286,11 @@ export default function Step1Resume() {
           )}
 
           <div className="flex justify-between gap-3">
-            <Button variant="ghost" onClick={handleEditText} className="text-slate-400 hover:text-white">
+            <Button
+              variant="ghost"
+              onClick={handleEditText}
+              className="text-slate-400 hover:text-white"
+            >
               <ArrowLeft className="w-4 h-4 mr-2" />
               {t('common.back_to_step')} 1
             </Button>
@@ -306,10 +319,7 @@ export default function Step1Resume() {
               </Button>
 
               {/* Next button (navigation only) */}
-              <Button
-                onClick={handleNext}
-                className="min-w-[150px]"
-              >
+              <Button onClick={handleNext} className="min-w-[150px]">
                 {t('wizard.step1.next')}
                 <ArrowRight className="w-4 h-4 ml-2" />
               </Button>

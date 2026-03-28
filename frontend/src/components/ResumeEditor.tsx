@@ -144,8 +144,11 @@ export default function ResumeEditor({ data, onChange, readonly = false }: Resum
         onToggle={() => toggleSection('summary')}
       >
         <textarea
-          className={`w-full px-3 py-2 border rounded-lg resize-none ${readonly ? 'bg-slate-900/50 border-slate-700 cursor-not-allowed text-slate-400' : 'bg-slate-900 border-slate-700 text-white focus:ring-2 focus:ring-brand-500 focus:border-transparent'
-            }`}
+          className={`w-full px-3 py-2 border rounded-lg resize-none ${
+            readonly
+              ? 'bg-slate-900/50 border-slate-700 cursor-not-allowed text-slate-400'
+              : 'bg-slate-900 border-slate-700 text-white focus:ring-2 focus:ring-brand-500 focus:border-transparent'
+          }`}
           rows={4}
           value={data.summary || ''}
           onChange={(e) => updateSummary(e.target.value)}
@@ -287,10 +290,11 @@ function InputField({
       <label className="block text-sm font-medium text-slate-300 mb-1">{label}</label>
       <input
         type="text"
-        className={`w-full px-3 py-2 border rounded-lg transition-colors ${readonly
-          ? 'bg-slate-900/50 border-slate-700 cursor-not-allowed text-slate-400'
-          : 'bg-slate-900 border-slate-700 text-white focus:ring-2 focus:ring-brand-500 focus:border-transparent placeholder:text-slate-500'
-          }`}
+        className={`w-full px-3 py-2 border rounded-lg transition-colors ${
+          readonly
+            ? 'bg-slate-900/50 border-slate-700 cursor-not-allowed text-slate-400'
+            : 'bg-slate-900 border-slate-700 text-white focus:ring-2 focus:ring-brand-500 focus:border-transparent placeholder:text-slate-500'
+        }`}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         readOnly={readonly}
@@ -386,7 +390,7 @@ function SkillTagEditor({
 
   const handleAdd = () => {
     const trimmed = input.trim()
-    if (trimmed && !skills.some(s => s.name === trimmed)) {
+    if (trimmed && !skills.some((s) => s.name === trimmed)) {
       onChange([...skills, { name: trimmed, level: 'unknown', category: 'other' }])
       setInput('')
     }
@@ -405,14 +409,22 @@ function SkillTagEditor({
 
   const getCategoryColor = (category?: string) => {
     switch (category) {
-      case 'language': return 'bg-purple-100 text-purple-800'
-      case 'framework': return 'bg-blue-100 text-blue-800'
-      case 'database': return 'bg-green-100 text-green-800'
-      case 'cloud': return 'bg-yellow-100 text-yellow-800'
-      case 'devops': return 'bg-orange-100 text-orange-800'
-      case 'tool': return 'bg-gray-100 text-gray-800'
-      case 'soft': return 'bg-pink-100 text-pink-800'
-      default: return 'bg-blue-100 text-blue-800'
+      case 'language':
+        return 'bg-purple-100 text-purple-800'
+      case 'framework':
+        return 'bg-blue-100 text-blue-800'
+      case 'database':
+        return 'bg-green-100 text-green-800'
+      case 'cloud':
+        return 'bg-yellow-100 text-yellow-800'
+      case 'devops':
+        return 'bg-orange-100 text-orange-800'
+      case 'tool':
+        return 'bg-gray-100 text-gray-800'
+      case 'soft':
+        return 'bg-pink-100 text-pink-800'
+      default:
+        return 'bg-blue-100 text-blue-800'
     }
   }
 
@@ -507,10 +519,15 @@ function ExperienceItem({
           Обязанности и достижения
         </label>
         <textarea
-          className={`w-full px-3 py-2 border rounded-lg resize-none ${readonly ? 'bg-slate-900/50 border-slate-700 cursor-not-allowed text-slate-400' : 'bg-slate-900 border-slate-700 text-white focus:ring-2 focus:ring-brand-500 focus:border-transparent'
-            }`}
+          className={`w-full px-3 py-2 border rounded-lg resize-none ${
+            readonly
+              ? 'bg-slate-900/50 border-slate-700 cursor-not-allowed text-slate-400'
+              : 'bg-slate-900 border-slate-700 text-white focus:ring-2 focus:ring-brand-500 focus:border-transparent'
+          }`}
           rows={3}
-          value={[...(experience.responsibilities || []), ...(experience.achievements || [])].join('\n')}
+          value={[...(experience.responsibilities || []), ...(experience.achievements || [])].join(
+            '\n'
+          )}
           onChange={(e) => {
             const lines = e.target.value.split('\n').filter((l) => l.trim())
             onChange({ ...experience, responsibilities: lines, achievements: [] })
@@ -617,15 +634,20 @@ function LanguageEditor({
     <div className="space-y-3">
       <div className="space-y-2">
         {languages.map((l, index) => {
-          const displayText = typeof l === 'string'
-            ? l
-            : `${l.language}${l.proficiency ? ` (${l.proficiency})` : ''}`
+          const displayText =
+            typeof l === 'string' ? l : `${l.language}${l.proficiency ? ` (${l.proficiency})` : ''}`
 
           return (
-            <div key={index} className="flex items-center justify-between bg-slate-800 p-2 rounded border border-slate-700">
+            <div
+              key={index}
+              className="flex items-center justify-between bg-slate-800 p-2 rounded border border-slate-700"
+            >
               <span className="text-white">{displayText}</span>
               {!readonly && (
-                <button onClick={() => handleRemove(index)} className="text-red-400 hover:text-red-300">
+                <button
+                  onClick={() => handleRemove(index)}
+                  className="text-red-400 hover:text-red-300"
+                >
                   <X className="w-4 h-4" />
                 </button>
               )}

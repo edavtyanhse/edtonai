@@ -1,10 +1,5 @@
 import { useState, ReactNode, useCallback } from 'react'
-import type {
-  ParsedResume,
-  ParsedVacancy,
-  MatchAnalysis,
-  ChangeLogEntry,
-} from '@/api'
+import type { ParsedResume, ParsedVacancy, MatchAnalysis, ChangeLogEntry } from '@/api'
 import { WizardContext, type WizardContextType, initialWizardState } from './WizardContextTypes'
 
 interface WizardState {
@@ -115,32 +110,26 @@ export function WizardProvider({ children }: { children: ReactNode }) {
     }))
   }, [])
 
-  const setResult = useCallback(
-    (text: string, changeLog: ChangeLogEntry[]) => {
-      setState((prev) => ({
-        ...prev,
-        resultText: text,
-        changeLog,
-      }))
-    },
-    []
-  )
+  const setResult = useCallback((text: string, changeLog: ChangeLogEntry[]) => {
+    setState((prev) => ({
+      ...prev,
+      resultText: text,
+      changeLog,
+    }))
+  }, [])
 
   // Apply improved resume as the new base (after user confirms changes)
   const applyImprovedResume = useCallback((newResumeText: string, appliedIds?: string[]) => {
     setState((prev) => ({
       ...prev,
-      resumeText: newResumeText,  // New base resume text
+      resumeText: newResumeText, // New base resume text
       // Keep parsedResume — reanalyzeMutation will update it on success.
       // Clearing it forces preview to call parse API which may fail.
       previousResumeText: prev.resumeText, // Save previous resume text for diff
-      resultText: '',              // Clear result
-      changeLog: [],               // Clear change log
-      selectedCheckboxes: [],      // Clear selections
-      appliedCheckboxIds: [
-        ...prev.appliedCheckboxIds,
-        ...(appliedIds ?? prev.selectedCheckboxes),
-      ],
+      resultText: '', // Clear result
+      changeLog: [], // Clear change log
+      selectedCheckboxes: [], // Clear selections
+      appliedCheckboxIds: [...prev.appliedCheckboxIds, ...(appliedIds ?? prev.selectedCheckboxes)],
     }))
   }, [])
 

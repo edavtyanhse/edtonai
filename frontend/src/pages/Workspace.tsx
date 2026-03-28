@@ -2,7 +2,14 @@ import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { useLocation } from 'react-router-dom'
 import { Copy, Save, Sparkles, FileText, X, Eye, AlertCircle, Mail } from 'lucide-react'
-import { Button, TextAreaWithCounter, DiffViewer, CheckboxList, ConfirmDialog, CoverLetterModal } from '@/components'
+import {
+  Button,
+  TextAreaWithCounter,
+  DiffViewer,
+  CheckboxList,
+  ConfirmDialog,
+  CoverLetterModal,
+} from '@/components'
 import {
   analyzeMatch,
   adaptResume,
@@ -136,8 +143,7 @@ export default function Workspace() {
 
   // Ideal mutation
   const idealMutation = useMutation({
-    mutationFn: (signal: AbortSignal) =>
-      generateIdeal({ vacancy_text: vacancyText }, signal),
+    mutationFn: (signal: AbortSignal) => generateIdeal({ vacancy_text: vacancyText }, signal),
     onSuccess: (data) => {
       setResultText(data.ideal_resume_text)
       setOriginalResumeText('')
@@ -309,9 +315,7 @@ export default function Workspace() {
 
           {/* Checkbox options */}
           <div className="bg-white rounded-xl border border-gray-200 p-4">
-            <h3 className="text-sm font-medium text-gray-700 mb-3">
-              Select Improvements to Apply
-            </h3>
+            <h3 className="text-sm font-medium text-gray-700 mb-3">Select Improvements to Apply</h3>
             <div className="h-[400px] overflow-auto">
               <CheckboxList
                 options={checkboxOptions}
@@ -421,10 +425,7 @@ export default function Workspace() {
                   Cover Letter
                 </Button>
               )}
-              <Button
-                onClick={() => setShowSaveDialog(true)}
-                icon={<Save className="w-4 h-4" />}
-              >
+              <Button onClick={() => setShowSaveDialog(true)} icon={<Save className="w-4 h-4" />}>
                 Save Version
               </Button>
             </>

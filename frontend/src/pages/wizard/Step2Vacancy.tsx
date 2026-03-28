@@ -1,6 +1,15 @@
 import { useState } from 'react'
 import { useMutation } from '@tanstack/react-query'
-import { Briefcase, Loader2, ArrowRight, ArrowLeft, Save, Check, Link as LinkIcon, RefreshCw } from 'lucide-react'
+import {
+  Briefcase,
+  Loader2,
+  ArrowRight,
+  ArrowLeft,
+  Save,
+  Check,
+  Link as LinkIcon,
+  RefreshCw,
+} from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useWizard } from '@/hooks'
 import { parseVacancy, updateVacancy } from '@/api'
@@ -51,8 +60,7 @@ export default function Step2Vacancy() {
 
   // Save mutation (separate from navigation)
   const saveMutation = useMutation({
-    mutationFn: (parsed: ParsedVacancy) =>
-      updateVacancy(state.vacancyId!, { parsed_data: parsed }),
+    mutationFn: (parsed: ParsedVacancy) => updateVacancy(state.vacancyId!, { parsed_data: parsed }),
     onSuccess: (data) => {
       if (data.parsed_data) {
         updateParsedVacancy(data.parsed_data)
@@ -91,7 +99,9 @@ export default function Step2Vacancy() {
     setSaveSuccess(false)
   }
 
-  const isParseDisabled = (!localText && !url) || (localText.length > 0 && (localText.length < 10 || localText.length > MAX_CHARS))
+  const isParseDisabled =
+    (!localText && !url) ||
+    (localText.length > 0 && (localText.length < 10 || localText.length > MAX_CHARS))
 
   return (
     <div className="space-y-6">
@@ -100,13 +110,15 @@ export default function Step2Vacancy() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">{t('wizard.steps.vacancy')}</h1>
           <p className="text-gray-500 mt-1">
-            {mode === 'input'
-              ? t('wizard.step2.description')
-              : t('wizard.step2.description')}
+            {mode === 'input' ? t('wizard.step2.description') : t('wizard.step2.description')}
           </p>
         </div>
         {mode === 'parsed' && (
-          <Button variant="ghost" onClick={handleChangeVacancy} className="text-slate-400 hover:text-white">
+          <Button
+            variant="ghost"
+            onClick={handleChangeVacancy}
+            className="text-slate-400 hover:text-white"
+          >
             <RefreshCw className="w-4 h-4 mr-2" />
             {t('wizard.step2.change_vacancy')}
           </Button>
@@ -116,7 +128,6 @@ export default function Step2Vacancy() {
       {/* Content */}
       {mode === 'input' ? (
         <div className="space-y-6">
-
           {/* URL Input */}
           <div className="bg-slate-800 p-4 border border-slate-700 rounded-lg shadow-sm">
             <label className="block text-sm font-medium text-slate-300 mb-2">
@@ -201,10 +212,7 @@ export default function Step2Vacancy() {
       ) : (
         <div className="space-y-4">
           {state.parsedVacancy && (
-            <VacancyEditor
-              data={state.parsedVacancy}
-              onChange={handleParsedChange}
-            />
+            <VacancyEditor data={state.parsedVacancy} onChange={handleParsedChange} />
           )}
 
           <div className="flex justify-between">
@@ -213,7 +221,11 @@ export default function Step2Vacancy() {
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 {t('wizard.step2.back')}
               </Button>
-              <Button variant="ghost" onClick={handleChangeVacancy} className="text-slate-400 hover:text-white">
+              <Button
+                variant="ghost"
+                onClick={handleChangeVacancy}
+                className="text-slate-400 hover:text-white"
+              >
                 <RefreshCw className="w-4 h-4 mr-2" />
                 {t('wizard.step2.change_vacancy')}
               </Button>
@@ -242,10 +254,7 @@ export default function Step2Vacancy() {
               </Button>
 
               {/* Next button (navigation only) */}
-              <Button
-                onClick={handleNext}
-                className="min-w-[150px]"
-              >
+              <Button onClick={handleNext} className="min-w-[150px]">
                 {t('wizard.step2.next')}
                 <ArrowRight className="w-4 h-4 ml-2" />
               </Button>

@@ -33,7 +33,9 @@ export default function WizardLayout({ steps, currentStep, children }: WizardLay
                 title={t('wizard.home_tooltip')}
               >
                 <Home className="w-5 h-5" />
-                <span className="text-sm font-medium group-hover:text-white transition-colors">{t('common.back_home')}</span>
+                <span className="text-sm font-medium group-hover:text-white transition-colors">
+                  {t('common.back_home')}
+                </span>
               </button>
               <h1 className="text-lg font-semibold text-white">{t('wizard.page_title')}</h1>
             </div>
@@ -51,39 +53,49 @@ export default function WizardLayout({ steps, currentStep, children }: WizardLay
                       {/* Connector line - left side */}
                       {index > 0 && (
                         <div
-                          className={`absolute left-0 right-1/2 top-5 h-0.5 -translate-y-1/2 ${isCompleted || isCurrent ? 'bg-brand-500' : 'bg-slate-800'
-                            }`}
+                          className={`absolute left-0 right-1/2 top-5 h-0.5 -translate-y-1/2 ${
+                            isCompleted || isCurrent ? 'bg-brand-500' : 'bg-slate-800'
+                          }`}
                         />
                       )}
 
                       {/* Connector line - right side */}
                       {index < steps.length - 1 && (
                         <div
-                          className={`absolute left-1/2 right-0 top-5 h-0.5 -translate-y-1/2 ${isCompleted ? 'bg-brand-500' : 'bg-slate-800'
-                            }`}
+                          className={`absolute left-1/2 right-0 top-5 h-0.5 -translate-y-1/2 ${
+                            isCompleted ? 'bg-brand-500' : 'bg-slate-800'
+                          }`}
                         />
                       )}
 
                       {/* Step indicator */}
                       <div className="relative flex flex-col items-center w-full">
                         <div
-                          className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold z-10 transition-all duration-300 ${isCompleted
-                            ? 'bg-brand-600 text-white shadow-lg shadow-brand-500/25'
-                            : isCurrent
-                              ? 'bg-brand-500 text-white ring-4 ring-brand-500/20 shadow-lg shadow-brand-500/40 scale-110'
-                              : 'bg-slate-800 text-slate-500 border border-slate-700'
-                            }`}
+                          className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold z-10 transition-all duration-300 ${
+                            isCompleted
+                              ? 'bg-brand-600 text-white shadow-lg shadow-brand-500/25'
+                              : isCurrent
+                                ? 'bg-brand-500 text-white ring-4 ring-brand-500/20 shadow-lg shadow-brand-500/40 scale-110'
+                                : 'bg-slate-800 text-slate-500 border border-slate-700'
+                          }`}
                         >
                           {isCompleted ? <Check className="w-5 h-5" /> : step.id}
                         </div>
                         <div className="mt-3 text-center">
                           <div
-                            className={`text-sm font-medium transition-colors ${isCurrent ? 'text-brand-400' : isCompleted ? 'text-white' : 'text-slate-500'
-                              }`}
+                            className={`text-sm font-medium transition-colors ${
+                              isCurrent
+                                ? 'text-brand-400'
+                                : isCompleted
+                                  ? 'text-white'
+                                  : 'text-slate-500'
+                            }`}
                           >
                             {step.title}
                           </div>
-                          <div className={`text-xs mt-0.5 hidden sm:block transition-colors ${isCurrent ? 'text-brand-300/70' : 'text-slate-600'}`}>
+                          <div
+                            className={`text-xs mt-0.5 hidden sm:block transition-colors ${isCurrent ? 'text-brand-300/70' : 'text-slate-600'}`}
+                          >
                             {step.subtitle}
                           </div>
                         </div>
