@@ -15,6 +15,7 @@ class VersionItemResponse(BaseModel):
     created_at: datetime
     type: str
     title: str | None = None
+    analysis_id: str | None = None
 
 
 class VersionDetailResponse(BaseModel):
@@ -30,6 +31,8 @@ class VersionDetailResponse(BaseModel):
     vacancy_text: str
     result_text: str
     change_log: list[dict[str, Any]] = []
+    selected_checkbox_ids: list[str] = []
+    analysis_id: str | None = None
 
 
 class VersionListResponse(BaseModel):

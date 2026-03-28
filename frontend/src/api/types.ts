@@ -322,6 +322,8 @@ export interface VersionDetail {
   vacancy_text: string
   result_text: string
   change_log?: ChangeLogEntry[]
+  selected_checkbox_ids?: string[]
+  analysis_id?: string
 }
 
 export interface VersionListResponse {
