@@ -90,7 +90,7 @@ substitutions:
   _DEEPSEEK_BASE_URL: https://api.deepseek.com/v1
   _AI_MODEL: deepseek-chat
   _AI_PROVIDER_PARSING: groq
-  _AI_PROVIDER_REASONING: groq
+  _AI_PROVIDER_REASONING: deepseek
   # !!! IMPORTANT: The following secrets must be set in the Cloud Build Trigger settings !!!
   # _POSTGRES_PASSWORD
   # _DEEPSEEK_API_KEY
