@@ -67,6 +67,8 @@ class Settings(BaseSettings):
     # HuggingFace Inference API
     hf_api_key: str | None = None
     hf_model_reasoning: str = "Qwen/Qwen2.5-7B-Instruct"
+    # Dedicated endpoint for fine-tuned generator (set after deploying edmon03/edtonai-generator)
+    hf_endpoint_url: str = ""
 
     # General AI config
     # Backward-compatible model name (used by DeepSeekProvider and for metadata storage).

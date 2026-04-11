@@ -31,6 +31,7 @@ from backend.core.config import Settings  # noqa: E402
 from backend.integration.ai.base import AIProvider  # noqa: E402
 from backend.integration.ai.deepseek import DeepSeekProvider  # noqa: E402
 from backend.integration.ai.groq import GroqProvider  # noqa: E402
+from backend.integration.ai.fallback import FallbackProvider  # noqa: E402
 from backend.integration.ai.huggingface import HuggingFaceProvider  # noqa: E402
 from backend.integration.ai.local_hf import LocalHFProvider  # noqa: E402
 from backend.integration.ai.scorer import ResumeScorer  # noqa: E402
@@ -67,7 +68,11 @@ from backend.services.vacancy import VacancyService  # noqa: E402
 
 
 def _create_ai_provider(settings: Settings, task_type: str) -> AIProvider:
-    """Factory function: choose AI provider based on settings + task type."""
+    """Factory function: choose AI provider based on settings + task type.
+
+    For reasoning tasks: if hf_endpoint_url is set, use HF generator as primary
+    with DeepSeek as automatic fallback. Otherwise use configured provider directly.
+    """
     if task_type == "parsing":
         provider_name = settings.ai_provider_parsing.lower()
         groq_model = settings.groq_model_parsing
@@ -78,11 +83,24 @@ def _create_ai_provider(settings: Settings, task_type: str) -> AIProvider:
     if provider_name == "groq":
         return GroqProvider(model=groq_model)
     if provider_name == "deepseek":
+        # If HF endpoint is configured — use generator as primary, DeepSeek as fallback
+        if task_type == "reasoning" and settings.hf_endpoint_url:
+            hf = HuggingFaceProvider(
+                model="edmon03/edtonai-generator",
+                api_key=settings.hf_api_key,
+                endpoint_url=settings.hf_endpoint_url,
+                temperature=settings.ai_temperature,
+                max_tokens=settings.ai_max_tokens,
+                max_retries=1,
+                timeout_seconds=settings.ai_timeout_seconds,
+            )
+            return FallbackProvider(primary=hf, fallback=DeepSeekProvider())
         return DeepSeekProvider()
     if provider_name == "huggingface":
         return HuggingFaceProvider(
             model=settings.hf_model_reasoning,
             api_key=settings.hf_api_key,
+            endpoint_url=settings.hf_endpoint_url,
             temperature=settings.ai_temperature,
             max_tokens=settings.ai_max_tokens,
             max_retries=settings.ai_max_retries,

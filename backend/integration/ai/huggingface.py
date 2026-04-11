@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 _JSON_BLOCK_RE = re.compile(r"```(?:json)?\s*(\{.*?\})\s*```", re.DOTALL)
 _JSON_BARE_RE = re.compile(r"\{.*\}", re.DOTALL)
 
-HF_CHAT_URL = "https://router.huggingface.co/v1/chat/completions"
+HF_ROUTER_URL = "https://router.huggingface.co/v1/chat/completions"
 
 
 def _extract_json(text: str) -> dict[str, Any]:
@@ -57,6 +57,7 @@ class HuggingFaceProvider(AIProvider):
         self,
         model: str,
         api_key: str | None = None,
+        endpoint_url: str = "",
         temperature: float = 0.3,
         max_tokens: int = 4096,
         max_retries: int = 3,
@@ -64,6 +65,12 @@ class HuggingFaceProvider(AIProvider):
     ) -> None:
         self.model = model
         self.api_key = api_key or ""
+        # Custom endpoint (HF Inference Endpoint) takes priority over public router
+        self._chat_url = (
+            f"{endpoint_url.rstrip('/')}/v1/chat/completions"
+            if endpoint_url
+            else HF_ROUTER_URL
+        )
         self.temperature = temperature
         self.max_tokens = max_tokens
         self.max_retries = max_retries
@@ -121,7 +128,7 @@ class HuggingFaceProvider(AIProvider):
 
         timeout = httpx.Timeout(connect=30.0, read=self.timeout_seconds, write=30.0, pool=10.0)
         async with httpx.AsyncClient(timeout=timeout) as client:
-            resp = await client.post(HF_CHAT_URL, headers=self._headers, json=payload)
+            resp = await client.post(self._chat_url, headers=self._headers, json=payload)
             resp.raise_for_status()
             data = resp.json()
 
