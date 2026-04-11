@@ -31,6 +31,9 @@ from backend.core.config import Settings  # noqa: E402
 from backend.integration.ai.base import AIProvider  # noqa: E402
 from backend.integration.ai.deepseek import DeepSeekProvider  # noqa: E402
 from backend.integration.ai.groq import GroqProvider  # noqa: E402
+from backend.integration.ai.huggingface import HuggingFaceProvider  # noqa: E402
+from backend.integration.ai.local_hf import LocalHFProvider  # noqa: E402
+from backend.integration.ai.scorer import ResumeScorer  # noqa: E402
 from backend.integration.email.client import SmtpEmailClient  # noqa: E402
 from backend.integration.email.service import EmailService  # noqa: E402
 from backend.integration.oauth.base import OAuthProvider  # noqa: E402
@@ -76,6 +79,20 @@ def _create_ai_provider(settings: Settings, task_type: str) -> AIProvider:
         return GroqProvider(model=groq_model)
     if provider_name == "deepseek":
         return DeepSeekProvider()
+    if provider_name == "huggingface":
+        return HuggingFaceProvider(
+            model=settings.hf_model_reasoning,
+            api_key=settings.hf_api_key,
+            temperature=settings.ai_temperature,
+            max_tokens=settings.ai_max_tokens,
+            max_retries=settings.ai_max_retries,
+            timeout_seconds=settings.ai_timeout_seconds,
+        )
+    if provider_name == "local_hf":
+        return LocalHFProvider(
+            model_id=settings.hf_model_reasoning,
+            temperature=settings.ai_temperature,
+        )
     raise ValueError(f"Unsupported AI provider: {provider_name}")
 
 
@@ -151,6 +168,13 @@ class Container(containers.DeclarativeContainer):
 
     session = providers.Callable(lambda: request_session.get())
 
+    # ── Semantic Scorer ───────────────────────────────────────────
+
+    resume_scorer = providers.Singleton(
+        ResumeScorer,
+        model_path=config.provided.scorer_model_path,
+    )
+
     # ── AI Providers ──────────────────────────────────────────────
 
     ai_provider_parsing = providers.Factory(
@@ -202,6 +226,7 @@ class Container(containers.DeclarativeContainer):
         ai_result_repo=ai_result_repo,
         ai_provider=ai_provider_reasoning,
         settings=config,
+        scorer=resume_scorer,
     )
 
     orchestrator_service = providers.Factory(

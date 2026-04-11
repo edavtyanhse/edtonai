@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from backend.core.config import Settings
 from backend.domain.match import MatchAnalysisResult
 from backend.integration.ai.base import AIProvider
+from backend.integration.ai.scorer import ResumeScorer
 from backend.integration.ai.prompts import (
     ANALYZE_MATCH_PROMPT,
     ANALYZE_MATCH_WITH_CONTEXT_PROMPT,
@@ -40,6 +41,7 @@ class MatchService(CachedAIService):
         ai_result_repo: IAIResultRepository,
         ai_provider: AIProvider,
         settings: Settings,
+        scorer: ResumeScorer | None = None,
     ) -> None:
         super().__init__(
             session=session,
@@ -47,6 +49,7 @@ class MatchService(CachedAIService):
             settings=settings,
             ai_result_repo=ai_result_repo,
         )
+        self._scorer = scorer
 
     # ── Helpers ───────────────────────────────────────────────────
 
@@ -239,8 +242,24 @@ class MatchService(CachedAIService):
                 cache_hit=True,
             )
 
+        # Semantic score hint from cross-encoder
+        score_hint = ""
+        if self._scorer is not None:
+            resume_str = json.dumps(parsed_resume, ensure_ascii=False)
+            vacancy_str = json.dumps(parsed_vacancy, ensure_ascii=False)
+            semantic_score = self._scorer.score(resume_str, vacancy_str)
+            if semantic_score is not None:
+                score_hint = (
+                    f"Подсказка: семантическая совместимость резюме и вакансии "
+                    f"по оценке cross-encoder модели = {semantic_score}/100. "
+                    f"Используй как ориентир при выставлении итогового score.\n\n"
+                )
+
         # Build prompt & call LLM
         prompt = ANALYZE_MATCH_PROMPT.replace(
+            "{{SEMANTIC_SCORE_HINT}}",
+            score_hint,
+        ).replace(
             "{{PARSED_RESUME_JSON}}",
             json.dumps(parsed_resume, ensure_ascii=False, indent=2),
         ).replace(

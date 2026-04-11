@@ -233,7 +233,7 @@ Clarity & Evidence (10):
   ]
 }
 
-parsed_resume:
+{{SEMANTIC_SCORE_HINT}}parsed_resume:
 {{PARSED_RESUME_JSON}}
 
 parsed_vacancy:

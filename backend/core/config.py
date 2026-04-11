@@ -64,6 +64,10 @@ class Settings(BaseSettings):
     groq_model_parsing: str = "llama-3.1-8b-instant"
     groq_model_reasoning: str = "llama-3.3-70b-versatile"
 
+    # HuggingFace Inference API
+    hf_api_key: str | None = None
+    hf_model_reasoning: str = "Qwen/Qwen2.5-7B-Instruct"
+
     # General AI config
     # Backward-compatible model name (used by DeepSeekProvider and for metadata storage).
     ai_model: str = "deepseek-reasoner"
@@ -100,6 +104,9 @@ class Settings(BaseSettings):
     # OAuth — Yandex
     yandex_oauth_client_id: str = ""
     yandex_oauth_client_secret: str = ""
+
+    # Semantic Scorer (cross-encoder for resume-vacancy matching)
+    scorer_model_path: str = "edmon03/edtonai-scorer"
 
     # Feedback Collection Feature Flag
     # Set to False to disable feedback collection entirely
