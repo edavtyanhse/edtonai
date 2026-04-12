@@ -27,7 +27,7 @@ class ResumeScorer:
             from sentence_transformers import CrossEncoder
 
             logger.info(f"Loading scorer model: {self.model_path}")
-            self._model = CrossEncoder(self.model_path, max_length=1024)
+            self._model = CrossEncoder(self.model_path, max_length=512)
             logger.info("Scorer model loaded ✓")
         except Exception as e:
             logger.warning(f"Failed to load scorer model: {e}. Scorer disabled.")
