@@ -135,6 +135,8 @@ export default function Step4Improvement() {
       const analysisPromise = analyzeMatch({
         resume_text: newResumeText,
         vacancy_text: state.vacancyText,
+        original_analysis: state.analysis ?? undefined,
+        applied_checkbox_ids: state.appliedCheckboxIds.length > 0 ? state.appliedCheckboxIds : undefined,
       }).catch((e) => {
         console.error('Analysis failed:', e)
         return null
