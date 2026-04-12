@@ -91,7 +91,7 @@ substitutions:
   _AI_MODEL: deepseek-chat
   _AI_PROVIDER_PARSING: groq
   _AI_PROVIDER_REASONING: deepseek
-    _HF_ENDPOINT_URL: ''
+  _HF_ENDPOINT_URL: ''
   # !!! IMPORTANT: The following secrets must be set in the Cloud Build Trigger settings !!!
   # _POSTGRES_PASSWORD
   # _DEEPSEEK_API_KEY
