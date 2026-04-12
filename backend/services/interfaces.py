@@ -43,6 +43,8 @@ class IMatchService(Protocol):
         self,
         parsed_resume: dict[str, Any],
         parsed_vacancy: dict[str, Any],
+        resume_text: str | None = None,
+        vacancy_text: str | None = None,
     ) -> MatchAnalysisResult: ...
 
     async def analyze_with_context(

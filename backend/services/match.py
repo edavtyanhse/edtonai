@@ -347,6 +347,8 @@ class MatchService(CachedAIService):
         self,
         parsed_resume: dict[str, Any],
         parsed_vacancy: dict[str, Any],
+        resume_text: str | None = None,
+        vacancy_text: str | None = None,
     ) -> MatchAnalysisResult:
         """Analyze match and cache result.
 
@@ -378,10 +380,12 @@ class MatchService(CachedAIService):
             )
 
         # Semantic score hint from cross-encoder
+        # Use raw source texts when available — scorer was trained on natural language,
+        # not JSON. Fall back to JSON only if raw texts not provided.
         score_hint = ""
         if self._scorer is not None:
-            resume_str = json.dumps(parsed_resume, ensure_ascii=False)
-            vacancy_str = json.dumps(parsed_vacancy, ensure_ascii=False)
+            resume_str = resume_text or json.dumps(parsed_resume, ensure_ascii=False)
+            vacancy_str = vacancy_text or json.dumps(parsed_vacancy, ensure_ascii=False)
             semantic_score = self._scorer.score(resume_str, vacancy_str)
             if semantic_score is not None:
                 score_hint = (

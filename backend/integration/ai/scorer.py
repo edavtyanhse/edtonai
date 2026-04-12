@@ -27,7 +27,7 @@ class ResumeScorer:
             from sentence_transformers import CrossEncoder
 
             logger.info(f"Loading scorer model: {self.model_path}")
-            self._model = CrossEncoder(self.model_path, max_length=512)
+            self._model = CrossEncoder(self.model_path, max_length=1024)
             logger.info("Scorer model loaded ✓")
         except Exception as e:
             logger.warning(f"Failed to load scorer model: {e}. Scorer disabled.")
@@ -39,7 +39,7 @@ class ResumeScorer:
         if not self._model:
             return None
         try:
-            raw = self._model.predict([(resume_text[:512], vacancy_text[:512])])[0]
+            raw = self._model.predict([(resume_text[:3000], vacancy_text[:3000])])[0]
             prob = float(1 / (1 + np.exp(-raw)))
             return round(prob * 100, 1)
         except Exception as e:

@@ -70,6 +70,8 @@ class OrchestratorService:
             match_result = await self.match_service.analyze_and_cache(
                 resume_result.parsed_resume,
                 vacancy_result.parsed_vacancy,
+                resume_text=resume_text,
+                vacancy_text=vacancy_text,
             )
         self.logger.info(
             "Match analyzed: id=%s cache_hit=%s",
