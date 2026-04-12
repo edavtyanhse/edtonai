@@ -388,6 +388,12 @@ class MatchService(CachedAIService):
             vacancy_str = vacancy_text or json.dumps(parsed_vacancy, ensure_ascii=False)
             semantic_score = self._scorer.score(resume_str, vacancy_str)
             if semantic_score is not None:
+                import logging as _logging
+                _logging.getLogger(__name__).info(
+                    "scorer | semantic_score=%.1f using_raw_text=%s",
+                    semantic_score,
+                    resume_text is not None,
+                )
                 score_hint = (
                     f"Подсказка: семантическая совместимость резюме и вакансии "
                     f"по оценке cross-encoder модели = {semantic_score}/100. "
