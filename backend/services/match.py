@@ -239,6 +239,79 @@ class MatchService(CachedAIService):
 
         return analysis
 
+    @staticmethod
+    def _extract_skill_from_gap_message(message: str) -> str:
+        """Extract skill name from gap message like 'Отсутствует: Python'."""
+        for prefix in ("отсутствует (желательно): ", "отсутствует: "):
+            if message.lower().startswith(prefix):
+                return message[len(prefix):]
+        return message
+
+    @staticmethod
+    def _force_apply_skill_moves(
+        analysis: dict[str, Any],
+        applied_details: list[dict[str, Any]],
+    ) -> dict[str, Any]:
+        """Deterministically move applied missing skills from missing→matched.
+
+        LLM sometimes ignores applied_improvements and keeps skill_fit=0 even
+        when the user explicitly added the skills.  This post-processing step
+        guarantees that every applied gap of type 'missing_skill' results in the
+        skill being counted as matched for score calculation purposes.
+        """
+        applied_skills: set[str] = set()
+        for detail in applied_details:
+            if detail.get("type") == "missing_skill":
+                skill = MatchService._extract_skill_from_gap_message(
+                    detail.get("message", "")
+                )
+                if skill:
+                    applied_skills.add(skill)
+
+        if not applied_skills:
+            return analysis
+
+        # Case-insensitive lookup map: lower → original name from missing lists
+        def _move(missing_key: str, matched_key: str) -> None:
+            missing = analysis.get(missing_key, [])
+            matched = analysis.get(matched_key, [])
+            lower_applied = {s.lower() for s in applied_skills}
+            to_move = [s for s in missing if s.lower() in lower_applied]
+            if to_move:
+                analysis[missing_key] = [
+                    s for s in missing if s.lower() not in lower_applied
+                ]
+                existing = {s.lower() for s in matched}
+                analysis[matched_key] = matched + [
+                    s for s in to_move if s.lower() not in existing
+                ]
+
+        _move("missing_required_skills", "matched_required_skills")
+        _move("missing_preferred_skills", "matched_preferred_skills")
+
+        # Also update ATS keywords if applicable
+        ats = analysis.get("ats", {})
+        missing_kw = ats.get("missing_keywords", [])
+        covered_kw = ats.get("covered_keywords", [])
+        lower_applied = {s.lower() for s in applied_skills}
+        kw_to_move = [k for k in missing_kw if k.lower() in lower_applied]
+        if kw_to_move:
+            ats["missing_keywords"] = [
+                k for k in missing_kw if k.lower() not in lower_applied
+            ]
+            existing_kw = {k.lower() for k in covered_kw}
+            ats["covered_keywords"] = covered_kw + [
+                k for k in kw_to_move if k.lower() not in existing_kw
+            ]
+            total_kw = len(ats["covered_keywords"]) + len(ats["missing_keywords"])
+            if total_kw > 0:
+                ats["coverage_ratio"] = round(
+                    len(ats["covered_keywords"]) / total_kw, 2
+                )
+            analysis["ats"] = ats
+
+        return analysis
+
     def _post_process_output(self, output_json: dict[str, Any]) -> dict[str, Any]:
         """Clamp scores and ensure gaps consistency."""
         output_json = self._clamp_scores(output_json)
@@ -404,6 +477,11 @@ class MatchService(CachedAIService):
             prompt,
             prompt_name="analyze_match_with_context",
         )
+
+        # Deterministically move applied missing skills from missing→matched.
+        # LLM sometimes ignores applied_improvements, so we enforce it here.
+        analysis_json = self._force_apply_skill_moves(analysis_json, applied_details)
+
         analysis_json = self._clamp_scores(analysis_json)
 
         # Remove gaps that weren't in the original analysis (no surprise new gaps)
