@@ -131,12 +131,20 @@ export default function Step4Improvement() {
 
   // Re-analyze mutation - runs automatically after confirming
   const reanalyzeMutation = useMutation({
-    mutationFn: async (newResumeText: string) => {
+    mutationFn: async ({
+      newResumeText,
+      originalAnalysis,
+      appliedIds,
+    }: {
+      newResumeText: string
+      originalAnalysis: typeof state.analysis
+      appliedIds: string[]
+    }) => {
       const analysisPromise = analyzeMatch({
         resume_text: newResumeText,
         vacancy_text: state.vacancyText,
-        original_analysis: state.analysis ?? undefined,
-        applied_checkbox_ids: state.appliedCheckboxIds.length > 0 ? state.appliedCheckboxIds : undefined,
+        original_analysis: originalAnalysis ?? undefined,
+        applied_checkbox_ids: appliedIds.length > 0 ? appliedIds : undefined,
       }).catch((e) => {
         console.error('Analysis failed:', e)
         return null
@@ -201,10 +209,14 @@ export default function Step4Improvement() {
       const applied = pendingChanges.filter((c) => c.status !== 'rejected')
       setLastAppliedChanges(applied)
 
+      // Capture analysis and applied IDs BEFORE applyImprovedResume updates state
+      const originalAnalysis = state.analysis
+      const allAppliedIds = [...state.appliedCheckboxIds, ...state.selectedCheckboxes]
+
       // Apply improved resume as new base
       applyImprovedResume(resumeText)
-      // Run re-analysis with new text
-      reanalyzeMutation.mutate(resumeText)
+      // Run re-analysis with captured values (avoid stale closure)
+      reanalyzeMutation.mutate({ newResumeText: resumeText, originalAnalysis, appliedIds: allAppliedIds })
     },
     onError: (error, resumeText) => {
       console.error('Failed to save version, but proceeding to analysis', error)
@@ -213,8 +225,11 @@ export default function Step4Improvement() {
       const applied = pendingChanges.filter((c) => c.status !== 'rejected')
       setLastAppliedChanges(applied)
 
+      const originalAnalysis = state.analysis
+      const allAppliedIds = [...state.appliedCheckboxIds, ...state.selectedCheckboxes]
+
       applyImprovedResume(resumeText)
-      reanalyzeMutation.mutate(resumeText)
+      reanalyzeMutation.mutate({ newResumeText: resumeText, originalAnalysis, appliedIds: allAppliedIds })
     },
   })
 
