@@ -441,6 +441,7 @@ class MatchService(CachedAIService):
                 "prompt_sha256": prompt_sha,
                 "temperature": self.settings.ai_temperature,
                 "max_tokens": self.settings.ai_max_tokens,
+                "pp_version": "3",  # increment when post-processing logic changes
             },
         )
 
@@ -478,18 +479,31 @@ class MatchService(CachedAIService):
             prompt_name="analyze_match_with_context",
         )
 
-        # Deterministically move applied missing skills from missing→matched.
+        # Step 1: Deterministically move applied missing skills from missing→matched.
         # LLM sometimes ignores applied_improvements, so we enforce it here.
         analysis_json = self._force_apply_skill_moves(analysis_json, applied_details)
 
-        analysis_json = self._clamp_scores(analysis_json)
-
-        # Remove gaps that weren't in the original analysis (no surprise new gaps)
+        # Step 2: Reconcile skills that were matched in original (LLM must not
+        # "forget" them) and remove any unexpected new gaps it hallucinated.
+        # Must happen BEFORE _clamp_scores so the score reflects all reconciled lists.
         analysis_json = self._filter_new_gaps(analysis_json, original_analysis)
 
-        # Always floor individual score categories to their original values.
-        # This prevents any category from looking "worse" after applying improvements,
-        # even if the total score improved enough to mask the drop.
+        # Step 3: Remove gaps that the user already addressed.
+        applied_ids_set = set(applied_checkbox_ids)
+        analysis_json["gaps"] = [
+            g for g in analysis_json.get("gaps", [])
+            if g["id"] not in applied_ids_set
+        ]
+        analysis_json["checkbox_options"] = [
+            c for c in analysis_json.get("checkbox_options", [])
+            if c["id"] not in applied_ids_set
+        ]
+
+        # Step 4: Recalculate scores from the fully reconciled skill lists.
+        analysis_json = self._clamp_scores(analysis_json)
+
+        # Step 5: Floor individual score categories to their original values.
+        # Applied improvements can only raise scores, never lower them.
         orig_sb = original_analysis.get("score_breakdown", {})
         new_sb = analysis_json.get("score_breakdown", {})
         for cat in _SCORE_LIMITS:
