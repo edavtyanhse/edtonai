@@ -188,7 +188,13 @@ class MatchService(CachedAIService):
         analysis: dict[str, Any],
         original_analysis: dict[str, Any],
     ) -> dict[str, Any]:
-        """Remove gaps from re-analysis that weren't in the original analysis."""
+        """Remove gaps from re-analysis that weren't in the original analysis.
+
+        Also reconciles missing/matched skill lists so that skills which were
+        matched in the original analysis can't reappear as missing after re-analysis
+        (LLM sometimes re-evaluates the adapted resume and "forgets" previously
+        matched skills).
+        """
         original_gap_ids = {g["id"] for g in original_analysis.get("gaps", [])}
         analysis["gaps"] = [
             g for g in analysis.get("gaps", []) if g["id"] in original_gap_ids
@@ -198,6 +204,39 @@ class MatchService(CachedAIService):
             for c in analysis.get("checkbox_options", [])
             if c["id"] in original_gap_ids
         ]
+
+        # Skills that were matched in original must stay matched.
+        # Remove them from missing_* lists and add to matched_* if absent.
+        orig_matched_req = set(original_analysis.get("matched_required_skills", []))
+        orig_matched_pref = set(original_analysis.get("matched_preferred_skills", []))
+
+        new_missing_req = analysis.get("missing_required_skills", [])
+        new_missing_pref = analysis.get("missing_preferred_skills", [])
+        new_matched_req = analysis.get("matched_required_skills", [])
+        new_matched_pref = analysis.get("matched_preferred_skills", [])
+
+        # Required skills
+        wrongly_missing_req = [s for s in new_missing_req if s in orig_matched_req]
+        if wrongly_missing_req:
+            analysis["missing_required_skills"] = [
+                s for s in new_missing_req if s not in orig_matched_req
+            ]
+            existing_matched_req = set(new_matched_req)
+            analysis["matched_required_skills"] = new_matched_req + [
+                s for s in wrongly_missing_req if s not in existing_matched_req
+            ]
+
+        # Preferred skills
+        wrongly_missing_pref = [s for s in new_missing_pref if s in orig_matched_pref]
+        if wrongly_missing_pref:
+            analysis["missing_preferred_skills"] = [
+                s for s in new_missing_pref if s not in orig_matched_pref
+            ]
+            existing_matched_pref = set(new_matched_pref)
+            analysis["matched_preferred_skills"] = new_matched_pref + [
+                s for s in wrongly_missing_pref if s not in existing_matched_pref
+            ]
+
         return analysis
 
     def _post_process_output(self, output_json: dict[str, Any]) -> dict[str, Any]:
@@ -370,22 +409,20 @@ class MatchService(CachedAIService):
         # Remove gaps that weren't in the original analysis (no surprise new gaps)
         analysis_json = self._filter_new_gaps(analysis_json, original_analysis)
 
-        # Ensure score never decreases after improvements
-        original_score = original_analysis.get("score", 0)
-        if analysis_json.get("score", 0) < original_score:
-            analysis_json["score"] = original_score
-            # Also floor each breakdown category to its original value
-            orig_sb = original_analysis.get("score_breakdown", {})
-            new_sb = analysis_json.get("score_breakdown", {})
-            for cat in _SCORE_LIMITS:
-                orig_val = orig_sb.get(cat, {}).get("value", 0)
-                new_val = new_sb.get(cat, {}).get("value", 0)
-                if new_val < orig_val and cat in new_sb:
-                    new_sb[cat]["value"] = orig_val
-            # Recalculate total after floor
-            analysis_json["score"] = sum(
-                new_sb.get(cat, {}).get("value", 0) for cat in _SCORE_LIMITS
-            )
+        # Always floor individual score categories to their original values.
+        # This prevents any category from looking "worse" after applying improvements,
+        # even if the total score improved enough to mask the drop.
+        orig_sb = original_analysis.get("score_breakdown", {})
+        new_sb = analysis_json.get("score_breakdown", {})
+        for cat in _SCORE_LIMITS:
+            orig_val = orig_sb.get(cat, {}).get("value", 0)
+            new_val = new_sb.get(cat, {}).get("value", 0)
+            if new_val < orig_val and cat in new_sb:
+                new_sb[cat]["value"] = orig_val
+        # Recalculate total after flooring
+        analysis_json["score"] = sum(
+            new_sb.get(cat, {}).get("value", 0) for cat in _SCORE_LIMITS
+        )
 
         # Save to cache
         ai_result = await self._save_to_cache(input_hash, analysis_json)
