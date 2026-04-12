@@ -65,9 +65,11 @@ class Settings(BaseSettings):
     groq_model_reasoning: str = "llama-3.3-70b-versatile"
 
     # HuggingFace Inference API
-    hf_api_key: str | None = None
-    hf_model_reasoning: str = "Qwen/Qwen2.5-7B-Instruct"
-    # Dedicated endpoint for fine-tuned generator (set after deploying edmon03/edtonai-generator)
+    hf_token: str | None = None
+    hf_model_parsing: str = "edmon03/edtonai-generator"
+    hf_model_reasoning: str = "edmon03/edtonai-generator"
+    # Custom inference endpoint URL (e.g. Cloud Run GPU, HF Dedicated Endpoint).
+    # If empty — uses HF Serverless router (free, public models only).
     hf_endpoint_url: str = ""
 
     # General AI config

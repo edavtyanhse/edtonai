@@ -87,7 +87,7 @@ def _create_ai_provider(settings: Settings, task_type: str) -> AIProvider:
         if task_type == "reasoning" and settings.hf_endpoint_url:
             hf = HuggingFaceProvider(
                 model="edmon03/edtonai-generator",
-                api_key=settings.hf_api_key,
+                api_key=settings.hf_token,
                 endpoint_url=settings.hf_endpoint_url,
                 temperature=settings.ai_temperature,
                 max_tokens=settings.ai_max_tokens,
@@ -99,7 +99,7 @@ def _create_ai_provider(settings: Settings, task_type: str) -> AIProvider:
     if provider_name == "huggingface":
         return HuggingFaceProvider(
             model=settings.hf_model_reasoning,
-            api_key=settings.hf_api_key,
+            api_key=settings.hf_token,
             endpoint_url=settings.hf_endpoint_url,
             temperature=settings.ai_temperature,
             max_tokens=settings.ai_max_tokens,
