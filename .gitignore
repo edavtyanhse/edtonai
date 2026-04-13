@@ -59,8 +59,12 @@ frontend/bun.lockb
 **/*.otf
 
 backend.env
-monitoring/setup_scripts/  
-  
-monitoring/setup_scripts/  
-.env  
-backend.env 
+monitoring/setup_scripts/
+
+# --- AI agent dirs ---
+.agent/
+.agents/
+.claude/
+skills-lock.json
+_config_patch.json
+Diploma/
