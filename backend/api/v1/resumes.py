@@ -2,13 +2,9 @@
 
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import APIRouter, Depends
 
 from backend.api.dependencies import get_resume_service
-from backend.db import get_db
-from backend.domain.mappers import get_resume_parsed_data
-from backend.repositories import ResumeRepository
 from backend.schemas import (
     ResumeDetailResponse,
     ResumeParseRequest,
@@ -43,19 +39,16 @@ async def parse_resume(
 @router.get("/{resume_id}", response_model=ResumeDetailResponse)
 async def get_resume(
     resume_id: UUID,
-    db: AsyncSession = Depends(get_db),
+    service: ResumeService = Depends(get_resume_service),
 ) -> ResumeDetailResponse:
     """Get resume by ID with all details."""
-    repo = ResumeRepository(db)
-    resume = await repo.get_by_id(resume_id)
-    if resume is None:
-        raise HTTPException(status_code=404, detail="Resume not found")
+    resume = await service.get_detail(resume_id)
 
     return ResumeDetailResponse(
         id=resume.id,
         source_text=resume.source_text,
         content_hash=resume.content_hash,
-        parsed_data=get_resume_parsed_data(resume),
+        parsed_data=resume.parsed_data,
         created_at=resume.created_at,
         parsed_at=resume.parsed_at,
     )
@@ -65,23 +58,20 @@ async def get_resume(
 async def update_resume_parsed_data(
     resume_id: UUID,
     request: ResumePatchRequest,
-    db: AsyncSession = Depends(get_db),
+    service: ResumeService = Depends(get_resume_service),
 ) -> ResumeDetailResponse:
     """Update parsed data for a resume.
 
     Allows frontend to save edited structured resume fields.
     This is separate from the wizard navigation (Next button).
     """
-    repo = ResumeRepository(db)
-    resume = await repo.update_parsed_data(resume_id, request.parsed_data)
-    if resume is None:
-        raise HTTPException(status_code=404, detail="Resume not found")
+    resume = await service.update_parsed_data(resume_id, request.parsed_data)
 
     return ResumeDetailResponse(
         id=resume.id,
         source_text=resume.source_text,
         content_hash=resume.content_hash,
-        parsed_data=get_resume_parsed_data(resume),
+        parsed_data=resume.parsed_data,
         created_at=resume.created_at,
         parsed_at=resume.parsed_at,
     )

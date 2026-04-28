@@ -1,12 +1,15 @@
 """Resume service - parse and cache resume text."""
 
 from datetime import datetime
+from typing import Any
+from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.core.config import Settings
 from backend.domain.mappers import get_resume_parsed_data, set_resume_parsed_data
-from backend.domain.resume import ResumeParseResult
+from backend.domain.resume import ResumeDetailResult, ResumeParseResult
+from backend.errors.business import ResumeNotFoundError
 from backend.integration.ai.base import AIProvider
 from backend.integration.ai.prompts import PARSE_RESUME_PROMPT
 from backend.repositories.interfaces import IAIResultRepository, IResumeRepository
@@ -38,6 +41,24 @@ class ResumeService(CachedAIService):
             ai_result_repo=ai_result_repo,
         )
         self.resume_repo = resume_repo
+
+    async def get_detail(self, resume_id: UUID) -> ResumeDetailResult:
+        """Return detailed resume data by ID."""
+        resume = await self.resume_repo.get_by_id(resume_id)
+        if resume is None:
+            raise ResumeNotFoundError(str(resume_id))
+        return self._to_detail_result(resume)
+
+    async def update_parsed_data(
+        self,
+        resume_id: UUID,
+        parsed_data: dict[str, Any],
+    ) -> ResumeDetailResult:
+        """Update structured resume data edited by a user."""
+        resume = await self.resume_repo.update_parsed_data(resume_id, parsed_data)
+        if resume is None:
+            raise ResumeNotFoundError(str(resume_id))
+        return self._to_detail_result(resume)
 
     async def parse_and_cache(self, resume_text: str) -> ResumeParseResult:
         """Parse resume and cache result.
@@ -102,4 +123,15 @@ class ResumeService(CachedAIService):
             resume_hash=content_hash,
             parsed_resume=get_resume_parsed_data(resume),
             cache_hit=False,
+        )
+
+    @staticmethod
+    def _to_detail_result(resume: Any) -> ResumeDetailResult:
+        return ResumeDetailResult(
+            id=resume.id,
+            source_text=resume.source_text,
+            content_hash=resume.content_hash,
+            parsed_data=get_resume_parsed_data(resume),
+            created_at=resume.created_at,
+            parsed_at=resume.parsed_at,
         )

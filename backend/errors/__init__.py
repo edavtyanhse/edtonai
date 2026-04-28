@@ -8,11 +8,12 @@ from .business import (
     AccessDeniedError,
     NotFoundError,
     ResumeNotFoundError,
+    UnprocessableEntityError,
     VacancyNotFoundError,
     ValidationError,
     VersionNotFoundError,
 )
-from .integration import AIProviderError, ScraperError
+from .integration import AIProviderError, ScraperError, ServiceUnavailableError
 
 __all__ = [
     "AppError",
@@ -22,6 +23,8 @@ __all__ = [
     "VersionNotFoundError",
     "AccessDeniedError",
     "ValidationError",
+    "UnprocessableEntityError",
     "AIProviderError",
     "ScraperError",
+    "ServiceUnavailableError",
 ]

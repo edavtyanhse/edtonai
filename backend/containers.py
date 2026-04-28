@@ -16,53 +16,56 @@ from __future__ import annotations
 import contextvars
 
 from dependency_injector import containers, providers
-
-# Per-request session, set by middleware in main.py
-request_session: contextvars.ContextVar = contextvars.ContextVar("request_session")
-from sqlalchemy.ext.asyncio import (  # noqa: E402
+from sqlalchemy.ext.asyncio import (
     AsyncSession,
     async_sessionmaker,
     create_async_engine,
 )
 
-from backend.auth.oauth_service import OAuthService  # noqa: E402
-from backend.auth.service import AuthService  # noqa: E402
-from backend.core.config import Settings  # noqa: E402
-from backend.integration.ai.base import AIProvider  # noqa: E402
-from backend.integration.ai.deepseek import DeepSeekProvider  # noqa: E402
-from backend.integration.ai.groq import GroqProvider  # noqa: E402
-from backend.integration.ai.fallback import FallbackProvider  # noqa: E402
-from backend.integration.ai.huggingface import HuggingFaceProvider  # noqa: E402
-from backend.integration.ai.local_hf import LocalHFProvider  # noqa: E402
-from backend.integration.ai.scorer import ResumeScorer  # noqa: E402
-from backend.integration.email.client import SmtpEmailClient  # noqa: E402
-from backend.integration.email.service import EmailService  # noqa: E402
-from backend.integration.oauth.base import OAuthProvider  # noqa: E402
-from backend.integration.oauth.google import GoogleOAuthProvider  # noqa: E402
-from backend.integration.oauth.yandex import YandexOAuthProvider  # noqa: E402
-from backend.repositories.ai_result import AIResultRepository  # noqa: E402
-from backend.repositories.analysis import AnalysisRepository  # noqa: E402
-from backend.repositories.email_verification import (  # noqa: E402
-    EmailVerificationRepository,  # noqa: E402
+from backend.auth.oauth_service import OAuthService
+from backend.auth.service import AuthService
+from backend.core.config import Settings
+from backend.integration.ai.base import AIProvider
+from backend.integration.ai.deepseek import DeepSeekProvider
+from backend.integration.ai.fallback import FallbackProvider
+from backend.integration.ai.groq import GroqProvider
+from backend.integration.ai.huggingface import HuggingFaceProvider
+from backend.integration.ai.local_hf import LocalHFProvider
+from backend.integration.ai.scorer import ResumeScorer
+from backend.integration.email.client import SmtpEmailClient
+from backend.integration.email.service import EmailService
+from backend.integration.oauth.base import OAuthProvider
+from backend.integration.oauth.google import GoogleOAuthProvider
+from backend.integration.oauth.yandex import YandexOAuthProvider
+from backend.repositories.ai_result import AIResultRepository
+from backend.repositories.analysis import AnalysisRepository
+from backend.repositories.email_verification import (
+    EmailVerificationRepository,
 )
-from backend.repositories.feedback import FeedbackRepository  # noqa: E402
-from backend.repositories.ideal_resume import IdealResumeRepository  # noqa: E402
-from backend.repositories.oauth_account import OAuthAccountRepository  # noqa: E402
-from backend.repositories.refresh_token_repo import (  # noqa: E402
+from backend.repositories.feedback import FeedbackRepository
+from backend.repositories.ideal_resume import IdealResumeRepository
+from backend.repositories.oauth_account import OAuthAccountRepository
+from backend.repositories.refresh_token_repo import (
     RefreshTokenRepository as RefreshTokenRepo,
 )
-from backend.repositories.resume import ResumeRepository  # noqa: E402
-from backend.repositories.resume_version import ResumeVersionRepository  # noqa: E402
-from backend.repositories.user import UserRepository  # noqa: E402
-from backend.repositories.user_version import UserVersionRepository  # noqa: E402
-from backend.repositories.vacancy import VacancyRepository  # noqa: E402
-from backend.services.adapt import AdaptResumeService  # noqa: E402
-from backend.services.cover_letter import CoverLetterService  # noqa: E402
-from backend.services.ideal import IdealResumeService  # noqa: E402
-from backend.services.match import MatchService  # noqa: E402
-from backend.services.orchestrator import OrchestratorService  # noqa: E402
-from backend.services.resume import ResumeService  # noqa: E402
-from backend.services.vacancy import VacancyService  # noqa: E402
+from backend.repositories.resume import ResumeRepository
+from backend.repositories.resume_version import ResumeVersionRepository
+from backend.repositories.user import UserRepository
+from backend.repositories.user_version import UserVersionRepository
+from backend.repositories.vacancy import VacancyRepository
+from backend.services.adapt import AdaptResumeService
+from backend.services.analytics import AnalyticsService
+from backend.services.cover_letter import CoverLetterService
+from backend.services.feedback import FeedbackService
+from backend.services.ideal import IdealResumeService
+from backend.services.match import MatchService
+from backend.services.orchestrator import OrchestratorService
+from backend.services.resume import ResumeService
+from backend.services.vacancy import VacancyService
+from backend.services.version import VersionService
+
+# Per-request session, set by middleware in main.py
+request_session: contextvars.ContextVar = contextvars.ContextVar("request_session")
 
 # ── Helpers ───────────────────────────────────────────────────────
 
@@ -81,7 +84,12 @@ def _create_ai_provider(settings: Settings, task_type: str) -> AIProvider:
         groq_model = settings.groq_model_reasoning
 
     if provider_name == "groq":
-        return GroqProvider(model=groq_model)
+        return GroqProvider(
+            api_key=settings.groq_api_key,
+            model=groq_model,
+            temperature=settings.ai_temperature,
+            max_tokens=settings.ai_max_tokens,
+        )
     if provider_name == "deepseek":
         # If HF endpoint is configured — use generator as primary, DeepSeek as fallback
         if task_type == "reasoning" and settings.hf_endpoint_url:
@@ -94,8 +102,11 @@ def _create_ai_provider(settings: Settings, task_type: str) -> AIProvider:
                 max_retries=1,
                 timeout_seconds=settings.ai_timeout_seconds,
             )
-            return FallbackProvider(primary=hf, fallback=DeepSeekProvider())
-        return DeepSeekProvider()
+            return FallbackProvider(
+                primary=hf,
+                fallback=_create_deepseek_provider(settings),
+            )
+        return _create_deepseek_provider(settings)
     if provider_name == "huggingface":
         return HuggingFaceProvider(
             model=settings.hf_model_reasoning,
@@ -112,6 +123,19 @@ def _create_ai_provider(settings: Settings, task_type: str) -> AIProvider:
             temperature=settings.ai_temperature,
         )
     raise ValueError(f"Unsupported AI provider: {provider_name}")
+
+
+def _create_deepseek_provider(settings: Settings) -> DeepSeekProvider:
+    """Create DeepSeek provider from explicit settings."""
+    return DeepSeekProvider(
+        api_key=settings.deepseek_api_key,
+        base_url=settings.deepseek_base_url,
+        model=settings.ai_model,
+        timeout_seconds=settings.ai_timeout_seconds,
+        max_retries=settings.ai_max_retries,
+        temperature=settings.ai_temperature,
+        max_tokens=settings.ai_max_tokens,
+    )
 
 
 def _create_oauth_providers(settings: Settings) -> dict[str, OAuthProvider]:
@@ -290,6 +314,19 @@ class Container(containers.DeclarativeContainer):
         ai_provider=ai_provider_reasoning,
         settings=config,
     )
+
+    version_service = providers.Factory(
+        VersionService,
+        user_version_repo=user_version_repo,
+    )
+
+    feedback_service = providers.Factory(
+        FeedbackService,
+        feedback_repo=feedback_repo,
+        settings=config,
+    )
+
+    analytics_service = providers.Factory(AnalyticsService)
 
     # ── Auth ───────────────────────────────────────────────────────
 

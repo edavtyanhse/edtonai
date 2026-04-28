@@ -3,12 +3,8 @@
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.api.dependencies import get_vacancy_service
-from backend.db import get_db
-from backend.domain.mappers import get_vacancy_parsed_data
-from backend.repositories import VacancyRepository
 from backend.schemas import (
     VacancyDetailResponse,
     VacancyParseRequest,
@@ -56,19 +52,16 @@ async def parse_vacancy(
 @router.get("/{vacancy_id}", response_model=VacancyDetailResponse)
 async def get_vacancy(
     vacancy_id: UUID,
-    db: AsyncSession = Depends(get_db),
+    service: VacancyService = Depends(get_vacancy_service),
 ) -> VacancyDetailResponse:
     """Get vacancy by ID with all details."""
-    repo = VacancyRepository(db)
-    vacancy = await repo.get_by_id(vacancy_id)
-    if vacancy is None:
-        raise HTTPException(status_code=404, detail="Vacancy not found")
+    vacancy = await service.get_detail(vacancy_id)
 
     return VacancyDetailResponse(
         id=vacancy.id,
         source_text=vacancy.source_text,
         content_hash=vacancy.content_hash,
-        parsed_data=get_vacancy_parsed_data(vacancy),
+        parsed_data=vacancy.parsed_data,
         created_at=vacancy.created_at,
         parsed_at=vacancy.parsed_at,
     )
@@ -78,23 +71,20 @@ async def get_vacancy(
 async def update_vacancy_parsed_data(
     vacancy_id: UUID,
     request: VacancyPatchRequest,
-    db: AsyncSession = Depends(get_db),
+    service: VacancyService = Depends(get_vacancy_service),
 ) -> VacancyDetailResponse:
     """Update parsed data for a vacancy.
 
     Allows frontend to save edited structured vacancy fields.
     This is separate from the wizard navigation (Next button).
     """
-    repo = VacancyRepository(db)
-    vacancy = await repo.update_parsed_data(vacancy_id, request.parsed_data)
-    if vacancy is None:
-        raise HTTPException(status_code=404, detail="Vacancy not found")
+    vacancy = await service.update_parsed_data(vacancy_id, request.parsed_data)
 
     return VacancyDetailResponse(
         id=vacancy.id,
         source_text=vacancy.source_text,
         content_hash=vacancy.content_hash,
-        parsed_data=get_vacancy_parsed_data(vacancy),
+        parsed_data=vacancy.parsed_data,
         created_at=vacancy.created_at,
         parsed_at=vacancy.parsed_at,
     )

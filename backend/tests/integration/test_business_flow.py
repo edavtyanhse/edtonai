@@ -60,6 +60,29 @@ async def test_parse_resume_flow(client: AsyncClient, mock_ai_provider):
 
 
 @pytest.mark.anyio
+async def test_get_and_update_resume_flow(client: AsyncClient, mock_ai_provider):
+    """Resume detail endpoints should use service-layer persistence."""
+    mock_ai_provider.generate_json.return_value = MOCK_PARSED_RESUME
+
+    parse_response = await client.post(
+        "/v1/resumes/parse",
+        json={"resume_text": f"Resume for detail flow {uuid.uuid4()}"},
+    )
+    resume_id = parse_response.json()["resume_id"]
+
+    get_response = await client.get(f"/v1/resumes/{resume_id}")
+    assert get_response.status_code == 200
+    assert get_response.json()["id"] == resume_id
+
+    patch_response = await client.patch(
+        f"/v1/resumes/{resume_id}",
+        json={"parsed_data": {"summary": "Updated summary"}},
+    )
+    assert patch_response.status_code == 200
+    assert patch_response.json()["parsed_data"]["summary"] == "Updated summary"
+
+
+@pytest.mark.anyio
 async def test_parse_vacancy_flow(client: AsyncClient, mock_ai_provider):
     """Test full vacancy parsing flow with mocked AI."""
     mock_ai_provider.generate_json.return_value = MOCK_PARSED_VACANCY
@@ -79,6 +102,29 @@ async def test_parse_vacancy_flow(client: AsyncClient, mock_ai_provider):
 
     # Verify AI was called
     mock_ai_provider.generate_json.assert_called_once()
+
+
+@pytest.mark.anyio
+async def test_get_and_update_vacancy_flow(client: AsyncClient, mock_ai_provider):
+    """Vacancy detail endpoints should use service-layer persistence."""
+    mock_ai_provider.generate_json.return_value = MOCK_PARSED_VACANCY
+
+    parse_response = await client.post(
+        "/v1/vacancies/parse",
+        json={"vacancy_text": f"Vacancy for detail flow {uuid.uuid4()}"},
+    )
+    vacancy_id = parse_response.json()["vacancy_id"]
+
+    get_response = await client.get(f"/v1/vacancies/{vacancy_id}")
+    assert get_response.status_code == 200
+    assert get_response.json()["id"] == vacancy_id
+
+    patch_response = await client.patch(
+        f"/v1/vacancies/{vacancy_id}",
+        json={"parsed_data": {"job_title": "Updated title"}},
+    )
+    assert patch_response.status_code == 200
+    assert patch_response.json()["parsed_data"]["job_title"] == "Updated title"
 
 
 @pytest.mark.anyio

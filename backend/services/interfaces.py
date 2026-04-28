@@ -13,8 +13,9 @@ from backend.domain.adapt import AdaptResumeResult, SelectedImprovement
 from backend.domain.cover_letter import CoverLetterResult
 from backend.domain.ideal import IdealResumeResult
 from backend.domain.match import MatchAnalysisResult
-from backend.domain.resume import ResumeParseResult
-from backend.domain.vacancy import VacancyParseResult
+from backend.domain.resume import ResumeDetailResult, ResumeParseResult
+from backend.domain.vacancy import VacancyDetailResult, VacancyParseResult
+from backend.domain.version import VersionDetailResult, VersionListResult
 
 
 @runtime_checkable
@@ -22,6 +23,14 @@ class IResumeService(Protocol):
     """Protocol for resume parsing service."""
 
     async def parse_and_cache(self, resume_text: str) -> ResumeParseResult: ...
+
+    async def get_detail(self, resume_id: UUID) -> ResumeDetailResult: ...
+
+    async def update_parsed_data(
+        self,
+        resume_id: UUID,
+        parsed_data: dict[str, Any],
+    ) -> ResumeDetailResult: ...
 
 
 @runtime_checkable
@@ -33,6 +42,14 @@ class IVacancyService(Protocol):
         vacancy_text: str,
         source_url: str | None = None,
     ) -> VacancyParseResult: ...
+
+    async def get_detail(self, vacancy_id: UUID) -> VacancyDetailResult: ...
+
+    async def update_parsed_data(
+        self,
+        vacancy_id: UUID,
+        parsed_data: dict[str, Any],
+    ) -> VacancyDetailResult: ...
 
 
 @runtime_checkable
@@ -106,3 +123,36 @@ class IOrchestratorService(Protocol):
         resume_text: str,
         vacancy_text: str,
     ) -> Any: ...
+
+
+@runtime_checkable
+class IVersionService(Protocol):
+    """Protocol for user version history service."""
+
+    async def create_version(
+        self,
+        user_id: str | None,
+        type: str,
+        resume_text: str,
+        vacancy_text: str,
+        result_text: str,
+        title: str | None = None,
+        change_log: list[dict[str, Any]] | None = None,
+        selected_checkbox_ids: list[str] | None = None,
+        analysis_id: UUID | None = None,
+    ) -> VersionDetailResult: ...
+
+    async def list_versions(
+        self,
+        user_id: str | None,
+        limit: int = 50,
+        offset: int = 0,
+    ) -> VersionListResult: ...
+
+    async def get_version(
+        self,
+        version_id: UUID,
+        user_id: str | None,
+    ) -> VersionDetailResult: ...
+
+    async def delete_version(self, version_id: UUID, user_id: str | None) -> None: ...

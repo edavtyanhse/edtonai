@@ -31,6 +31,9 @@ class TestContainerSmoke:
             "adapt_resume_service",
             "ideal_resume_service",
             "cover_letter_service",
+            "version_service",
+            "feedback_service",
+            "analytics_service",
         ]
         for name in expected:
             assert hasattr(container, name), f"Missing provider: {name}"

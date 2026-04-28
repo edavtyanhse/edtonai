@@ -9,11 +9,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from backend.core.config import Settings
 from backend.domain.match import MatchAnalysisResult
 from backend.integration.ai.base import AIProvider
-from backend.integration.ai.scorer import ResumeScorer
 from backend.integration.ai.prompts import (
     ANALYZE_MATCH_PROMPT,
     ANALYZE_MATCH_WITH_CONTEXT_PROMPT,
 )
+from backend.integration.ai.scorer import ResumeScorer
 from backend.repositories.interfaces import IAIResultRepository
 from backend.services.base import CachedAIService
 from backend.services.utils import (

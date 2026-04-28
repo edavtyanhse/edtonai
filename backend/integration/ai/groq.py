@@ -4,7 +4,6 @@ from typing import Any
 
 from groq import AsyncGroq
 
-from backend.core.config import settings
 from backend.integration.ai.base import AIProvider
 from backend.integration.ai.errors import AIError
 
@@ -14,12 +13,20 @@ logger = logging.getLogger(__name__)
 class GroqProvider(AIProvider):
     """Groq AI provider implementation."""
 
-    def __init__(self, model: str):
-        if not settings.groq_api_key:
+    def __init__(
+        self,
+        api_key: str | None,
+        model: str,
+        temperature: float,
+        max_tokens: int,
+    ) -> None:
+        if not api_key:
             raise ValueError("Groq API key is not configured")
 
-        self.client = AsyncGroq(api_key=settings.groq_api_key)
+        self.client = AsyncGroq(api_key=api_key)
         self.model = model
+        self.temperature = temperature
+        self.max_tokens = max_tokens
         self.provider_name = "groq"
 
     async def generate_json(
@@ -38,8 +45,8 @@ class GroqProvider(AIProvider):
                     },
                     {"role": "user", "content": prompt},
                 ],
-                temperature=settings.ai_temperature,
-                max_tokens=settings.ai_max_tokens,
+                temperature=self.temperature,
+                max_tokens=self.max_tokens,
                 response_format={"type": "json_object"},
             )
 

@@ -1,12 +1,15 @@
 """Vacancy service - parse and cache vacancy text."""
 
 from datetime import datetime
+from typing import Any
+from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.core.config import Settings
 from backend.domain.mappers import get_vacancy_parsed_data, set_vacancy_parsed_data
-from backend.domain.vacancy import VacancyParseResult
+from backend.domain.vacancy import VacancyDetailResult, VacancyParseResult
+from backend.errors.business import VacancyNotFoundError
 from backend.integration.ai.base import AIProvider
 from backend.integration.ai.prompts import PARSE_VACANCY_PROMPT
 from backend.repositories.interfaces import IAIResultRepository, IVacancyRepository
@@ -38,6 +41,24 @@ class VacancyService(CachedAIService):
             ai_result_repo=ai_result_repo,
         )
         self.vacancy_repo = vacancy_repo
+
+    async def get_detail(self, vacancy_id: UUID) -> VacancyDetailResult:
+        """Return detailed vacancy data by ID."""
+        vacancy = await self.vacancy_repo.get_by_id(vacancy_id)
+        if vacancy is None:
+            raise VacancyNotFoundError(str(vacancy_id))
+        return self._to_detail_result(vacancy)
+
+    async def update_parsed_data(
+        self,
+        vacancy_id: UUID,
+        parsed_data: dict[str, Any],
+    ) -> VacancyDetailResult:
+        """Update structured vacancy data edited by a user."""
+        vacancy = await self.vacancy_repo.update_parsed_data(vacancy_id, parsed_data)
+        if vacancy is None:
+            raise VacancyNotFoundError(str(vacancy_id))
+        return self._to_detail_result(vacancy)
 
     async def parse_and_cache(
         self,
@@ -117,4 +138,15 @@ class VacancyService(CachedAIService):
             vacancy_hash=content_hash,
             parsed_vacancy=get_vacancy_parsed_data(vacancy),
             cache_hit=False,
+        )
+
+    @staticmethod
+    def _to_detail_result(vacancy: Any) -> VacancyDetailResult:
+        return VacancyDetailResult(
+            id=vacancy.id,
+            source_text=vacancy.source_text,
+            content_hash=vacancy.content_hash,
+            parsed_data=get_vacancy_parsed_data(vacancy),
+            created_at=vacancy.created_at,
+            parsed_at=vacancy.parsed_at,
         )

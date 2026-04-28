@@ -123,8 +123,8 @@ export async function generateCoverLetter(
 export async function createVersion(
   data: VersionCreateRequest,
   signal?: AbortSignal
-): Promise<{ id: string; created_at: string }> {
-  return apiClient.post('/v1/versions', data, { signal })
+): Promise<VersionDetail> {
+  return apiClient.post<VersionDetail>('/v1/versions', data, { signal })
 }
 
 export async function getVersions(

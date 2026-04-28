@@ -190,7 +190,9 @@ class IUserVersionRepository(Protocol):
         user_id: str | None = None,
     ) -> tuple[list, int]: ...
 
-    async def delete(self, version_id: UUID, user_id: str) -> bool: ...
+    async def delete_by_id(
+        self, version_id: UUID, user_id: str | None = None
+    ) -> bool: ...
 
 
 # ── Feedback ─────────────────────────────────────────────────────

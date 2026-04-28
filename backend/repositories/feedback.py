@@ -32,6 +32,5 @@ class FeedbackRepository:
             user_segment=user_segment,
         )
         self.session.add(feedback)
-        await self.session.commit()
-        await self.session.refresh(feedback)
+        await self.session.flush()
         return feedback

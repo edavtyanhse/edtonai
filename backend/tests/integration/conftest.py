@@ -74,6 +74,15 @@ class InMemoryResumeRepo:
             return existing
         return await self.create(source_text, content_hash)
 
+    async def update_parsed_data(self, resume_id: UUID, parsed_data: dict):
+        record = await self.get_by_id(resume_id)
+        if record is None:
+            return None
+        for key, value in parsed_data.items():
+            setattr(record, key, value)
+        record.parsed_at = datetime.utcnow()
+        return record
+
 
 class InMemoryVacancyRepo:
     def __init__(self) -> None:
@@ -106,6 +115,15 @@ class InMemoryVacancyRepo:
         if existing:
             return existing
         return await self.create(source_text, content_hash, source_url)
+
+    async def update_parsed_data(self, vacancy_id: UUID, parsed_data: dict):
+        record = await self.get_by_id(vacancy_id)
+        if record is None:
+            return None
+        for key, value in parsed_data.items():
+            setattr(record, key, value)
+        record.parsed_at = datetime.utcnow()
+        return record
 
 
 class InMemoryAIResultRepo:

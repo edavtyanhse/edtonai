@@ -29,22 +29,45 @@ def get_current_user_id(
     if not credentials:
         return None
 
-    token = credentials.credentials
+    payload = _decode_token(credentials.credentials)
+    user_id = payload.get("sub")
+    if not user_id:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token: missing user ID",
+        )
+    return user_id
 
+
+def get_current_user_payload(
+    credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(security)],
+) -> dict | None:
+    """Return decoded JWT payload or None if no token was provided."""
+    if not credentials:
+        return None
+    return _decode_token(credentials.credentials)
+
+
+def require_auth_payload(
+    payload: Annotated[dict | None, Depends(get_current_user_payload)],
+) -> dict:
+    """Require authentication and return the decoded JWT payload."""
+    if not payload:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authentication required",
+        )
+    return payload
+
+
+def _decode_token(token: str) -> dict:
+    """Decode and validate an access token."""
     try:
-        payload = pyjwt.decode(
+        return pyjwt.decode(
             token,
             settings.jwt_secret_key,
             algorithms=["HS256"],
         )
-        user_id = payload.get("sub")
-        if not user_id:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid token: missing user ID",
-            )
-        return user_id
-
     except pyjwt.ExpiredSignatureError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

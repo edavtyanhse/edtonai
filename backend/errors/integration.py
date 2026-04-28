@@ -20,3 +20,9 @@ class ScraperError(AppError):
     ) -> None:
         super().__init__(message)
         self.status_code = status_code
+
+
+class ServiceUnavailableError(AppError):
+    """Service or feature is temporarily unavailable (HTTP 503)."""
+
+    status_code: int = 503

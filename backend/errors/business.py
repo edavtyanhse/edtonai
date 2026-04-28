@@ -9,6 +9,12 @@ class ValidationError(AppError):
     status_code: int = 400
 
 
+class UnprocessableEntityError(AppError):
+    """Input data is semantically invalid (HTTP 422)."""
+
+    status_code: int = 422
+
+
 class NotFoundError(AppError):
     """Requested entity not found (HTTP 404)."""
 

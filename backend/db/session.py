@@ -1,37 +1,26 @@
-"""Async database session management."""
+"""Deprecated DB session helpers.
+
+Runtime database session management is owned by ``backend.containers.Container``.
+This module remains only to fail fast if old router-level DB dependencies are
+reintroduced.
+"""
 
 from collections.abc import AsyncGenerator
 
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.core.config import settings
-
-async_engine = create_async_engine(
-    settings.database_url,
-    echo=False,
-    future=True,
-    # Supabase Transaction Pooler (port 6543) does not support prepared statements
-    # Use statement_cache_size=0 to disable prepared statement caching
-    connect_args={"statement_cache_size": 0},
-)
-
-AsyncSessionLocal = async_sessionmaker(
-    bind=async_engine,
-    class_=AsyncSession,
-    expire_on_commit=False,
-    autoflush=False,
-)
+async_engine = None
+AsyncSessionLocal = None
 
 
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
-    """Dependency for FastAPI to get async database session."""
-    async with AsyncSessionLocal() as session:
-        try:
-            yield session
-            await session.commit()
-        except Exception:
-            await session.rollback()
-            raise
+    """Deprecated FastAPI dependency.
+
+    Use ``backend.api.dependencies.get_session_factory`` or service providers
+    from the DI container instead.
+    """
+    raise RuntimeError("Use Container.session_factory instead of backend.db.session")
+    yield  # pragma: no cover
 
 
 # Alias for consistency

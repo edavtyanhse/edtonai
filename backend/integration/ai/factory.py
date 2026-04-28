@@ -1,6 +1,6 @@
 from typing import Literal
 
-from backend.core.config import settings
+from backend.core.config import Settings, settings
 from backend.integration.ai.base import AIProvider
 from backend.integration.ai.deepseek import DeepSeekProvider
 from backend.integration.ai.fallback import FallbackProvider
@@ -10,7 +10,10 @@ from backend.integration.ai.huggingface import HuggingFaceProvider
 TaskType = Literal["parsing", "reasoning"]
 
 
-def get_ai_provider(task_type: TaskType = "reasoning") -> AIProvider:
+def get_ai_provider(
+    task_type: TaskType = "reasoning",
+    app_settings: Settings | None = None,
+) -> AIProvider:
     """Factory to get the configured AI provider instance for a specific task.
 
     Current default: groq (parsing) / deepseek (reasoning).
@@ -26,35 +29,63 @@ def get_ai_provider(task_type: TaskType = "reasoning") -> AIProvider:
       4. Re-deploy — done. Groq/DeepSeek remain as automatic fallback.
     """
 
+    config = app_settings or settings
+
     if task_type == "parsing":
-        provider_name = settings.ai_provider_parsing.lower()
-        groq_model = settings.groq_model_parsing
-        hf_model = settings.hf_model_parsing
+        provider_name = config.ai_provider_parsing.lower()
+        groq_model = config.groq_model_parsing
+        hf_model = config.hf_model_parsing
     else:
-        provider_name = settings.ai_provider_reasoning.lower()
-        groq_model = settings.groq_model_reasoning
-        hf_model = settings.hf_model_reasoning
+        provider_name = config.ai_provider_reasoning.lower()
+        groq_model = config.groq_model_reasoning
+        hf_model = config.hf_model_reasoning
 
     if provider_name == "groq":
-        return GroqProvider(model=groq_model)
+        return GroqProvider(
+            api_key=config.groq_api_key,
+            model=groq_model,
+            temperature=config.ai_temperature,
+            max_tokens=config.ai_max_tokens,
+        )
 
     elif provider_name == "deepseek":
-        return DeepSeekProvider()
+        return DeepSeekProvider(
+            api_key=config.deepseek_api_key,
+            base_url=config.deepseek_base_url,
+            model=config.ai_model,
+            timeout_seconds=config.ai_timeout_seconds,
+            max_retries=config.ai_max_retries,
+            temperature=config.ai_temperature,
+            max_tokens=config.ai_max_tokens,
+        )
 
     elif provider_name == "huggingface":
         hf = HuggingFaceProvider(
             model=hf_model,
-            api_key=settings.hf_token,
-            endpoint_url=settings.hf_endpoint_url,
-            temperature=settings.ai_temperature,
-            max_tokens=settings.ai_max_tokens,
-            max_retries=settings.ai_max_retries,
-            timeout_seconds=settings.ai_timeout_seconds,
+            api_key=config.hf_token,
+            endpoint_url=config.hf_endpoint_url,
+            temperature=config.ai_temperature,
+            max_tokens=config.ai_max_tokens,
+            max_retries=config.ai_max_retries,
+            timeout_seconds=config.ai_timeout_seconds,
         )
         fallback: AIProvider = (
-            GroqProvider(model=groq_model)
+            GroqProvider(
+                api_key=config.groq_api_key,
+                model=groq_model,
+                temperature=config.ai_temperature,
+                max_tokens=config.ai_max_tokens,
+            )
             if task_type == "parsing"
-            else DeepSeekProvider()
+            else DeepSeekProvider(
+                api_key=config.deepseek_api_key,
+                base_url=config.deepseek_base_url,
+                model=config.ai_model,
+                timeout_seconds=config.ai_timeout_seconds,
+                max_retries=config.ai_max_retries,
+                temperature=config.ai_temperature,
+                max_tokens=config.ai_max_tokens,
+            )
         )
         return FallbackProvider(primary=hf, fallback=fallback)
 

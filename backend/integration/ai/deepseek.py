@@ -6,7 +6,6 @@ from typing import Any
 
 import httpx
 
-from backend.core.config import settings
 from backend.integration.ai.base import AIProvider
 from backend.integration.ai.errors import AIRequestError, AIResponseFormatError
 from backend.integration.ai.prompts import SYSTEM_PROMPT, VALIDATE_JSON_PROMPT
@@ -15,20 +14,29 @@ from backend.integration.ai.prompts import SYSTEM_PROMPT, VALIDATE_JSON_PROMPT
 class DeepSeekProvider(AIProvider):
     """AI provider implementation for DeepSeek chat completions.
 
-    All configuration is loaded from environment via settings.
+    All configuration is passed explicitly by the application composition root.
     """
 
-    def __init__(self) -> None:
-        if not settings.deepseek_api_key:
+    def __init__(
+        self,
+        api_key: str | None,
+        base_url: str,
+        model: str,
+        timeout_seconds: int,
+        max_retries: int,
+        temperature: float,
+        max_tokens: int,
+    ) -> None:
+        if not api_key:
             raise ValueError("DEEPSEEK_API_KEY is required (set in .env)")
 
-        self.api_key = settings.deepseek_api_key
-        self.base_url = settings.deepseek_base_url.rstrip("/")
-        self.model = settings.ai_model
-        self.timeout_seconds = settings.ai_timeout_seconds
-        self.max_retries = settings.ai_max_retries
-        self.temperature = settings.ai_temperature
-        self.max_tokens = settings.ai_max_tokens
+        self.api_key = api_key
+        self.base_url = base_url.rstrip("/")
+        self.model = model
+        self.timeout_seconds = timeout_seconds
+        self.max_retries = max_retries
+        self.temperature = temperature
+        self.max_tokens = max_tokens
         self.provider_name = "deepseek"
         self.completions_url = f"{self.base_url}/chat/completions"
         self.logger = logging.getLogger(__name__)

@@ -308,6 +308,7 @@ export interface VersionItem {
   created_at: string
   type: VersionType
   title?: string
+  analysis_id?: string | null
   resume_preview?: string
   vacancy_preview?: string
   result_preview?: string
@@ -329,6 +330,8 @@ export interface VersionDetail {
 export interface VersionListResponse {
   items: VersionItem[]
   total: number
+  limit: number
+  offset: number
 }
 
 // ========================================
