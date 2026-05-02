@@ -3,6 +3,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 
 from backend.api.dependencies import get_ideal_resume_service
+from backend.core.auth import require_auth
 from backend.schemas import IdealResumeMetadata, IdealResumeRequest, IdealResumeResponse
 from backend.services import IdealResumeService
 
@@ -12,6 +13,7 @@ router = APIRouter(prefix="/resumes", tags=["resumes"])
 @router.post("/ideal", response_model=IdealResumeResponse)
 async def generate_ideal_resume(
     request: IdealResumeRequest,
+    user_id: str = Depends(require_auth),
     service: IdealResumeService = Depends(get_ideal_resume_service),
 ) -> IdealResumeResponse:
     """Generate an ideal resume template for a vacancy.
@@ -38,6 +40,7 @@ async def generate_ideal_resume(
         vacancy_text=request.vacancy_text,
         vacancy_id=request.vacancy_id,
         options=request.options.model_dump() if request.options else {},
+        user_id=user_id,
     )
 
     return IdealResumeResponse(

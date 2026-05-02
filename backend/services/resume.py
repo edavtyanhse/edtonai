@@ -42,9 +42,15 @@ class ResumeService(CachedAIService):
         )
         self.resume_repo = resume_repo
 
-    async def get_detail(self, resume_id: UUID) -> ResumeDetailResult:
+    async def get_detail(
+        self, resume_id: UUID, user_id: str | None = None
+    ) -> ResumeDetailResult:
         """Return detailed resume data by ID."""
-        resume = await self.resume_repo.get_by_id(resume_id)
+        resume = (
+            await self.resume_repo.get_by_id_for_user(resume_id, user_id)
+            if user_id
+            else await self.resume_repo.get_by_id(resume_id)
+        )
         if resume is None:
             raise ResumeNotFoundError(str(resume_id))
         return self._to_detail_result(resume)
@@ -53,14 +59,25 @@ class ResumeService(CachedAIService):
         self,
         resume_id: UUID,
         parsed_data: dict[str, Any],
+        user_id: str | None = None,
     ) -> ResumeDetailResult:
         """Update structured resume data edited by a user."""
-        resume = await self.resume_repo.update_parsed_data(resume_id, parsed_data)
+        resume = (
+            await self.resume_repo.update_parsed_data_for_user(
+                resume_id,
+                user_id,
+                parsed_data,
+            )
+            if user_id
+            else await self.resume_repo.update_parsed_data(resume_id, parsed_data)
+        )
         if resume is None:
             raise ResumeNotFoundError(str(resume_id))
         return self._to_detail_result(resume)
 
-    async def parse_and_cache(self, resume_text: str) -> ResumeParseResult:
+    async def parse_and_cache(
+        self, resume_text: str, user_id: str | None = None
+    ) -> ResumeParseResult:
         """Parse resume and cache result.
 
         1. Compute hash of normalized text
@@ -85,6 +102,8 @@ class ResumeService(CachedAIService):
 
         # Get or create resume record (handles race condition on duplicate hash)
         resume = await self.resume_repo.get_or_create(resume_text, content_hash)
+        if user_id:
+            await self.resume_repo.link_user_resume(user_id, resume.id)
 
         # Check cache
         cached_result = await self._check_cache(ai_input_hash)

@@ -20,7 +20,7 @@ class VersionService:
 
     async def create_version(
         self,
-        user_id: str | None,
+        user_id: str,
         type: str,
         resume_text: str,
         vacancy_text: str,
@@ -46,7 +46,7 @@ class VersionService:
 
     async def list_versions(
         self,
-        user_id: str | None,
+        user_id: str,
         limit: int = 50,
         offset: int = 0,
     ) -> VersionListResult:
@@ -66,7 +66,7 @@ class VersionService:
     async def get_version(
         self,
         version_id: UUID,
-        user_id: str | None,
+        user_id: str,
     ) -> VersionDetailResult:
         """Get a single version owned by the current user."""
         version = await self.user_version_repo.get_by_id(version_id, user_id=user_id)
@@ -74,7 +74,7 @@ class VersionService:
             raise VersionNotFoundError(str(version_id))
         return self._to_detail(version)
 
-    async def delete_version(self, version_id: UUID, user_id: str | None) -> None:
+    async def delete_version(self, version_id: UUID, user_id: str) -> None:
         """Delete a version owned by the current user."""
         deleted = await self.user_version_repo.delete_by_id(version_id, user_id=user_id)
         if not deleted:

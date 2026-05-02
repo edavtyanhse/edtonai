@@ -22,7 +22,7 @@ class UserVersionRepository:
         resume_text: str,
         vacancy_text: str,
         result_text: str,
-        user_id: str | None = None,
+        user_id: str,
         title: str | None = None,
         change_log: list[dict] = None,
         selected_checkbox_ids: list[str] = None,
@@ -46,15 +46,13 @@ class UserVersionRepository:
         return version
 
     async def get_by_id(
-        self, version_id: UUID, user_id: str | None = None
+        self, version_id: UUID, user_id: str
     ) -> UserVersion | None:
-        """Get user version by ID, optionally filtered by user_id."""
-        query = select(UserVersion).where(UserVersion.id == version_id)
-
-        # If user_id is provided, filter by it
-        if user_id:
-            query = query.where(UserVersion.user_id == user_id)
-
+        """Get user version by ID filtered by owner."""
+        query = select(UserVersion).where(
+            UserVersion.id == version_id,
+            UserVersion.user_id == user_id,
+        )
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
 
@@ -62,14 +60,10 @@ class UserVersionRepository:
         self,
         limit: int = 50,
         offset: int = 0,
-        user_id: str | None = None,
+        user_id: str = "",
     ) -> tuple[list[UserVersion], int]:
-        """List versions with pagination, ordered by created_at desc.
-
-        If user_id is provided, only returns versions for that user.
-        """
-        # Base query with optional user filter
-        base_filter = UserVersion.user_id == user_id if user_id else True
+        """List versions with pagination, ordered by created_at desc."""
+        base_filter = UserVersion.user_id == user_id
 
         # Get total count
         count_result = await self.session.execute(
@@ -89,15 +83,12 @@ class UserVersionRepository:
 
         return versions, total
 
-    async def delete_by_id(self, version_id: UUID, user_id: str | None = None) -> bool:
-        """Delete user version by ID. Returns True if deleted.
-
-        If user_id is provided, only deletes if the version belongs to that user.
-        """
-        query = delete(UserVersion).where(UserVersion.id == version_id)
-
-        if user_id:
-            query = query.where(UserVersion.user_id == user_id)
+    async def delete_by_id(self, version_id: UUID, user_id: str) -> bool:
+        """Delete user version by ID and owner. Returns True if deleted."""
+        query = delete(UserVersion).where(
+            UserVersion.id == version_id,
+            UserVersion.user_id == user_id,
+        )
 
         result = await self.session.execute(query)
         await self.session.flush()

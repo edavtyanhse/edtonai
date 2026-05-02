@@ -1,5 +1,6 @@
 """Feedback service - validates and stores product feedback."""
 
+import hashlib
 import logging
 from json import dumps
 from typing import Any
@@ -10,6 +11,10 @@ from backend.errors.integration import ServiceUnavailableError
 from backend.repositories.interfaces import IFeedbackRepository
 
 logger = logging.getLogger(__name__)
+
+
+def _hash_email(email: str) -> str:
+    return hashlib.sha256(email.lower().strip().encode("utf-8")).hexdigest()
 
 
 class FeedbackService:
@@ -59,7 +64,7 @@ class FeedbackService:
                     "context_step": context_step,
                     "ui_variant": ui_variant,
                     "user_segment": user_segment,
-                    "user_email": user_email,
+                    "user_hash": _hash_email(user_email),
                     "feedback_id": feedback.id,
                 },
                 ensure_ascii=False,

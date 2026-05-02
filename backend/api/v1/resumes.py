@@ -5,6 +5,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends
 
 from backend.api.dependencies import get_resume_service
+from backend.core.auth import require_auth
 from backend.schemas import (
     ResumeDetailResponse,
     ResumeParseRequest,
@@ -19,6 +20,7 @@ router = APIRouter(prefix="/resumes", tags=["resumes"])
 @router.post("/parse", response_model=ResumeParseResponse)
 async def parse_resume(
     request: ResumeParseRequest,
+    user_id: str = Depends(require_auth),
     service: ResumeService = Depends(get_resume_service),
 ) -> ResumeParseResponse:
     """Parse resume text and return structured data.
@@ -26,7 +28,7 @@ async def parse_resume(
     - Caches results by content hash
     - Returns cache_hit=true if result was from cache
     """
-    result = await service.parse_and_cache(request.resume_text)
+    result = await service.parse_and_cache(request.resume_text, user_id=user_id)
 
     return ResumeParseResponse(
         resume_id=result.resume_id,
@@ -39,10 +41,11 @@ async def parse_resume(
 @router.get("/{resume_id}", response_model=ResumeDetailResponse)
 async def get_resume(
     resume_id: UUID,
+    user_id: str = Depends(require_auth),
     service: ResumeService = Depends(get_resume_service),
 ) -> ResumeDetailResponse:
     """Get resume by ID with all details."""
-    resume = await service.get_detail(resume_id)
+    resume = await service.get_detail(resume_id, user_id=user_id)
 
     return ResumeDetailResponse(
         id=resume.id,
@@ -58,6 +61,7 @@ async def get_resume(
 async def update_resume_parsed_data(
     resume_id: UUID,
     request: ResumePatchRequest,
+    user_id: str = Depends(require_auth),
     service: ResumeService = Depends(get_resume_service),
 ) -> ResumeDetailResponse:
     """Update parsed data for a resume.
@@ -65,7 +69,11 @@ async def update_resume_parsed_data(
     Allows frontend to save edited structured resume fields.
     This is separate from the wizard navigation (Next button).
     """
-    resume = await service.update_parsed_data(resume_id, request.parsed_data)
+    resume = await service.update_parsed_data(
+        resume_id,
+        request.parsed_data,
+        user_id=user_id,
+    )
 
     return ResumeDetailResponse(
         id=resume.id,

@@ -10,6 +10,8 @@ from .refresh_token import RefreshToken
 from .resume import ResumeRaw
 from .resume_version import ResumeVersion
 from .user import User
+from .user_resume import UserResume
+from .user_vacancy import UserVacancy
 from .user_version import UserVersion
 from .vacancy import VacancyRaw
 
@@ -22,6 +24,8 @@ __all__ = [
     "IdealResume",
     "UserVersion",
     "User",
+    "UserResume",
+    "UserVacancy",
     "RefreshToken",
     "EmailVerification",
     "Feedback",

@@ -3,6 +3,7 @@
 from fastapi import APIRouter, Depends
 
 from backend.api.dependencies import get_orchestrator_service
+from backend.core.auth import require_auth
 from backend.schemas import MatchAnalyzeRequest, MatchAnalyzeResponse
 from backend.services import OrchestratorService
 
@@ -12,6 +13,7 @@ router = APIRouter(prefix="/match", tags=["match"])
 @router.post("/analyze", response_model=MatchAnalyzeResponse)
 async def analyze_match(
     request: MatchAnalyzeRequest,
+    user_id: str = Depends(require_auth),
     service: OrchestratorService = Depends(get_orchestrator_service),
 ) -> MatchAnalyzeResponse:
     """Analyze resume-vacancy match.
@@ -28,6 +30,7 @@ async def analyze_match(
         request.vacancy_text,
         original_analysis=request.original_analysis,
         applied_checkbox_ids=request.applied_checkbox_ids,
+        user_id=user_id,
     )
 
     return MatchAnalyzeResponse(

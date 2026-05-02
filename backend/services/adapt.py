@@ -132,6 +132,7 @@ class AdaptResumeService(CachedAIService):
         selected_checkbox_ids: list[str] | None = None,  # Legacy support
         base_version_id: UUID | None = None,
         options: dict[str, Any] | None = None,
+        user_id: str | None = None,
     ) -> AdaptResumeResult:
         """Adapt resume for vacancy and create new version.
 
@@ -160,33 +161,51 @@ class AdaptResumeService(CachedAIService):
 
         # Step 1: Get resume
         if resume_id:
-            resume = await self.resume_repo.get_by_id(resume_id)
+            resume = (
+                await self.resume_repo.get_by_id_for_user(resume_id, user_id)
+                if user_id
+                else await self.resume_repo.get_by_id(resume_id)
+            )
             if not resume:
                 raise ResumeNotFoundError(str(resume_id))
             resume_text = resume.source_text
             actual_resume_id = resume.id
         elif resume_text:
-            resume_result = await self.resume_service.parse_and_cache(resume_text)
+            resume_result = await self.resume_service.parse_and_cache(
+                resume_text,
+                user_id=user_id,
+            )
             actual_resume_id = resume_result.resume_id
         else:
             raise ValidationError("Either resume_text or resume_id must be provided")
 
         # Step 2: Get vacancy
         if vacancy_id:
-            vacancy = await self.vacancy_repo.get_by_id(vacancy_id)
+            vacancy = (
+                await self.vacancy_repo.get_by_id_for_user(vacancy_id, user_id)
+                if user_id
+                else await self.vacancy_repo.get_by_id(vacancy_id)
+            )
             if not vacancy:
                 raise VacancyNotFoundError(str(vacancy_id))
             vacancy_text = vacancy.source_text
             actual_vacancy_id = vacancy.id
         elif vacancy_text:
-            vacancy_result = await self.vacancy_service.parse_and_cache(vacancy_text)
+            vacancy_result = await self.vacancy_service.parse_and_cache(
+                vacancy_text,
+                user_id=user_id,
+            )
             actual_vacancy_id = vacancy_result.vacancy_id
         else:
             raise ValidationError("Either vacancy_text or vacancy_id must be provided")
 
         # Step 2.5: Validate base_version_id (if provided)
         if base_version_id:
-            existing_version = await self.version_repo.get_by_id(base_version_id)
+            existing_version = (
+                await self.version_repo.get_by_id_for_user(base_version_id, user_id)
+                if user_id
+                else await self.version_repo.get_by_id(base_version_id)
+            )
             if not existing_version:
                 self.logger.warning(
                     "base_version_id %s not found, ignoring", base_version_id
@@ -194,11 +213,17 @@ class AdaptResumeService(CachedAIService):
                 base_version_id = None  # Reset to None if not found
 
         # Step 3: Get parsed resume
-        resume_result = await self.resume_service.parse_and_cache(resume_text)
+        resume_result = await self.resume_service.parse_and_cache(
+            resume_text,
+            user_id=user_id,
+        )
         parsed_resume = resume_result.parsed_resume
 
         # Step 4: Get parsed vacancy
-        vacancy_result = await self.vacancy_service.parse_and_cache(vacancy_text)
+        vacancy_result = await self.vacancy_service.parse_and_cache(
+            vacancy_text,
+            user_id=user_id,
+        )
         parsed_vacancy = vacancy_result.parsed_vacancy
 
         # Step 5: Get match analysis
@@ -232,6 +257,7 @@ class AdaptResumeService(CachedAIService):
                 selected_checkbox_ids=checkbox_ids_for_storage,
                 analysis_id=analysis_id,
                 parent_version_id=base_version_id,
+                user_id=user_id,
                 provider=self.provider_name,
                 model=self.model_name,
             )
@@ -274,6 +300,7 @@ class AdaptResumeService(CachedAIService):
             selected_checkbox_ids=checkbox_ids_for_storage,
             analysis_id=analysis_id,
             parent_version_id=base_version_id,
+            user_id=user_id,
             provider=self.provider_name,
             model=self.model_name,
         )

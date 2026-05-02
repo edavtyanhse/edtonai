@@ -10,7 +10,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.domain.mappers import set_resume_parsed_data
-from backend.models import ResumeRaw
+from backend.models import ResumeRaw, UserResume
 
 logger = logging.getLogger(__name__)
 
@@ -30,6 +30,20 @@ class ResumeRepository:
     async def get_by_id(self, resume_id: UUID) -> ResumeRaw | None:
         """Get resume by ID."""
         stmt = select(ResumeRaw).where(ResumeRaw.id == resume_id)
+        result = await self.session.execute(stmt)
+        return result.scalar_one_or_none()
+
+    async def get_by_id_for_user(
+        self,
+        resume_id: UUID,
+        user_id: str,
+    ) -> ResumeRaw | None:
+        """Get resume by ID only if it is linked to the given user."""
+        stmt = (
+            select(ResumeRaw)
+            .join(UserResume, UserResume.resume_id == ResumeRaw.id)
+            .where(ResumeRaw.id == resume_id, UserResume.user_id == user_id)
+        )
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
 
@@ -63,6 +77,25 @@ class ResumeRepository:
                 return existing
             raise
 
+    async def link_user_resume(self, user_id: str, resume_id: UUID) -> None:
+        """Link an existing raw resume record to a user."""
+        if await self.user_has_access(user_id, resume_id):
+            return
+        try:
+            async with self.session.begin_nested():
+                self.session.add(UserResume(user_id=user_id, resume_id=resume_id))
+        except IntegrityError:
+            logger.info("Race condition on user_resume link, ignoring duplicate")
+
+    async def user_has_access(self, user_id: str, resume_id: UUID) -> bool:
+        """Return True if the user owns or has created this resume record."""
+        stmt = select(UserResume.id).where(
+            UserResume.user_id == user_id,
+            UserResume.resume_id == resume_id,
+        )
+        result = await self.session.execute(stmt)
+        return result.scalar_one_or_none() is not None
+
     async def update_parsed_data(
         self, resume_id: UUID, parsed_data: dict[str, Any]
     ) -> ResumeRaw | None:
@@ -71,6 +104,21 @@ class ResumeRepository:
         if resume is None:
             return None
         # Use helper method to set all parsed fields
+        set_resume_parsed_data(resume, parsed_data)
+        resume.parsed_at = datetime.utcnow()
+        await self.session.flush()
+        return resume
+
+    async def update_parsed_data_for_user(
+        self,
+        resume_id: UUID,
+        user_id: str,
+        parsed_data: dict[str, Any],
+    ) -> ResumeRaw | None:
+        """Update parsed data only when the user owns this resume record."""
+        resume = await self.get_by_id_for_user(resume_id, user_id)
+        if resume is None:
+            return None
         set_resume_parsed_data(resume, parsed_data)
         resume.parsed_at = datetime.utcnow()
         await self.session.flush()

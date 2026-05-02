@@ -5,6 +5,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException
 
 from backend.api.dependencies import get_vacancy_service
+from backend.core.auth import require_auth
 from backend.schemas import (
     VacancyDetailResponse,
     VacancyParseRequest,
@@ -19,6 +20,7 @@ router = APIRouter(prefix="/vacancies", tags=["vacancies"])
 @router.post("/parse", response_model=VacancyParseResponse)
 async def parse_vacancy(
     request: VacancyParseRequest,
+    user_id: str = Depends(require_auth),
     service: VacancyService = Depends(get_vacancy_service),
 ) -> VacancyParseResponse:
     """Parse vacancy text and return structured data.
@@ -38,7 +40,7 @@ async def parse_vacancy(
             status_code=422, detail="Vacancy text is empty or too short"
         )
 
-    result = await service.parse_and_cache(text, source_url=source_url)
+    result = await service.parse_and_cache(text, source_url=source_url, user_id=user_id)
 
     return VacancyParseResponse(
         vacancy_id=result.vacancy_id,
@@ -52,10 +54,11 @@ async def parse_vacancy(
 @router.get("/{vacancy_id}", response_model=VacancyDetailResponse)
 async def get_vacancy(
     vacancy_id: UUID,
+    user_id: str = Depends(require_auth),
     service: VacancyService = Depends(get_vacancy_service),
 ) -> VacancyDetailResponse:
     """Get vacancy by ID with all details."""
-    vacancy = await service.get_detail(vacancy_id)
+    vacancy = await service.get_detail(vacancy_id, user_id=user_id)
 
     return VacancyDetailResponse(
         id=vacancy.id,
@@ -71,6 +74,7 @@ async def get_vacancy(
 async def update_vacancy_parsed_data(
     vacancy_id: UUID,
     request: VacancyPatchRequest,
+    user_id: str = Depends(require_auth),
     service: VacancyService = Depends(get_vacancy_service),
 ) -> VacancyDetailResponse:
     """Update parsed data for a vacancy.
@@ -78,7 +82,11 @@ async def update_vacancy_parsed_data(
     Allows frontend to save edited structured vacancy fields.
     This is separate from the wizard navigation (Next button).
     """
-    vacancy = await service.update_parsed_data(vacancy_id, request.parsed_data)
+    vacancy = await service.update_parsed_data(
+        vacancy_id,
+        request.parsed_data,
+        user_id=user_id,
+    )
 
     return VacancyDetailResponse(
         id=vacancy.id,

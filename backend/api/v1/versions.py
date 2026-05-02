@@ -6,7 +6,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Query, status
 
 from backend.api.dependencies import get_version_service
-from backend.core.auth import get_current_user_id
+from backend.core.auth import require_auth
 from backend.schemas import (
     VersionCreateRequest,
     VersionDetailResponse,
@@ -26,7 +26,7 @@ router = APIRouter(prefix="/versions", tags=["versions"])
 )
 async def create_version(
     request: VersionCreateRequest,
-    user_id: Annotated[str | None, Depends(get_current_user_id)],
+    user_id: Annotated[str, Depends(require_auth)],
     service: Annotated[VersionService, Depends(get_version_service)],
 ) -> VersionDetailResponse:
     """Save a new version to history."""
@@ -62,7 +62,7 @@ async def create_version(
     summary="List all versions",
 )
 async def list_versions(
-    user_id: Annotated[str | None, Depends(get_current_user_id)],
+    user_id: Annotated[str, Depends(require_auth)],
     service: Annotated[VersionService, Depends(get_version_service)],
     limit: int = Query(default=50, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
@@ -96,7 +96,7 @@ async def list_versions(
 )
 async def get_version(
     version_id: UUID,
-    user_id: Annotated[str | None, Depends(get_current_user_id)],
+    user_id: Annotated[str, Depends(require_auth)],
     service: Annotated[VersionService, Depends(get_version_service)],
 ) -> VersionDetailResponse:
     """Get full details of a specific version."""
@@ -123,7 +123,7 @@ async def get_version(
 )
 async def delete_version(
     version_id: UUID,
-    user_id: Annotated[str | None, Depends(get_current_user_id)],
+    user_id: Annotated[str, Depends(require_auth)],
     service: Annotated[VersionService, Depends(get_version_service)],
 ) -> None:
     """Delete a version from history."""

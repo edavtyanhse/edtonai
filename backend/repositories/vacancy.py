@@ -10,7 +10,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.domain.mappers import set_vacancy_parsed_data
-from backend.models import VacancyRaw
+from backend.models import UserVacancy, VacancyRaw
 
 logger = logging.getLogger(__name__)
 
@@ -30,6 +30,20 @@ class VacancyRepository:
     async def get_by_id(self, vacancy_id: UUID) -> VacancyRaw | None:
         """Get vacancy by ID."""
         stmt = select(VacancyRaw).where(VacancyRaw.id == vacancy_id)
+        result = await self.session.execute(stmt)
+        return result.scalar_one_or_none()
+
+    async def get_by_id_for_user(
+        self,
+        vacancy_id: UUID,
+        user_id: str,
+    ) -> VacancyRaw | None:
+        """Get vacancy by ID only if it is linked to the given user."""
+        stmt = (
+            select(VacancyRaw)
+            .join(UserVacancy, UserVacancy.vacancy_id == VacancyRaw.id)
+            .where(VacancyRaw.id == vacancy_id, UserVacancy.user_id == user_id)
+        )
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
 
@@ -80,6 +94,27 @@ class VacancyRepository:
                 return existing
             raise
 
+    async def link_user_vacancy(self, user_id: str, vacancy_id: UUID) -> None:
+        """Link an existing raw vacancy record to a user."""
+        if await self.user_has_access(user_id, vacancy_id):
+            return
+        try:
+            async with self.session.begin_nested():
+                self.session.add(
+                    UserVacancy(user_id=user_id, vacancy_id=vacancy_id)
+                )
+        except IntegrityError:
+            logger.info("Race condition on user_vacancy link, ignoring duplicate")
+
+    async def user_has_access(self, user_id: str, vacancy_id: UUID) -> bool:
+        """Return True if the user owns or has created this vacancy record."""
+        stmt = select(UserVacancy.id).where(
+            UserVacancy.user_id == user_id,
+            UserVacancy.vacancy_id == vacancy_id,
+        )
+        result = await self.session.execute(stmt)
+        return result.scalar_one_or_none() is not None
+
     async def update_parsed_data(
         self, vacancy_id: UUID, parsed_data: dict[str, Any]
     ) -> VacancyRaw | None:
@@ -88,6 +123,21 @@ class VacancyRepository:
         if vacancy is None:
             return None
         # Use helper method to set all parsed fields
+        set_vacancy_parsed_data(vacancy, parsed_data)
+        vacancy.parsed_at = datetime.utcnow()
+        await self.session.flush()
+        return vacancy
+
+    async def update_parsed_data_for_user(
+        self,
+        vacancy_id: UUID,
+        user_id: str,
+        parsed_data: dict[str, Any],
+    ) -> VacancyRaw | None:
+        """Update parsed data only when the user owns this vacancy record."""
+        vacancy = await self.get_by_id_for_user(vacancy_id, user_id)
+        if vacancy is None:
+            return None
         set_vacancy_parsed_data(vacancy, parsed_data)
         vacancy.parsed_at = datetime.utcnow()
         await self.session.flush()

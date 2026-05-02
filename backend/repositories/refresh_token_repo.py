@@ -40,6 +40,20 @@ class RefreshTokenRepository:
         )
         return result.scalar_one_or_none()
 
+    async def consume_valid_token(self, token_id: UUID) -> UUID | None:
+        """Atomically revoke a valid refresh token and return its user_id."""
+        result = await self._session.execute(
+            update(RefreshToken)
+            .where(
+                RefreshToken.id == token_id,
+                RefreshToken.is_revoked.is_(False),
+                RefreshToken.expires_at > datetime.now(timezone.utc),
+            )
+            .values(is_revoked=True)
+            .returning(RefreshToken.user_id)
+        )
+        return result.scalar_one_or_none()
+
     async def revoke(self, token_id: UUID) -> None:
         await self._session.execute(
             update(RefreshToken)

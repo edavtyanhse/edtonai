@@ -1,12 +1,16 @@
 import base64
+import os
 
 import jwt
 
-# The secret from backend.env
-SECRET_STR = "sviXIxL2LAzLtQp/ewp7jOsnN2tJ3/2MGr3NFdb852JL+/X1LYve//bS4oTdbFOEtBBISOctmoxrTF1HUYlvdA=="
+SECRET_STR = os.environ.get("JWT_SECRET_KEY", "")
 
 
 def test():
+    if not SECRET_STR:
+        print("Set JWT_SECRET_KEY in the environment before running this script.")
+        return
+
     print(f"Secret string length: {len(SECRET_STR)}")
 
     # 1. Decode to bytes

@@ -42,9 +42,15 @@ class VacancyService(CachedAIService):
         )
         self.vacancy_repo = vacancy_repo
 
-    async def get_detail(self, vacancy_id: UUID) -> VacancyDetailResult:
+    async def get_detail(
+        self, vacancy_id: UUID, user_id: str | None = None
+    ) -> VacancyDetailResult:
         """Return detailed vacancy data by ID."""
-        vacancy = await self.vacancy_repo.get_by_id(vacancy_id)
+        vacancy = (
+            await self.vacancy_repo.get_by_id_for_user(vacancy_id, user_id)
+            if user_id
+            else await self.vacancy_repo.get_by_id(vacancy_id)
+        )
         if vacancy is None:
             raise VacancyNotFoundError(str(vacancy_id))
         return self._to_detail_result(vacancy)
@@ -53,9 +59,18 @@ class VacancyService(CachedAIService):
         self,
         vacancy_id: UUID,
         parsed_data: dict[str, Any],
+        user_id: str | None = None,
     ) -> VacancyDetailResult:
         """Update structured vacancy data edited by a user."""
-        vacancy = await self.vacancy_repo.update_parsed_data(vacancy_id, parsed_data)
+        vacancy = (
+            await self.vacancy_repo.update_parsed_data_for_user(
+                vacancy_id,
+                user_id,
+                parsed_data,
+            )
+            if user_id
+            else await self.vacancy_repo.update_parsed_data(vacancy_id, parsed_data)
+        )
         if vacancy is None:
             raise VacancyNotFoundError(str(vacancy_id))
         return self._to_detail_result(vacancy)
@@ -64,6 +79,7 @@ class VacancyService(CachedAIService):
         self,
         vacancy_text: str,
         source_url: str | None = None,
+        user_id: str | None = None,
     ) -> VacancyParseResult:
         """Parse vacancy and cache result.
 
@@ -100,6 +116,8 @@ class VacancyService(CachedAIService):
             # Backfill source_url if missing
             vacancy.source_url = source_url
             await self.session.flush()
+        if user_id:
+            await self.vacancy_repo.link_user_vacancy(user_id, vacancy.id)
 
         # Check cache
         cached_result = await self._check_cache(ai_input_hash)

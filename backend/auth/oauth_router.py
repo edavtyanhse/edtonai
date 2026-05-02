@@ -11,6 +11,7 @@ from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, Query
 from fastapi.responses import RedirectResponse
 
+from backend.auth.cookies import set_refresh_cookie
 from backend.auth.oauth_service import OAuthService
 from backend.containers import Container
 from backend.core.config import Settings
@@ -81,7 +82,7 @@ async def oauth_callback(
         )
 
     try:
-        token_pair, user_info = await oauth_service.handle_callback(provider, code)
+        token_pair, _user_info = await oauth_service.handle_callback(provider, code)
     except Exception:
         logger.exception("OAuth callback failed for provider=%s", provider)
         error_params = urlencode({"error": "Authentication failed. Please try again."})
@@ -90,19 +91,13 @@ async def oauth_callback(
             status_code=302,
         )
 
-    # Redirect to frontend callback page with tokens
-    # Refresh token is passed via URL (one-time) because the cookie domain
-    # (backend) differs from where /auth/refresh is called (frontend proxy).
-    # The frontend callback page will call /auth/set-cookie to store it properly.
-    params = urlencode(
-        {
-            "access_token": token_pair.access_token,
-            "refresh_token": token_pair.refresh_token,
-            "expires_in": str(token_pair.expires_in),
-        }
-    )
-
-    return RedirectResponse(
-        url=f"{settings.frontend_url}/oauth/callback?{params}",
+    response = RedirectResponse(
+        url=f"{settings.frontend_url}/oauth/callback",
         status_code=302,
     )
+    set_refresh_cookie(
+        response,
+        token_pair.refresh_token,
+        path=settings.refresh_cookie_path,
+    )
+    return response

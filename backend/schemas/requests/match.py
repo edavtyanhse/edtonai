@@ -4,12 +4,24 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
+from backend.core.config import MAX_RESUME_CHARS, MAX_VACANCY_CHARS
+
 
 class MatchAnalyzeRequest(BaseModel):
     """Request to analyze resume-vacancy match."""
 
-    resume_text: str = Field(..., min_length=10, description="Raw resume text")
-    vacancy_text: str = Field(..., min_length=10, description="Raw vacancy text")
+    resume_text: str = Field(
+        ...,
+        min_length=10,
+        max_length=MAX_RESUME_CHARS,
+        description="Raw resume text",
+    )
+    vacancy_text: str = Field(
+        ...,
+        min_length=10,
+        max_length=MAX_VACANCY_CHARS,
+        description="Raw vacancy text",
+    )
 
     # Context for re-analysis after adaptation (optional)
     original_analysis: dict[str, Any] | None = Field(

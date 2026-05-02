@@ -1,6 +1,10 @@
+import asyncio
+import ipaddress
 import logging
 import re
+import socket
 from typing import Any
+from urllib.parse import urljoin, urlparse, urlunparse
 
 import httpx
 from bs4 import BeautifulSoup
@@ -17,6 +21,9 @@ _HH_VACANCY_RE = re.compile(
 
 # HH.ru public API base
 _HH_API_BASE = "https://api.hh.ru"
+_HH_ALLOWED_HOSTS = {"hh.ru", "hh.kz", "headhunter.ru", "headhunter.kz"}
+_MAX_HTML_BYTES = 1_000_000
+_MAX_REDIRECTS = 5
 
 
 class WebScraper:
@@ -47,10 +54,7 @@ class WebScraper:
         For HH.ru URLs, uses the public API for structured data.
         For all other URLs, falls back to HTML scraping.
         """
-        if not url.startswith(("http://", "https://")):
-            raise ScraperError(
-                "URL must start with http:// or https://", status_code=422
-            )
+        await cls._validate_public_http_url(url)
 
         # Try HH.ru API path first
         vacancy_id = cls._extract_hh_vacancy_id(url)
@@ -65,7 +69,11 @@ class WebScraper:
     @classmethod
     def _extract_hh_vacancy_id(cls, url: str) -> str | None:
         """Extract vacancy ID from HH.ru URL, or None if not an HH URL."""
-        match = _HH_VACANCY_RE.search(url)
+        parsed = urlparse(url)
+        hostname = parsed.hostname.lower() if parsed.hostname else ""
+        if hostname not in _HH_ALLOWED_HOSTS:
+            return None
+        match = _HH_VACANCY_RE.search(f"{hostname}{parsed.path}")
         return match.group(1) if match else None
 
     @classmethod
@@ -241,28 +249,132 @@ class WebScraper:
     @classmethod
     async def _fetch_html(cls, url: str) -> str:
         """Fetch URL via HTML scraping with retries."""
-        async with httpx.AsyncClient(follow_redirects=True, timeout=15.0) as client:
+        async with httpx.AsyncClient(follow_redirects=False, timeout=15.0) as client:
             for attempt in range(cls.MAX_RETRIES + 1):
                 try:
-                    response = await client.get(url, headers=cls.HEADERS)
+                    response = await cls._get_with_safe_redirects(client, url)
                     response.raise_for_status()
+                    content_type = response.headers.get("content-type", "")
+                    if not cls._is_text_response(content_type):
+                        raise ScraperError(
+                            "URL did not return a text/html response",
+                            status_code=422,
+                        )
+                    if len(response.content) > _MAX_HTML_BYTES:
+                        raise ScraperError(
+                            "URL response is too large",
+                            status_code=422,
+                        )
                     html = response.text
                     return cls._clean_html(html)
+                except ScraperError:
+                    raise
                 except (httpx.HTTPError, Exception) as e:
                     if attempt < cls.MAX_RETRIES:
                         logger.warning(
                             "Scrape attempt %d failed for %s: %s, retrying...",
                             attempt + 1,
-                            url,
+                            cls._safe_url_for_log(url),
                             str(e),
                         )
                         continue
-                    logger.error("Failed to fetch vacancy URL %s: %s", url, e)
+                    logger.error(
+                        "Failed to fetch vacancy URL %s: %s",
+                        cls._safe_url_for_log(url),
+                        e,
+                    )
                     raise ScraperError(
                         f"Failed to fetch URL (site may block bots): {str(e)}"
                     )
 
         raise ScraperError("Failed to fetch URL after retries")
+
+    @classmethod
+    async def _get_with_safe_redirects(
+        cls,
+        client: httpx.AsyncClient,
+        url: str,
+    ) -> httpx.Response:
+        """Fetch URL while validating every redirect target."""
+        current_url = url
+        for _ in range(_MAX_REDIRECTS + 1):
+            await cls._validate_public_http_url(current_url)
+            response = await client.get(current_url, headers=cls.HEADERS)
+            if response.status_code not in {301, 302, 303, 307, 308}:
+                return response
+            location = response.headers.get("location")
+            if not location:
+                return response
+            current_url = urljoin(str(response.url), location)
+        raise ScraperError("Too many redirects while fetching URL", status_code=422)
+
+    @classmethod
+    async def _validate_public_http_url(cls, url: str) -> None:
+        """Reject non-public HTTP(S) URLs to reduce SSRF risk."""
+        parsed = urlparse(url)
+        if parsed.scheme not in {"http", "https"}:
+            raise ScraperError(
+                "URL must start with http:// or https://",
+                status_code=422,
+            )
+        if parsed.username or parsed.password:
+            raise ScraperError("URL credentials are not allowed", status_code=422)
+        if not parsed.hostname:
+            raise ScraperError("URL host is required", status_code=422)
+        try:
+            port = parsed.port
+        except ValueError:
+            raise ScraperError("URL port is invalid", status_code=422)
+        if port and port not in {80, 443}:
+            raise ScraperError("URL port is not allowed", status_code=422)
+
+        hostname = parsed.hostname.lower()
+        if hostname == "localhost" or hostname.endswith(".localhost"):
+            raise ScraperError("Localhost URLs are not allowed", status_code=422)
+
+        default_port = 443 if parsed.scheme == "https" else 80
+        addresses = await cls._resolve_host(hostname, port or default_port)
+        if not addresses:
+            raise ScraperError("URL host could not be resolved", status_code=422)
+        if any(cls._is_blocked_ip(address) for address in addresses):
+            raise ScraperError("Private or local network URLs are not allowed", status_code=422)
+
+    @staticmethod
+    async def _resolve_host(hostname: str, port: int) -> set[str]:
+        loop = asyncio.get_running_loop()
+        try:
+            infos = await loop.getaddrinfo(
+                hostname,
+                port,
+                type=socket.SOCK_STREAM,
+            )
+        except socket.gaierror:
+            return set()
+        return {info[4][0] for info in infos}
+
+    @staticmethod
+    def _is_blocked_ip(address: str) -> bool:
+        ip = ipaddress.ip_address(address)
+        return (
+            ip.is_private
+            or ip.is_loopback
+            or ip.is_link_local
+            or ip.is_multicast
+            or ip.is_reserved
+            or ip.is_unspecified
+        )
+
+    @staticmethod
+    def _is_text_response(content_type: str) -> bool:
+        return any(
+            allowed in content_type.lower()
+            for allowed in ("text/html", "text/plain", "application/xhtml+xml")
+        )
+
+    @staticmethod
+    def _safe_url_for_log(url: str) -> str:
+        parsed = urlparse(url)
+        return urlunparse((parsed.scheme, parsed.netloc, parsed.path, "", "", ""))
 
     @classmethod
     def _clean_html(cls, html: str) -> str:

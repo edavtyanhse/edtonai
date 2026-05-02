@@ -64,7 +64,14 @@ monitoring/setup_scripts/
 # --- AI agent dirs ---
 .agent/
 .agents/
+.codex/
 .claude/
 skills-lock.json
 _config_patch.json
+
+# --- Local agent/security docs ---
+AGENTS.md
+SECURITY.md
+SECIRITY.md
+
 Diploma/

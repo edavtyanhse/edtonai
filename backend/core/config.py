@@ -2,15 +2,15 @@
 
 from pathlib import Path
 
-from pydantic import computed_field
+from pydantic import computed_field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # Корень проекта (edtonai/)
 PROJECT_ROOT = Path(__file__).parent.parent.parent
 
-# Text limits for frontend
-MAX_RESUME_CHARS = 15000
-MAX_VACANCY_CHARS = 10000
+DEFAULT_MAX_RESUME_CHARS = 15000
+DEFAULT_MAX_VACANCY_CHARS = 10000
+DEVELOPMENT_JWT_SECRET = "development-only-insecure-secret-change-me"
 
 
 class Settings(BaseSettings):
@@ -83,10 +83,23 @@ class Settings(BaseSettings):
     # Logging
     log_level: str
 
+    # Runtime environment
+    app_env: str = "development"
+
     # JWT Authentication
-    jwt_secret_key: str = "change-me-in-production"
+    jwt_secret_key: str = DEVELOPMENT_JWT_SECRET
     jwt_access_token_expire_minutes: int = 15
     jwt_refresh_token_expire_days: int = 30
+    refresh_cookie_path: str = "/"
+
+    # Public input limits
+    max_resume_chars: int = DEFAULT_MAX_RESUME_CHARS
+    max_vacancy_chars: int = DEFAULT_MAX_VACANCY_CHARS
+
+    # Basic abuse protection. Production can tune these via env.
+    auth_rate_limit_per_minute: int = 20
+    ai_rate_limit_per_minute: int = 120
+    scraper_rate_limit_per_minute: int = 30
 
     # SMTP (email sending)
     smtp_host: str = "smtp.yandex.ru"
@@ -121,5 +134,25 @@ class Settings(BaseSettings):
     # Disabled by default so production/Cloud Run startup does not block on DDL.
     db_auto_create: bool = False
 
+    @model_validator(mode="after")
+    def validate_security_defaults(self) -> "Settings":
+        """Fail fast when production-like environments use unsafe secrets."""
+        env = self.app_env.lower()
+        is_production_like = env not in {"dev", "development", "local", "test"}
+        weak_jwt_secret = (
+            self.jwt_secret_key == DEVELOPMENT_JWT_SECRET
+            or len(self.jwt_secret_key) < 32
+        )
+        if is_production_like and weak_jwt_secret:
+            raise ValueError(
+                "JWT_SECRET_KEY must be set to a strong non-default value "
+                "outside development/test environments"
+            )
+        return self
+
 
 settings = Settings()
+
+# Backward-compatible aliases for existing imports and public limits endpoint.
+MAX_RESUME_CHARS = settings.max_resume_chars
+MAX_VACANCY_CHARS = settings.max_vacancy_chars

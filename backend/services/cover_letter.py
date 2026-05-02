@@ -103,7 +103,10 @@ class CoverLetterService(CachedAIService):
         options = options or {}
 
         # Step 1: Get version (try ResumeVersion first, then UserVersion)
-        resume_version = await self.version_repo.get_by_id(resume_version_id)
+        resume_version = await self.version_repo.get_by_id_for_user(
+            resume_version_id,
+            str(user_id),
+        )
         is_user_version = False
 
         if not resume_version:
@@ -116,7 +119,7 @@ class CoverLetterService(CachedAIService):
         if not resume_version:
             raise VersionNotFoundError(str(resume_version_id))
 
-        # Check ownership for UserVersion only (ResumeVersion doesn't have user_id in DB).
+        # UserVersion has an explicit owner check in the repository call above.
         if is_user_version and str(getattr(resume_version, "user_id", None)) != str(
             user_id
         ):

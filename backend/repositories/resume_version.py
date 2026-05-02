@@ -25,6 +25,7 @@ class ResumeVersionRepository:
         selected_checkbox_ids: list[str],
         analysis_id: UUID | None = None,
         parent_version_id: UUID | None = None,
+        user_id: str | None = None,
         provider: str | None = None,
         model: str | None = None,
         prompt_version: str | None = None,
@@ -38,6 +39,7 @@ class ResumeVersionRepository:
             selected_checkbox_ids=selected_checkbox_ids,
             analysis_id=analysis_id,
             parent_version_id=parent_version_id,
+            user_id=user_id,
             provider=provider,
             model=model,
             prompt_version=prompt_version,
@@ -51,6 +53,18 @@ class ResumeVersionRepository:
         """Get resume version by ID."""
         result = await self.session.execute(
             select(ResumeVersion).where(ResumeVersion.id == version_id)
+        )
+        return result.scalar_one_or_none()
+
+    async def get_by_id_for_user(
+        self, version_id: UUID, user_id: str
+    ) -> ResumeVersion | None:
+        """Get resume version by ID only if it belongs to the given user."""
+        result = await self.session.execute(
+            select(ResumeVersion).where(
+                ResumeVersion.id == version_id,
+                ResumeVersion.user_id == user_id,
+            )
         )
         return result.scalar_one_or_none()
 

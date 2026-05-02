@@ -101,14 +101,11 @@ class AuthService:
 
     async def refresh(self, refresh_token_id: UUID) -> tuple[TokenPair, UserInfo]:
         """Rotate refresh token and issue new access token."""
-        token = await self._refresh_repo.get_valid_token(refresh_token_id)
-        if not token:
+        user_id = await self._refresh_repo.consume_valid_token(refresh_token_id)
+        if not user_id:
             raise TokenExpiredError()
 
-        # Revoke old token (rotation)
-        await self._refresh_repo.revoke(token.id)
-
-        user = await self._user_repo.get_by_id(token.user_id)
+        user = await self._user_repo.get_by_id(user_id)
         if not user or not user.is_active:
             raise InvalidTokenError()
 

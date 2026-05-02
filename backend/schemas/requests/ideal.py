@@ -4,6 +4,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
+from backend.core.config import MAX_VACANCY_CHARS
 from backend.schemas.common import IdealResumeOptions
 
 
@@ -13,6 +14,7 @@ class IdealResumeRequest(BaseModel):
     vacancy_text: str | None = Field(
         default=None,
         min_length=10,
+        max_length=MAX_VACANCY_CHARS,
         description="Raw vacancy text (if not using vacancy_id)",
     )
     vacancy_id: UUID | None = Field(

@@ -26,10 +26,10 @@ class UserVersion(Base):
         default=uuid.uuid4,
     )
 
-    # User ID from Supabase Auth (for per-user filtering)
-    user_id: Mapped[str | None] = mapped_column(
+    # User ID from application auth (for per-user filtering)
+    user_id: Mapped[str] = mapped_column(
         String(255),
-        nullable=True,
+        nullable=False,
         index=True,
     )
 

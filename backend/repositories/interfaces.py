@@ -20,12 +20,22 @@ class IResumeRepository(Protocol):
 
     async def get_by_id(self, resume_id: UUID) -> Any: ...
 
+    async def get_by_id_for_user(self, resume_id: UUID, user_id: str) -> Any: ...
+
     async def create(self, source_text: str, content_hash: str) -> Any: ...
 
     async def get_or_create(self, source_text: str, content_hash: str) -> Any: ...
 
+    async def link_user_resume(self, user_id: str, resume_id: UUID) -> None: ...
+
+    async def user_has_access(self, user_id: str, resume_id: UUID) -> bool: ...
+
     async def update_parsed_data(
         self, resume_id: UUID, parsed_data: dict[str, Any]
+    ) -> Any: ...
+
+    async def update_parsed_data_for_user(
+        self, resume_id: UUID, user_id: str, parsed_data: dict[str, Any]
     ) -> Any: ...
 
     async def update_field(self, resume_id: UUID, field: str, value: Any) -> Any: ...
@@ -42,6 +52,8 @@ class IVacancyRepository(Protocol):
 
     async def get_by_id(self, vacancy_id: UUID) -> Any: ...
 
+    async def get_by_id_for_user(self, vacancy_id: UUID, user_id: str) -> Any: ...
+
     async def create(
         self,
         source_text: str,
@@ -56,8 +68,16 @@ class IVacancyRepository(Protocol):
         source_url: str | None = None,
     ) -> Any: ...
 
+    async def link_user_vacancy(self, user_id: str, vacancy_id: UUID) -> None: ...
+
+    async def user_has_access(self, user_id: str, vacancy_id: UUID) -> bool: ...
+
     async def update_parsed_data(
         self, vacancy_id: UUID, parsed_data: dict[str, Any]
+    ) -> Any: ...
+
+    async def update_parsed_data_for_user(
+        self, vacancy_id: UUID, user_id: str, parsed_data: dict[str, Any]
     ) -> Any: ...
 
     async def update_field(self, vacancy_id: UUID, field: str, value: Any) -> Any: ...
@@ -118,12 +138,15 @@ class IResumeVersionRepository(Protocol):
         selected_checkbox_ids: list[str],
         analysis_id: UUID | None = None,
         parent_version_id: UUID | None = None,
+        user_id: str | None = None,
         provider: str | None = None,
         model: str | None = None,
         prompt_version: str | None = None,
     ) -> Any: ...
 
     async def get_by_id(self, version_id: UUID) -> Any: ...
+
+    async def get_by_id_for_user(self, version_id: UUID, user_id: str) -> Any: ...
 
     async def get_versions_for_resume(
         self,
@@ -174,25 +197,23 @@ class IUserVersionRepository(Protocol):
         resume_text: str,
         vacancy_text: str,
         result_text: str,
-        user_id: str | None = None,
+        user_id: str,
         title: str | None = None,
         change_log: list[dict] | None = None,
         selected_checkbox_ids: list[str] | None = None,
         analysis_id: UUID | None = None,
     ) -> Any: ...
 
-    async def get_by_id(self, version_id: UUID, user_id: str | None = None) -> Any: ...
+    async def get_by_id(self, version_id: UUID, user_id: str) -> Any: ...
 
     async def list_versions(
         self,
         limit: int = 50,
         offset: int = 0,
-        user_id: str | None = None,
+        user_id: str = "",
     ) -> tuple[list, int]: ...
 
-    async def delete_by_id(
-        self, version_id: UUID, user_id: str | None = None
-    ) -> bool: ...
+    async def delete_by_id(self, version_id: UUID, user_id: str) -> bool: ...
 
 
 # ── Feedback ─────────────────────────────────────────────────────

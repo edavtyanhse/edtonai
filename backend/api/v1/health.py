@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy import text
 
 from backend.api.dependencies import get_session_factory
-from backend.core.config import MAX_RESUME_CHARS, MAX_VACANCY_CHARS
+from backend.core.config import settings
 
 router = APIRouter(tags=["health"])
 logger = logging.getLogger(__name__)
@@ -41,6 +41,6 @@ async def health_check_v1(session_factory=Depends(get_session_factory)):
 async def get_limits():
     """Get text input limits for frontend validation."""
     return {
-        "max_resume_chars": MAX_RESUME_CHARS,
-        "max_vacancy_chars": MAX_VACANCY_CHARS,
+        "max_resume_chars": settings.max_resume_chars,
+        "max_vacancy_chars": settings.max_vacancy_chars,
     }

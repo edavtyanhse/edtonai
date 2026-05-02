@@ -4,6 +4,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
+from backend.core.config import MAX_RESUME_CHARS, MAX_VACANCY_CHARS
 from backend.schemas.common import AdaptResumeOptions, SelectedImprovementSchema
 
 
@@ -13,6 +14,7 @@ class AdaptResumeRequest(BaseModel):
     resume_text: str | None = Field(
         default=None,
         min_length=10,
+        max_length=MAX_RESUME_CHARS,
         description="Raw resume text (if not using resume_id)",
     )
     resume_id: UUID | None = Field(
@@ -23,6 +25,7 @@ class AdaptResumeRequest(BaseModel):
     vacancy_text: str | None = Field(
         default=None,
         min_length=10,
+        max_length=MAX_VACANCY_CHARS,
         description="Raw vacancy text (if not using vacancy_id)",
     )
     vacancy_id: UUID | None = Field(

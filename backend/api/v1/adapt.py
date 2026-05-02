@@ -3,6 +3,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 
 from backend.api.dependencies import get_adapt_resume_service
+from backend.core.auth import require_auth
 from backend.domain.adapt import SelectedImprovement
 from backend.schemas import AdaptResumeRequest, AdaptResumeResponse, ChangeLogEntry
 from backend.services import AdaptResumeService
@@ -13,6 +14,7 @@ router = APIRouter(prefix="/resumes", tags=["resumes"])
 @router.post("/adapt", response_model=AdaptResumeResponse)
 async def adapt_resume(
     request: AdaptResumeRequest,
+    user_id: str = Depends(require_auth),
     service: AdaptResumeService = Depends(get_adapt_resume_service),
 ) -> AdaptResumeResponse:
     """Adapt resume for a vacancy based on selected improvements.
@@ -73,6 +75,7 @@ async def adapt_resume(
         selected_checkbox_ids=request.selected_checkbox_ids,  # Legacy support
         base_version_id=request.base_version_id,
         options=request.options.model_dump() if request.options else {},
+        user_id=user_id,
     )
 
     return AdaptResumeResponse(

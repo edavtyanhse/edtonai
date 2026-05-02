@@ -53,6 +53,13 @@ class ResumeVersion(Base):
         index=True,
     )
 
+    # Owner for security-sensitive access to generated versions
+    user_id: Mapped[str | None] = mapped_column(
+        String(255),
+        nullable=True,
+        index=True,
+    )
+
     # Full adapted resume text
     text: Mapped[str] = mapped_column(
         Text,

@@ -10,7 +10,11 @@ import pytest
 from dependency_injector import providers
 from httpx import ASGITransport, AsyncClient
 
+from backend.auth.jwt import create_access_token
+from backend.core.config import settings
 from backend.main import app, container
+
+TEST_USER_ID = uuid4()
 
 
 @dataclass
@@ -53,11 +57,17 @@ class InMemoryResumeRepo:
     def __init__(self) -> None:
         self.by_hash: dict[str, FakeResumeRecord] = {}
         self.by_id: dict[UUID, FakeResumeRecord] = {}
+        self.user_links: set[tuple[str, UUID]] = set()
 
     async def get_by_hash(self, content_hash: str):
         return self.by_hash.get(content_hash)
 
     async def get_by_id(self, resume_id: UUID):
+        return self.by_id.get(resume_id)
+
+    async def get_by_id_for_user(self, resume_id: UUID, user_id: str):
+        if (user_id, resume_id) not in self.user_links:
+            return None
         return self.by_id.get(resume_id)
 
     async def create(self, source_text: str, content_hash: str):
@@ -74,8 +84,25 @@ class InMemoryResumeRepo:
             return existing
         return await self.create(source_text, content_hash)
 
+    async def link_user_resume(self, user_id: str, resume_id: UUID) -> None:
+        self.user_links.add((user_id, resume_id))
+
+    async def user_has_access(self, user_id: str, resume_id: UUID) -> bool:
+        return (user_id, resume_id) in self.user_links
+
     async def update_parsed_data(self, resume_id: UUID, parsed_data: dict):
         record = await self.get_by_id(resume_id)
+        if record is None:
+            return None
+        for key, value in parsed_data.items():
+            setattr(record, key, value)
+        record.parsed_at = datetime.utcnow()
+        return record
+
+    async def update_parsed_data_for_user(
+        self, resume_id: UUID, user_id: str, parsed_data: dict
+    ):
+        record = await self.get_by_id_for_user(resume_id, user_id)
         if record is None:
             return None
         for key, value in parsed_data.items():
@@ -88,11 +115,17 @@ class InMemoryVacancyRepo:
     def __init__(self) -> None:
         self.by_hash: dict[str, FakeVacancyRecord] = {}
         self.by_id: dict[UUID, FakeVacancyRecord] = {}
+        self.user_links: set[tuple[str, UUID]] = set()
 
     async def get_by_hash(self, content_hash: str):
         return self.by_hash.get(content_hash)
 
     async def get_by_id(self, vacancy_id: UUID):
+        return self.by_id.get(vacancy_id)
+
+    async def get_by_id_for_user(self, vacancy_id: UUID, user_id: str):
+        if (user_id, vacancy_id) not in self.user_links:
+            return None
         return self.by_id.get(vacancy_id)
 
     async def create(
@@ -116,8 +149,25 @@ class InMemoryVacancyRepo:
             return existing
         return await self.create(source_text, content_hash, source_url)
 
+    async def link_user_vacancy(self, user_id: str, vacancy_id: UUID) -> None:
+        self.user_links.add((user_id, vacancy_id))
+
+    async def user_has_access(self, user_id: str, vacancy_id: UUID) -> bool:
+        return (user_id, vacancy_id) in self.user_links
+
     async def update_parsed_data(self, vacancy_id: UUID, parsed_data: dict):
         record = await self.get_by_id(vacancy_id)
+        if record is None:
+            return None
+        for key, value in parsed_data.items():
+            setattr(record, key, value)
+        record.parsed_at = datetime.utcnow()
+        return record
+
+    async def update_parsed_data_for_user(
+        self, vacancy_id: UUID, user_id: str, parsed_data: dict
+    ):
+        record = await self.get_by_id_for_user(vacancy_id, user_id)
         if record is None:
             return None
         for key, value in parsed_data.items():
@@ -204,6 +254,11 @@ async def client(mock_ai_provider):
     fake_vacancy_repo = InMemoryVacancyRepo()
     fake_ai_result_repo = InMemoryAIResultRepo()
     fake_analysis_repo = InMemoryAnalysisRepo()
+    access_token = create_access_token(
+        user_id=TEST_USER_ID,
+        email="test@example.com",
+        secret=settings.jwt_secret_key,
+    )
 
     with (
         container.session.override(providers.Object(mock_session)),
@@ -214,6 +269,24 @@ async def client(mock_ai_provider):
         container.ai_provider_parsing.override(mock_ai_provider),
         container.ai_provider_reasoning.override(mock_ai_provider),
     ):
+        transport = ASGITransport(app=app)
+        async with AsyncClient(
+            transport=transport,
+            base_url="http://test",
+            headers={"Authorization": f"Bearer {access_token}"},
+        ) as ac:
+            yield ac
+
+
+@pytest.fixture
+async def unauth_client(mock_ai_provider):
+    """Async HTTP client without Authorization header for auth hardening tests."""
+    mock_session = AsyncMock()
+    mock_session.flush = AsyncMock()
+    mock_session.commit = AsyncMock()
+    mock_session.rollback = AsyncMock()
+
+    with container.session.override(providers.Object(mock_session)):
         transport = ASGITransport(app=app)
         async with AsyncClient(transport=transport, base_url="http://test") as ac:
             yield ac

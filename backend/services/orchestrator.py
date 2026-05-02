@@ -34,6 +34,7 @@ class OrchestratorService:
         vacancy_text: str,
         original_analysis: dict[str, Any] | None = None,
         applied_checkbox_ids: list[str] | None = None,
+        user_id: str | None = None,
     ) -> FullAnalysisResult:
         """Run full analysis pipeline.
 
@@ -43,7 +44,10 @@ class OrchestratorService:
         4. Create AnalysisLink
         """
         # Step 1: Parse resume
-        resume_result = await self.resume_service.parse_and_cache(resume_text)
+        resume_result = await self.resume_service.parse_and_cache(
+            resume_text,
+            user_id=user_id,
+        )
         self.logger.info(
             "Resume parsed: id=%s cache_hit=%s",
             resume_result.resume_id,
@@ -51,7 +55,10 @@ class OrchestratorService:
         )
 
         # Step 2: Parse vacancy
-        vacancy_result = await self.vacancy_service.parse_and_cache(vacancy_text)
+        vacancy_result = await self.vacancy_service.parse_and_cache(
+            vacancy_text,
+            user_id=user_id,
+        )
         self.logger.info(
             "Vacancy parsed: id=%s cache_hit=%s",
             vacancy_result.vacancy_id,
