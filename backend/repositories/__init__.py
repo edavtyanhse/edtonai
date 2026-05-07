@@ -1,7 +1,6 @@
 """Repository layer for database operations."""
 
 from .ai_result import AIResultRepository
-from .analysis import AnalysisRepository
 from .ideal_resume import IdealResumeRepository
 from .resume import ResumeRepository
 from .resume_version import ResumeVersionRepository
@@ -13,7 +12,6 @@ __all__ = [
     "ResumeRepository",
     "VacancyRepository",
     "AIResultRepository",
-    "AnalysisRepository",
     # Stage 2
     "ResumeVersionRepository",
     "IdealResumeRepository",

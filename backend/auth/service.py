@@ -99,9 +99,9 @@ class AuthService:
 
     # ── Refresh ────────────────────────────────────────────────────
 
-    async def refresh(self, refresh_token_id: UUID) -> tuple[TokenPair, UserInfo]:
+    async def refresh(self, refresh_token: str) -> tuple[TokenPair, UserInfo]:
         """Rotate refresh token and issue new access token."""
-        user_id = await self._refresh_repo.consume_valid_token(refresh_token_id)
+        user_id = await self._refresh_repo.consume_valid_token(refresh_token)
         if not user_id:
             raise TokenExpiredError()
 
@@ -119,9 +119,9 @@ class AuthService:
 
     # ── Logout ─────────────────────────────────────────────────────
 
-    async def logout(self, refresh_token_id: UUID) -> None:
+    async def logout(self, refresh_token: str) -> None:
         """Revoke a refresh token."""
-        await self._refresh_repo.revoke(refresh_token_id)
+        await self._refresh_repo.revoke(refresh_token)
 
     # ── Email verification ─────────────────────────────────────────
 

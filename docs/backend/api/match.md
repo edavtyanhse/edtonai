@@ -228,14 +228,6 @@ Content-Type: application/json
                             │
                             ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│  Step 4: AnalysisRepository.link(resume_id, vacancy_id,         │
-│                                  analysis_result_id)            │
-│                                                                 │
-│  Create AnalysisLink record                                     │
-└───────────────────────────┬─────────────────────────────────────┘
-                            │
-                            ▼
-┌─────────────────────────────────────────────────────────────────┐
 │  Response                                                       │
 │                                                                 │
 │  {                                                              │

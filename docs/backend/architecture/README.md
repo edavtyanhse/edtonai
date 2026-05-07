@@ -61,8 +61,8 @@
 │                       Data Layer                                │
 │                                                                 │
 │  models/resume.py    models/vacancy.py    models/ai_result.py   │
-│  models/analysis_link.py   models/resume_version.py             │
-│  models/ideal_resume.py    models/user_version.py               │
+│  models/resume_version.py  models/ideal_resume.py               │
+│  models/user_version.py    models/feedback.py                   │
 │                                                                 │
 │  • SQLAlchemy ORM models (чистые, без бизнес-логики)            │
 │  • domain/mappers.py — standalone ORM ↔ dict маппинг            │
@@ -116,10 +116,10 @@ containers.py (Composition Root)
     │     ├── ai_provider_parsing ──► Groq (fast)
     │     └── ai_provider_reasoning ──► DeepSeek (smart)
     │
-    ├── Repositories (Factory) × 8
+    ├── Repositories (Factory) × 7
     │     ├── resume_repo, vacancy_repo, ai_result_repo
-    │     ├── analysis_repo, resume_version_repo
-    │     └── ideal_resume_repo, user_version_repo, feedback_repo
+    │     ├── resume_version_repo, ideal_resume_repo
+    │     └── user_version_repo, feedback_repo
     │
     └── Services (Factory) × 7
           ├── resume_service ──► resume_repo + ai_result_repo + ai_provider_parsing

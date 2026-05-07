@@ -23,18 +23,18 @@ class IResumeService(Protocol):
     """Protocol for resume parsing service."""
 
     async def parse_and_cache(
-        self, resume_text: str, user_id: str | None = None
+        self, resume_text: str, user_id: str | UUID | None = None
     ) -> ResumeParseResult: ...
 
     async def get_detail(
-        self, resume_id: UUID, user_id: str | None = None
+        self, resume_id: UUID, user_id: str | UUID | None = None
     ) -> ResumeDetailResult: ...
 
     async def update_parsed_data(
         self,
         resume_id: UUID,
         parsed_data: dict[str, Any],
-        user_id: str | None = None,
+        user_id: str | UUID | None = None,
     ) -> ResumeDetailResult: ...
 
 
@@ -46,18 +46,18 @@ class IVacancyService(Protocol):
         self,
         vacancy_text: str,
         source_url: str | None = None,
-        user_id: str | None = None,
+        user_id: str | UUID | None = None,
     ) -> VacancyParseResult: ...
 
     async def get_detail(
-        self, vacancy_id: UUID, user_id: str | None = None
+        self, vacancy_id: UUID, user_id: str | UUID | None = None
     ) -> VacancyDetailResult: ...
 
     async def update_parsed_data(
         self,
         vacancy_id: UUID,
         parsed_data: dict[str, Any],
-        user_id: str | None = None,
+        user_id: str | UUID | None = None,
     ) -> VacancyDetailResult: ...
 
 
@@ -96,7 +96,7 @@ class IAdaptResumeService(Protocol):
         selected_checkbox_ids: list[str] | None = None,
         base_version_id: UUID | None = None,
         options: dict[str, Any] | None = None,
-        user_id: str | None = None,
+        user_id: str | UUID | None = None,
     ) -> AdaptResumeResult: ...
 
 
@@ -109,7 +109,7 @@ class IIdealResumeService(Protocol):
         vacancy_text: str | None = None,
         vacancy_id: UUID | None = None,
         options: dict[str, Any] | None = None,
-        user_id: str | None = None,
+        user_id: str | UUID | None = None,
     ) -> IdealResumeResult: ...
 
 
@@ -133,7 +133,7 @@ class IOrchestratorService(Protocol):
         self,
         resume_text: str,
         vacancy_text: str,
-        user_id: str | None = None,
+        user_id: str | UUID | None = None,
     ) -> Any: ...
 
 
@@ -143,7 +143,7 @@ class IVersionService(Protocol):
 
     async def create_version(
         self,
-        user_id: str,
+        user_id: str | UUID,
         type: str,
         resume_text: str,
         vacancy_text: str,
@@ -156,7 +156,7 @@ class IVersionService(Protocol):
 
     async def list_versions(
         self,
-        user_id: str,
+        user_id: str | UUID,
         limit: int = 50,
         offset: int = 0,
     ) -> VersionListResult: ...
@@ -164,7 +164,7 @@ class IVersionService(Protocol):
     async def get_version(
         self,
         version_id: UUID,
-        user_id: str,
+        user_id: str | UUID,
     ) -> VersionDetailResult: ...
 
-    async def delete_version(self, version_id: UUID, user_id: str) -> None: ...
+    async def delete_version(self, version_id: UUID, user_id: str | UUID) -> None: ...

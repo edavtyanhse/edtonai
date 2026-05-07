@@ -18,7 +18,6 @@ class OrchestratorService:
         resume_service: IResumeService,
         vacancy_service: IVacancyService,
         match_service: IMatchService,
-        analysis_repo: IAnalysisRepository,
     ) -> None:
 ```
 
@@ -31,18 +30,16 @@ class OrchestratorService:
 | `resume_service` | `IResumeService` | `ResumeService` |
 | `vacancy_service` | `IVacancyService` | `VacancyService` |
 | `match_service` | `IMatchService` | `MatchService` |
-| `analysis_repo` | `IAnalysisRepository` | `AnalysisRepository` |
 
 ## Основной метод
 
 ### `run_analysis(resume_text, vacancy_text) -> FullAnalysisResult`
 
-Полный пайплайн из 4 шагов:
+Полный пайплайн из 3 шагов:
 
 1. **Parse resume** → `resume_service.parse_and_cache(resume_text)` → `ResumeResult`
 2. **Parse vacancy** → `vacancy_service.parse_and_cache(vacancy_text)` → `VacancyResult`
 3. **Analyze match** → `match_service.analyze_and_cache(parsed_resume, parsed_vacancy)` → `MatchResult`
-4. **Create link** → `analysis_repo.link(resume_id, vacancy_id, analysis_result_id)`
 
 Возвращает `FullAnalysisResult` с флагом `cache_hit` (true только если все 3 подзапроса были cache hit).
 
@@ -52,8 +49,7 @@ class OrchestratorService:
 Orchestrator
   ├── ResumeService.parse_and_cache()    [Groq - parsing]
   ├── VacancyService.parse_and_cache()   [Groq - parsing]
-  ├── MatchService.analyze_and_cache()   [DeepSeek - reasoning]
-  └── AnalysisRepository.link()          [DB only]
+  └── MatchService.analyze_and_cache()   [DeepSeek - reasoning]
 ```
 
 ## Логирование

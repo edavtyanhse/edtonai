@@ -16,21 +16,26 @@ class UserVersionRepository:
         self.session = session
         self.logger = logging.getLogger(__name__)
 
+    @staticmethod
+    def _user_uuid(user_id: str | UUID) -> UUID:
+        return user_id if isinstance(user_id, UUID) else UUID(user_id)
+
     async def create(
         self,
         type: str,
         resume_text: str,
         vacancy_text: str,
         result_text: str,
-        user_id: str,
+        user_id: str | UUID,
         title: str | None = None,
         change_log: list[dict] = None,
         selected_checkbox_ids: list[str] = None,
         analysis_id: UUID | None = None,
     ) -> UserVersion:
         """Create a new user version."""
+        user_uuid = self._user_uuid(user_id)
         version = UserVersion(
-            user_id=user_id,
+            user_id=user_uuid,
             type=type,
             title=title,
             resume_text=resume_text,
@@ -42,28 +47,30 @@ class UserVersionRepository:
         )
         self.session.add(version)
         await self.session.flush()
-        self.logger.info("Created user version: %s for user: %s", version.id, user_id)
+        self.logger.info("Created user version: %s for user: %s", version.id, user_uuid)
         return version
 
     async def get_by_id(
-        self, version_id: UUID, user_id: str
+        self, version_id: UUID, user_id: str | UUID
     ) -> UserVersion | None:
         """Get user version by ID filtered by owner."""
+        user_uuid = self._user_uuid(user_id)
         query = select(UserVersion).where(
             UserVersion.id == version_id,
-            UserVersion.user_id == user_id,
+            UserVersion.user_id == user_uuid,
         )
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
 
     async def list_versions(
         self,
+        user_id: str | UUID,
         limit: int = 50,
         offset: int = 0,
-        user_id: str = "",
     ) -> tuple[list[UserVersion], int]:
         """List versions with pagination, ordered by created_at desc."""
-        base_filter = UserVersion.user_id == user_id
+        user_uuid = self._user_uuid(user_id)
+        base_filter = UserVersion.user_id == user_uuid
 
         # Get total count
         count_result = await self.session.execute(
@@ -83,11 +90,12 @@ class UserVersionRepository:
 
         return versions, total
 
-    async def delete_by_id(self, version_id: UUID, user_id: str) -> bool:
+    async def delete_by_id(self, version_id: UUID, user_id: str | UUID) -> bool:
         """Delete user version by ID and owner. Returns True if deleted."""
+        user_uuid = self._user_uuid(user_id)
         query = delete(UserVersion).where(
             UserVersion.id == version_id,
-            UserVersion.user_id == user_id,
+            UserVersion.user_id == user_uuid,
         )
 
         result = await self.session.execute(query)

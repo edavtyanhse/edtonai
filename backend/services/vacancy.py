@@ -1,6 +1,6 @@
 """Vacancy service - parse and cache vacancy text."""
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any
 from uuid import UUID
 
@@ -127,7 +127,7 @@ class VacancyService(CachedAIService):
             # Update parsed columns if not set (e.g., migrated data)
             if vacancy.parsed_at is None:
                 set_vacancy_parsed_data(vacancy, cached_result.output_json)
-                vacancy.parsed_at = datetime.utcnow()
+                vacancy.parsed_at = datetime.now(timezone.utc)
                 await self.session.flush()
 
             return VacancyParseResult(
@@ -148,7 +148,7 @@ class VacancyService(CachedAIService):
 
         # Save parsed data to individual columns
         set_vacancy_parsed_data(vacancy, parsed_json)
-        vacancy.parsed_at = datetime.utcnow()
+        vacancy.parsed_at = datetime.now(timezone.utc)
         await self.session.flush()
 
         return VacancyParseResult(

@@ -1,11 +1,13 @@
 """Refresh token repository."""
 
+import secrets
 from datetime import datetime, timezone
 from uuid import UUID
 
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from backend.core.token_hashing import hash_secret
 from backend.models.refresh_token import RefreshToken
 
 
@@ -20,32 +22,34 @@ class RefreshTokenRepository:
         user_id: UUID,
         expires_at: datetime,
         device_info: str | None = None,
-    ) -> RefreshToken:
+    ) -> str:
+        raw_token = secrets.token_urlsafe(48)
         token = RefreshToken(
+            token_hash=hash_secret(raw_token),
             user_id=user_id,
             expires_at=expires_at,
             device_info=device_info,
         )
         self._session.add(token)
         await self._session.flush()
-        return token
+        return raw_token
 
-    async def get_valid_token(self, token_id: UUID) -> RefreshToken | None:
+    async def get_valid_token(self, token: str) -> RefreshToken | None:
         result = await self._session.execute(
             select(RefreshToken).where(
-                RefreshToken.id == token_id,
+                RefreshToken.token_hash == hash_secret(token),
                 RefreshToken.is_revoked.is_(False),
                 RefreshToken.expires_at > datetime.now(timezone.utc),
             )
         )
         return result.scalar_one_or_none()
 
-    async def consume_valid_token(self, token_id: UUID) -> UUID | None:
+    async def consume_valid_token(self, token: str) -> UUID | None:
         """Atomically revoke a valid refresh token and return its user_id."""
         result = await self._session.execute(
             update(RefreshToken)
             .where(
-                RefreshToken.id == token_id,
+                RefreshToken.token_hash == hash_secret(token),
                 RefreshToken.is_revoked.is_(False),
                 RefreshToken.expires_at > datetime.now(timezone.utc),
             )
@@ -54,10 +58,10 @@ class RefreshTokenRepository:
         )
         return result.scalar_one_or_none()
 
-    async def revoke(self, token_id: UUID) -> None:
+    async def revoke(self, token: str) -> None:
         await self._session.execute(
             update(RefreshToken)
-            .where(RefreshToken.id == token_id)
+            .where(RefreshToken.token_hash == hash_secret(token))
             .values(is_revoked=True)
         )
 

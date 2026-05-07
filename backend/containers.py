@@ -38,7 +38,6 @@ from backend.integration.oauth.base import OAuthProvider
 from backend.integration.oauth.google import GoogleOAuthProvider
 from backend.integration.oauth.yandex import YandexOAuthProvider
 from backend.repositories.ai_result import AIResultRepository
-from backend.repositories.analysis import AnalysisRepository
 from backend.repositories.email_verification import (
     EmailVerificationRepository,
 )
@@ -236,7 +235,6 @@ class Container(containers.DeclarativeContainer):
     resume_repo = providers.Factory(ResumeRepository, session=session)
     vacancy_repo = providers.Factory(VacancyRepository, session=session)
     ai_result_repo = providers.Factory(AIResultRepository, session=session)
-    analysis_repo = providers.Factory(AnalysisRepository, session=session)
     resume_version_repo = providers.Factory(ResumeVersionRepository, session=session)
     ideal_resume_repo = providers.Factory(IdealResumeRepository, session=session)
     user_version_repo = providers.Factory(UserVersionRepository, session=session)
@@ -277,7 +275,6 @@ class Container(containers.DeclarativeContainer):
         resume_service=resume_service,
         vacancy_service=vacancy_service,
         match_service=match_service,
-        analysis_repo=analysis_repo,
     )
 
     adapt_resume_service = providers.Factory(

@@ -9,7 +9,6 @@ TRUNCATE TABLE
     user_version,
     resume_version,
     ideal_resume,
-    analysis_link,
     ai_result,
     vacancy_raw,
     resume_raw

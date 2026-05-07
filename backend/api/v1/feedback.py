@@ -5,6 +5,7 @@ TO REMOVE: Delete this file and remove router registration from __init__.py
 """
 
 from typing import Annotated
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, status
 
@@ -26,9 +27,8 @@ async def submit_feedback(
 
     Requires authentication. Feature can be disabled via config.
     """
-    user_email = payload.get("email", payload.get("sub", "unknown"))
     return await service.submit_feedback(
-        user_email=user_email,
+        user_id=UUID(payload["sub"]),
         metric_type=request.metric_type,
         score=request.score,
         feedback_text=request.feedback_text,

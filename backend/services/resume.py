@@ -1,6 +1,6 @@
 """Resume service - parse and cache resume text."""
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any
 from uuid import UUID
 
@@ -113,7 +113,7 @@ class ResumeService(CachedAIService):
             # Update parsed columns if not set (e.g., migrated data)
             if resume.parsed_at is None:
                 set_resume_parsed_data(resume, cached_result.output_json)
-                resume.parsed_at = datetime.utcnow()
+                resume.parsed_at = datetime.now(timezone.utc)
                 await self.session.flush()
 
             return ResumeParseResult(
@@ -134,7 +134,7 @@ class ResumeService(CachedAIService):
 
         # Save parsed data to individual columns
         set_resume_parsed_data(resume, parsed_json)
-        resume.parsed_at = datetime.utcnow()
+        resume.parsed_at = datetime.now(timezone.utc)
         await self.session.flush()
 
         return ResumeParseResult(

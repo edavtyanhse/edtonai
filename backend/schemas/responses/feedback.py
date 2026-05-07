@@ -1,6 +1,7 @@
 """Feedback response schemas."""
 
 from datetime import datetime
+from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict
 
@@ -11,7 +12,8 @@ class FeedbackResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
-    user_email: str
+    user_id: UUID | None
+    user_hash: str
     metric_type: str
     score: int
     feedback_text: str

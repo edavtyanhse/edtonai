@@ -1,75 +1,244 @@
-@startuml ERD
+@startuml EdTonDataModel
 
-!define TABLE(name) entity name << (T,#FFAAAA) >>
-!define PK(x) <b><color:#b8860b>x</color></b>
-!define FK(x) <color:#aaaaaa>x</color>
-!define UNIQUE(x) <u>x</u>
+title EdTon.ai Current Data Model
 
+left to right direction
+scale 1.35
+
+skinparam dpi 180
+skinparam shadowing false
 skinparam linetype ortho
+skinparam defaultFontName Arial
+skinparam defaultFontSize 22
+skinparam ArrowFontSize 20
 skinparam entity {
-    BackgroundColor #f5f5f5
-    BorderColor #333333
+    FontSize 22
+    AttributeFontSize 19
+    BorderColor #1f2937
+    BackgroundColor #f8fafc
+}
+skinparam package {
+    FontSize 24
+    FontStyle bold
+    BorderColor #334155
+    BackgroundColor #eef2ff
+}
+skinparam note {
+    FontSize 20
+    BackgroundColor #fff7ed
+    BorderColor #fb923c
 }
 
-TABLE(resume_raw) {
-    PK(id) : UUID
-    --
-    source_text : TEXT
-    UNIQUE(content_hash) : VARCHAR(64)
-    created_at : TIMESTAMP
+package "Users and Auth" {
+    entity users <<table>> {
+        id : UUID PK
+        --
+        email : varchar(320) UNIQUE
+        password_hash : varchar(255)?
+        is_email_verified : bool
+        is_active : bool
+        created_at : timestamptz
+        updated_at : timestamptz
+    }
+
+    entity refresh_tokens <<table>> {
+        id : UUID PK
+        --
+        token_hash : varchar(64) UNIQUE
+        user_id : UUID FK
+        expires_at : timestamptz
+        is_revoked : bool
+        created_at : timestamptz
+        device_info : varchar(512)?
+    }
+
+    entity email_verifications <<table>> {
+        id : UUID PK
+        --
+        user_id : UUID FK
+        token_hash : varchar(64) UNIQUE
+        token : varchar(128)? legacy
+        expires_at : timestamptz
+        is_used : bool
+        created_at : timestamptz
+    }
+
+    entity oauth_accounts <<table>> {
+        id : UUID PK
+        --
+        user_id : UUID FK
+        provider : varchar(50)
+        provider_user_id : varchar(255)
+        email : varchar(320)?
+        name : varchar(255)?
+        avatar_url : varchar(1024)?
+        created_at : timestamptz
+        updated_at : timestamptz
+        --
+        provider, provider_user_id : UNIQUE
+    }
 }
 
-TABLE(vacancy_raw) {
-    PK(id) : UUID
-    --
-    source_text : TEXT
-    UNIQUE(content_hash) : VARCHAR(64)
-    created_at : TIMESTAMP
+package "Global AI Cache" {
+    entity resume_raw <<table>> {
+        id : UUID PK
+        --
+        source_text : text
+        content_hash : varchar(64) UNIQUE
+        personal_info : jsonb?
+        summary : text?
+        skills : jsonb
+        work_experience : jsonb
+        education : jsonb
+        parsed_at : timestamptz?
+        created_at : timestamptz
+        updated_at : timestamptz
+    }
+
+    entity vacancy_raw <<table>> {
+        id : UUID PK
+        --
+        source_text : text
+        content_hash : varchar(64) UNIQUE
+        source_url : varchar(2048)?
+        job_title : varchar(255)?
+        company : varchar(255)?
+        required_skills : jsonb
+        responsibilities : jsonb
+        parsed_at : timestamptz?
+        created_at : timestamptz
+        updated_at : timestamptz
+    }
+
+    entity ai_result <<table>> {
+        id : UUID PK
+        --
+        operation : varchar(100)
+        input_hash : varchar(64)
+        output_json : jsonb
+        provider : varchar(100)?
+        model : varchar(255)?
+        error : text?
+        created_at : timestamptz
+        updated_at : timestamptz
+        --
+        operation, input_hash : UNIQUE
+    }
+
 }
 
-TABLE(ai_result) {
-    PK(id) : UUID
-    --
-    operation : VARCHAR(50)
-    input_hash : VARCHAR(64)
-    output_json : JSONB
-    model : VARCHAR(100)
-    provider : VARCHAR(50)
-    error : TEXT
-    created_at : TIMESTAMP
-    --
-    <<UNIQUE>> (operation, input_hash)
+package "User Ownership and Artifacts" {
+    entity user_resume <<table>> {
+        id : UUID PK
+        --
+        user_id : UUID FK
+        resume_id : UUID FK
+        parsed_data_override : jsonb?
+        parsed_at : timestamptz?
+        created_at : timestamptz
+        --
+        user_id, resume_id : UNIQUE
+    }
+
+    entity user_vacancy <<table>> {
+        id : UUID PK
+        --
+        user_id : UUID FK
+        vacancy_id : UUID FK
+        parsed_data_override : jsonb?
+        parsed_at : timestamptz?
+        created_at : timestamptz
+        --
+        user_id, vacancy_id : UNIQUE
+    }
+
+    entity resume_version <<table>> {
+        id : UUID PK
+        --
+        user_id : UUID FK
+        resume_id : UUID FK
+        vacancy_id : UUID FK
+        parent_version_id : UUID? FK
+        analysis_id : UUID? FK
+        text : text
+        change_log : jsonb
+        selected_checkbox_ids : jsonb
+        provider : varchar(100)?
+        model : varchar(255)?
+        created_at : timestamptz
+        updated_at : timestamptz
+    }
+
+    entity user_version <<table>> {
+        id : UUID PK
+        --
+        user_id : UUID FK
+        type : adapt | ideal
+        analysis_id : UUID? FK
+        title : varchar(255)?
+        resume_text : text
+        vacancy_text : text
+        result_text : text
+        change_log : jsonb
+        created_at : timestamptz
+        updated_at : timestamptz
+    }
+
+    entity ideal_resume <<table>> {
+        id : UUID PK
+        --
+        vacancy_id : UUID FK
+        vacancy_hash : varchar(64)
+        text : text
+        generation_metadata : jsonb
+        options : jsonb
+        input_hash : varchar(64) UNIQUE
+        created_at : timestamptz
+        updated_at : timestamptz
+    }
+
+    entity feedback <<table>> {
+        id : integer PK
+        --
+        user_id : UUID? FK
+        user_hash : varchar(64)
+        user_email : varchar? legacy
+        metric_type : csat | nps
+        score : integer
+        feedback_text : text
+        created_at : timestamptz
+    }
 }
 
-TABLE(analysis_link) {
-    PK(id) : UUID
-    --
-    FK(resume_id) : UUID
-    FK(vacancy_id) : UUID
-    FK(analysis_result_id) : UUID
-    created_at : TIMESTAMP
-}
+users ||--o{ refresh_tokens : user_id
+users ||--o{ email_verifications : user_id
+users ||--o{ oauth_accounts : user_id
 
-resume_raw ||--o{ analysis_link : "resume_id"
-vacancy_raw ||--o{ analysis_link : "vacancy_id"
-ai_result ||--o{ analysis_link : "analysis_result_id"
+users ||--o{ user_resume : user_id
+users ||--o{ user_vacancy : user_id
+users ||--o{ resume_version : user_id
+users ||--o{ user_version : user_id
+users ||--o{ feedback : user_id
 
-note right of ai_result
-  **operation** values:
-  - parse_resume
-  - parse_vacancy
-  - analyze_match
-  
-  **output_json** contains
-  structured LLM response
+resume_raw ||--o{ user_resume : resume_id
+vacancy_raw ||--o{ user_vacancy : vacancy_id
+
+resume_raw ||--o{ resume_version : resume_id
+vacancy_raw ||--o{ resume_version : vacancy_id
+resume_version ||--o{ resume_version : parent_version_id
+ai_result ||--o{ resume_version : analysis_id
+ai_result ||--o{ user_version : analysis_id
+vacancy_raw ||--o{ ideal_resume : vacancy_id
+
+note bottom of user_resume
+  User-specific parsed edits live here.
+  Shared resume_raw stays immutable
+  after user PATCH requests.
 end note
 
-note bottom of analysis_link
-  Links resume + vacancy
-  to their match analysis
-  
-  ON DELETE CASCADE
-  for all FKs
+note bottom of refresh_tokens
+  Raw bearer tokens are never stored.
+  Database keeps SHA-256 hashes only.
 end note
 
 @enduml

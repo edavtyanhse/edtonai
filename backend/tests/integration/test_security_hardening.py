@@ -5,6 +5,7 @@ import pytest
 from backend.core.config import Settings
 from backend.errors.integration import ScraperError
 from backend.integration.scraper.scraper import WebScraper
+from backend.tests.integration.conftest import InMemoryResumeRepo
 
 
 @pytest.mark.anyio
@@ -56,3 +57,26 @@ def test_production_rejects_weak_jwt_secret(monkeypatch):
 
     with pytest.raises(ValueError, match="JWT_SECRET_KEY"):
         Settings()
+
+
+@pytest.mark.anyio
+async def test_user_resume_patch_does_not_mutate_shared_raw_record():
+    repo = InMemoryResumeRepo()
+    resume = await repo.create("Shared resume", "shared-resume-hash")
+
+    await repo.link_user_resume("11111111-1111-1111-1111-111111111111", resume.id)
+    await repo.link_user_resume("22222222-2222-2222-2222-222222222222", resume.id)
+
+    patched = await repo.update_parsed_data_for_user(
+        resume.id,
+        "11111111-1111-1111-1111-111111111111",
+        {"summary": "User A private edit"},
+    )
+    other_user_view = await repo.get_by_id_for_user(
+        resume.id,
+        "22222222-2222-2222-2222-222222222222",
+    )
+
+    assert patched.summary == "User A private edit"
+    assert other_user_view.summary is None
+    assert repo.by_id[resume.id].summary is None

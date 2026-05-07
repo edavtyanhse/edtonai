@@ -16,7 +16,8 @@ export interface FeedbackSubmit {
 
 export interface FeedbackResponse {
   id: number
-  user_email: string
+  user_id: string | null
+  user_hash: string
   metric_type: 'csat' | 'nps'
   score: number
   feedback_text: string

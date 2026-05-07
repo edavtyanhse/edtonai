@@ -45,7 +45,6 @@ class TestContainerSmoke:
             "resume_repo",
             "vacancy_repo",
             "ai_result_repo",
-            "analysis_repo",
             "resume_version_repo",
             "ideal_resume_repo",
             "user_version_repo",

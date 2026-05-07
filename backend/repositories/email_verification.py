@@ -6,6 +6,7 @@ from uuid import UUID
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from backend.core.token_hashing import hash_secret
 from backend.models.email_verification import EmailVerification
 
 
@@ -23,7 +24,7 @@ class EmailVerificationRepository:
     ) -> EmailVerification:
         verification = EmailVerification(
             user_id=user_id,
-            token=token,
+            token_hash=hash_secret(token),
             expires_at=expires_at,
         )
         self._session.add(verification)
@@ -33,7 +34,7 @@ class EmailVerificationRepository:
     async def get_valid_token(self, token: str) -> EmailVerification | None:
         result = await self._session.execute(
             select(EmailVerification).where(
-                EmailVerification.token == token,
+                EmailVerification.token_hash == hash_secret(token),
                 EmailVerification.is_used.is_(False),
                 EmailVerification.expires_at > datetime.now(timezone.utc),
             )

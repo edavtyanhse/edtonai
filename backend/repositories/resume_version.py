@@ -16,6 +16,10 @@ class ResumeVersionRepository:
         self.session = session
         self.logger = logging.getLogger(__name__)
 
+    @staticmethod
+    def _user_uuid(user_id: str | UUID) -> UUID:
+        return user_id if isinstance(user_id, UUID) else UUID(user_id)
+
     async def create(
         self,
         resume_id: UUID,
@@ -25,12 +29,15 @@ class ResumeVersionRepository:
         selected_checkbox_ids: list[str],
         analysis_id: UUID | None = None,
         parent_version_id: UUID | None = None,
-        user_id: str | None = None,
+        user_id: str | UUID | None = None,
         provider: str | None = None,
         model: str | None = None,
         prompt_version: str | None = None,
     ) -> ResumeVersion:
         """Create a new resume version."""
+        if user_id is None:
+            raise ValueError("user_id is required for resume versions")
+        user_uuid = self._user_uuid(user_id)
         version = ResumeVersion(
             resume_id=resume_id,
             vacancy_id=vacancy_id,
@@ -39,7 +46,7 @@ class ResumeVersionRepository:
             selected_checkbox_ids=selected_checkbox_ids,
             analysis_id=analysis_id,
             parent_version_id=parent_version_id,
-            user_id=user_id,
+            user_id=user_uuid,
             provider=provider,
             model=model,
             prompt_version=prompt_version,
@@ -57,13 +64,14 @@ class ResumeVersionRepository:
         return result.scalar_one_or_none()
 
     async def get_by_id_for_user(
-        self, version_id: UUID, user_id: str
+        self, version_id: UUID, user_id: str | UUID
     ) -> ResumeVersion | None:
         """Get resume version by ID only if it belongs to the given user."""
+        user_uuid = self._user_uuid(user_id)
         result = await self.session.execute(
             select(ResumeVersion).where(
                 ResumeVersion.id == version_id,
-                ResumeVersion.user_id == user_id,
+                ResumeVersion.user_id == user_uuid,
             )
         )
         return result.scalar_one_or_none()

@@ -6,7 +6,6 @@ from typing import Any
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.domain.analysis import FullAnalysisResult
-from backend.repositories.interfaces import IAnalysisRepository
 from backend.services.interfaces import IMatchService, IResumeService, IVacancyService
 
 
@@ -19,13 +18,11 @@ class OrchestratorService:
         resume_service: IResumeService,
         vacancy_service: IVacancyService,
         match_service: IMatchService,
-        analysis_repo: IAnalysisRepository,
     ) -> None:
         self.session = session
         self.resume_service = resume_service
         self.vacancy_service = vacancy_service
         self.match_service = match_service
-        self.analysis_repo = analysis_repo
         self.logger = logging.getLogger(__name__)
 
     async def run_analysis(
@@ -41,7 +38,6 @@ class OrchestratorService:
         1. Parse resume (with cache)
         2. Parse vacancy (with cache)
         3. Analyze match (with cache)
-        4. Create AnalysisLink
         """
         # Step 1: Parse resume
         resume_result = await self.resume_service.parse_and_cache(
@@ -84,13 +80,6 @@ class OrchestratorService:
             "Match analyzed: id=%s cache_hit=%s",
             match_result.analysis_id,
             match_result.cache_hit,
-        )
-
-        # Step 4: Create analysis link
-        await self.analysis_repo.link(
-            resume_id=resume_result.resume_id,
-            vacancy_id=vacancy_result.vacancy_id,
-            analysis_result_id=match_result.analysis_id,
         )
 
         # All cache hits?

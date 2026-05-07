@@ -13,8 +13,8 @@ ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT NOW();
 ALTER TABLE ai_result
 ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT NOW();
 
--- Add updated_at to analysis_link
-ALTER TABLE analysis_link
+-- Add updated_at to analysis_link for legacy databases that still have it
+ALTER TABLE IF EXISTS analysis_link
 ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT NOW();
 
 -- Add updated_at to resume_version

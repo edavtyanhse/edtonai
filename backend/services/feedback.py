@@ -4,6 +4,7 @@ import hashlib
 import logging
 from json import dumps
 from typing import Any
+from uuid import UUID
 
 from backend.core.config import Settings
 from backend.errors.business import UnprocessableEntityError
@@ -13,8 +14,8 @@ from backend.repositories.interfaces import IFeedbackRepository
 logger = logging.getLogger(__name__)
 
 
-def _hash_email(email: str) -> str:
-    return hashlib.sha256(email.lower().strip().encode("utf-8")).hexdigest()
+def _hash_user_identifier(identifier: str) -> str:
+    return hashlib.sha256(identifier.strip().lower().encode("utf-8")).hexdigest()
 
 
 class FeedbackService:
@@ -30,7 +31,7 @@ class FeedbackService:
 
     async def submit_feedback(
         self,
-        user_email: str,
+        user_id: UUID,
         metric_type: str,
         score: int,
         feedback_text: str,
@@ -43,9 +44,11 @@ class FeedbackService:
             raise ServiceUnavailableError("Feedback collection is currently disabled")
 
         self._validate_score(metric_type, score)
+        user_hash = _hash_user_identifier(str(user_id))
 
         feedback = await self.feedback_repo.create(
-            user_email=user_email,
+            user_id=user_id,
+            user_hash=user_hash,
             metric_type=metric_type,
             score=score,
             feedback_text=feedback_text,
@@ -64,7 +67,7 @@ class FeedbackService:
                     "context_step": context_step,
                     "ui_variant": ui_variant,
                     "user_segment": user_segment,
-                    "user_hash": _hash_email(user_email),
+                    "user_hash": user_hash,
                     "feedback_id": feedback.id,
                 },
                 ensure_ascii=False,

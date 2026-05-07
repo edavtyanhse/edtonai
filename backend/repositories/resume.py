@@ -1,7 +1,8 @@
 """Resume repository for database operations."""
 
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
+from types import SimpleNamespace
 from typing import Any
 from uuid import UUID
 
@@ -21,6 +22,33 @@ class ResumeRepository:
     def __init__(self, session: AsyncSession) -> None:
         self.session = session
 
+    @staticmethod
+    def _user_uuid(user_id: str | UUID) -> UUID:
+        return user_id if isinstance(user_id, UUID) else UUID(user_id)
+
+    @staticmethod
+    def _with_user_override(resume: ResumeRaw, link: UserResume) -> Any:
+        """Return a detached snapshot with user-specific parsed overrides applied."""
+        snapshot = SimpleNamespace(
+            id=resume.id,
+            source_text=resume.source_text,
+            content_hash=resume.content_hash,
+            personal_info=resume.personal_info,
+            summary=resume.summary,
+            skills=resume.skills,
+            work_experience=resume.work_experience,
+            education=resume.education,
+            certifications=resume.certifications,
+            languages=resume.languages,
+            raw_sections=resume.raw_sections,
+            created_at=resume.created_at,
+            updated_at=resume.updated_at,
+            parsed_at=link.parsed_at or resume.parsed_at,
+        )
+        if link.parsed_data_override:
+            set_resume_parsed_data(snapshot, link.parsed_data_override)
+        return snapshot
+
     async def get_by_hash(self, content_hash: str) -> ResumeRaw | None:
         """Get resume by content hash."""
         stmt = select(ResumeRaw).where(ResumeRaw.content_hash == content_hash)
@@ -36,16 +64,21 @@ class ResumeRepository:
     async def get_by_id_for_user(
         self,
         resume_id: UUID,
-        user_id: str,
-    ) -> ResumeRaw | None:
+        user_id: str | UUID,
+    ) -> Any | None:
         """Get resume by ID only if it is linked to the given user."""
+        user_uuid = self._user_uuid(user_id)
         stmt = (
-            select(ResumeRaw)
+            select(ResumeRaw, UserResume)
             .join(UserResume, UserResume.resume_id == ResumeRaw.id)
-            .where(ResumeRaw.id == resume_id, UserResume.user_id == user_id)
+            .where(ResumeRaw.id == resume_id, UserResume.user_id == user_uuid)
         )
         result = await self.session.execute(stmt)
-        return result.scalar_one_or_none()
+        row = result.one_or_none()
+        if row is None:
+            return None
+        resume, link = row
+        return self._with_user_override(resume, link)
 
     async def create(self, source_text: str, content_hash: str) -> ResumeRaw:
         """Create new resume record."""
@@ -77,20 +110,22 @@ class ResumeRepository:
                 return existing
             raise
 
-    async def link_user_resume(self, user_id: str, resume_id: UUID) -> None:
+    async def link_user_resume(self, user_id: str | UUID, resume_id: UUID) -> None:
         """Link an existing raw resume record to a user."""
+        user_uuid = self._user_uuid(user_id)
         if await self.user_has_access(user_id, resume_id):
             return
         try:
             async with self.session.begin_nested():
-                self.session.add(UserResume(user_id=user_id, resume_id=resume_id))
+                self.session.add(UserResume(user_id=user_uuid, resume_id=resume_id))
         except IntegrityError:
             logger.info("Race condition on user_resume link, ignoring duplicate")
 
-    async def user_has_access(self, user_id: str, resume_id: UUID) -> bool:
+    async def user_has_access(self, user_id: str | UUID, resume_id: UUID) -> bool:
         """Return True if the user owns or has created this resume record."""
+        user_uuid = self._user_uuid(user_id)
         stmt = select(UserResume.id).where(
-            UserResume.user_id == user_id,
+            UserResume.user_id == user_uuid,
             UserResume.resume_id == resume_id,
         )
         result = await self.session.execute(stmt)
@@ -105,24 +140,31 @@ class ResumeRepository:
             return None
         # Use helper method to set all parsed fields
         set_resume_parsed_data(resume, parsed_data)
-        resume.parsed_at = datetime.utcnow()
+        resume.parsed_at = datetime.now(timezone.utc)
         await self.session.flush()
         return resume
 
     async def update_parsed_data_for_user(
         self,
         resume_id: UUID,
-        user_id: str,
+        user_id: str | UUID,
         parsed_data: dict[str, Any],
-    ) -> ResumeRaw | None:
-        """Update parsed data only when the user owns this resume record."""
-        resume = await self.get_by_id_for_user(resume_id, user_id)
-        if resume is None:
+    ) -> Any | None:
+        """Store user-specific parsed data without mutating the shared raw cache."""
+        user_uuid = self._user_uuid(user_id)
+        result = await self.session.execute(
+            select(ResumeRaw, UserResume)
+            .join(UserResume, UserResume.resume_id == ResumeRaw.id)
+            .where(ResumeRaw.id == resume_id, UserResume.user_id == user_uuid)
+        )
+        row = result.one_or_none()
+        if row is None:
             return None
-        set_resume_parsed_data(resume, parsed_data)
-        resume.parsed_at = datetime.utcnow()
+        resume, link = row
+        link.parsed_data_override = parsed_data
+        link.parsed_at = datetime.now(timezone.utc)
         await self.session.flush()
-        return resume
+        return self._with_user_override(resume, link)
 
     async def update_field(
         self, resume_id: UUID, field: str, value: Any
@@ -146,6 +188,6 @@ class ResumeRepository:
             raise ValueError(f"Field {field} is not allowed")
 
         setattr(resume, field, value)
-        resume.parsed_at = datetime.utcnow()
+        resume.parsed_at = datetime.now(timezone.utc)
         await self.session.flush()
         return resume

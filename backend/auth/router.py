@@ -84,14 +84,7 @@ async def refresh(
 
         raise InvalidTokenError()
 
-    try:
-        refresh_token_id = UUID(refresh_token)
-    except ValueError:
-        from backend.errors.auth import InvalidTokenError
-
-        raise InvalidTokenError()
-
-    token_pair, user_info = await service.refresh(refresh_token_id)
+    token_pair, user_info = await service.refresh(refresh_token)
     set_refresh_cookie(response, token_pair.refresh_token, path=settings.refresh_cookie_path)
     return AuthResponse(
         access_token=token_pair.access_token,
@@ -115,7 +108,7 @@ async def logout(
     """Logout — revoke refresh token and clear cookie."""
     if refresh_token:
         try:
-            await service.logout(UUID(refresh_token))
+            await service.logout(refresh_token)
         except Exception:
             pass  # Token already invalid — that's fine
     clear_refresh_cookie(response, path=settings.refresh_cookie_path)

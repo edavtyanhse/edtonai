@@ -144,8 +144,7 @@ class SomeService(CachedAIService):
 │       │                                                         │
 │       ├──► IResumeService.parse_and_cache()   ← Protocol       │
 │       ├──► IVacancyService.parse_and_cache()  ← Protocol       │
-│       ├──► IMatchService.analyze_and_cache()  ← Protocol       │
-│       └──► IAnalysisRepository.link()         ← Protocol       │
+│       └──► IMatchService.analyze_and_cache()  ← Protocol       │
 │                                                                 │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │

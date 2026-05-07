@@ -1,7 +1,7 @@
 """Shared fixtures for integration tests (HTTP client, DB, etc.)."""
 
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from types import SimpleNamespace
 from unittest.mock import AsyncMock
 from uuid import UUID, uuid4
@@ -17,12 +17,16 @@ from backend.main import app, container
 TEST_USER_ID = uuid4()
 
 
+def _utcnow() -> datetime:
+    return datetime.now(timezone.utc)
+
+
 @dataclass
 class FakeResumeRecord:
     id: UUID
     source_text: str
     content_hash: str
-    created_at: datetime = field(default_factory=datetime.utcnow)
+    created_at: datetime = field(default_factory=_utcnow)
     parsed_at: datetime | None = None
     personal_info: dict | None = None
     summary: str | None = None
@@ -40,7 +44,7 @@ class FakeVacancyRecord:
     source_text: str
     content_hash: str
     source_url: str | None = None
-    created_at: datetime = field(default_factory=datetime.utcnow)
+    created_at: datetime = field(default_factory=_utcnow)
     parsed_at: datetime | None = None
     job_title: str | None = None
     company: str | None = None
@@ -58,6 +62,17 @@ class InMemoryResumeRepo:
         self.by_hash: dict[str, FakeResumeRecord] = {}
         self.by_id: dict[UUID, FakeResumeRecord] = {}
         self.user_links: set[tuple[str, UUID]] = set()
+        self.user_overrides: dict[tuple[str, UUID], dict] = {}
+
+    @staticmethod
+    def _with_override(record: FakeResumeRecord, override: dict | None):
+        if override is None:
+            return record
+        snapshot = SimpleNamespace(**record.__dict__)
+        for key, value in override.items():
+            setattr(snapshot, key, value)
+        snapshot.parsed_at = datetime.now(timezone.utc)
+        return snapshot
 
     async def get_by_hash(self, content_hash: str):
         return self.by_hash.get(content_hash)
@@ -68,7 +83,10 @@ class InMemoryResumeRepo:
     async def get_by_id_for_user(self, resume_id: UUID, user_id: str):
         if (user_id, resume_id) not in self.user_links:
             return None
-        return self.by_id.get(resume_id)
+        record = self.by_id.get(resume_id)
+        if record is None:
+            return None
+        return self._with_override(record, self.user_overrides.get((user_id, resume_id)))
 
     async def create(self, source_text: str, content_hash: str):
         record = FakeResumeRecord(
@@ -96,7 +114,7 @@ class InMemoryResumeRepo:
             return None
         for key, value in parsed_data.items():
             setattr(record, key, value)
-        record.parsed_at = datetime.utcnow()
+        record.parsed_at = datetime.now(timezone.utc)
         return record
 
     async def update_parsed_data_for_user(
@@ -105,10 +123,8 @@ class InMemoryResumeRepo:
         record = await self.get_by_id_for_user(resume_id, user_id)
         if record is None:
             return None
-        for key, value in parsed_data.items():
-            setattr(record, key, value)
-        record.parsed_at = datetime.utcnow()
-        return record
+        self.user_overrides[(user_id, resume_id)] = parsed_data
+        return self._with_override(self.by_id[resume_id], parsed_data)
 
 
 class InMemoryVacancyRepo:
@@ -116,6 +132,17 @@ class InMemoryVacancyRepo:
         self.by_hash: dict[str, FakeVacancyRecord] = {}
         self.by_id: dict[UUID, FakeVacancyRecord] = {}
         self.user_links: set[tuple[str, UUID]] = set()
+        self.user_overrides: dict[tuple[str, UUID], dict] = {}
+
+    @staticmethod
+    def _with_override(record: FakeVacancyRecord, override: dict | None):
+        if override is None:
+            return record
+        snapshot = SimpleNamespace(**record.__dict__)
+        for key, value in override.items():
+            setattr(snapshot, key, value)
+        snapshot.parsed_at = datetime.now(timezone.utc)
+        return snapshot
 
     async def get_by_hash(self, content_hash: str):
         return self.by_hash.get(content_hash)
@@ -126,7 +153,10 @@ class InMemoryVacancyRepo:
     async def get_by_id_for_user(self, vacancy_id: UUID, user_id: str):
         if (user_id, vacancy_id) not in self.user_links:
             return None
-        return self.by_id.get(vacancy_id)
+        record = self.by_id.get(vacancy_id)
+        if record is None:
+            return None
+        return self._with_override(record, self.user_overrides.get((user_id, vacancy_id)))
 
     async def create(
         self, source_text: str, content_hash: str, source_url: str | None = None
@@ -161,7 +191,7 @@ class InMemoryVacancyRepo:
             return None
         for key, value in parsed_data.items():
             setattr(record, key, value)
-        record.parsed_at = datetime.utcnow()
+        record.parsed_at = datetime.now(timezone.utc)
         return record
 
     async def update_parsed_data_for_user(
@@ -170,10 +200,8 @@ class InMemoryVacancyRepo:
         record = await self.get_by_id_for_user(vacancy_id, user_id)
         if record is None:
             return None
-        for key, value in parsed_data.items():
-            setattr(record, key, value)
-        record.parsed_at = datetime.utcnow()
-        return record
+        self.user_overrides[(user_id, vacancy_id)] = parsed_data
+        return self._with_override(self.by_id[vacancy_id], parsed_data)
 
 
 class InMemoryAIResultRepo:
@@ -204,33 +232,11 @@ class InMemoryAIResultRepo:
             provider=provider,
             model=model,
             error=error,
-            created_at=datetime.utcnow(),
+            created_at=datetime.now(timezone.utc),
         )
         self.by_key[(operation, input_hash)] = result
         self.by_id[result.id] = result
         return result
-
-
-class InMemoryAnalysisRepo:
-    def __init__(self) -> None:
-        self.links: list[SimpleNamespace] = []
-
-    async def get_by_ids(self, resume_id: UUID, vacancy_id: UUID):
-        for link in self.links:
-            if link.resume_id == resume_id and link.vacancy_id == vacancy_id:
-                return link
-        return None
-
-    async def link(self, resume_id: UUID, vacancy_id: UUID, analysis_result_id: UUID):
-        link = SimpleNamespace(
-            id=uuid4(),
-            resume_id=resume_id,
-            vacancy_id=vacancy_id,
-            analysis_result_id=analysis_result_id,
-            created_at=datetime.utcnow(),
-        )
-        self.links.append(link)
-        return link
 
 
 @pytest.fixture
@@ -253,7 +259,6 @@ async def client(mock_ai_provider):
     fake_resume_repo = InMemoryResumeRepo()
     fake_vacancy_repo = InMemoryVacancyRepo()
     fake_ai_result_repo = InMemoryAIResultRepo()
-    fake_analysis_repo = InMemoryAnalysisRepo()
     access_token = create_access_token(
         user_id=TEST_USER_ID,
         email="test@example.com",
@@ -265,7 +270,6 @@ async def client(mock_ai_provider):
         container.resume_repo.override(providers.Object(fake_resume_repo)),
         container.vacancy_repo.override(providers.Object(fake_vacancy_repo)),
         container.ai_result_repo.override(providers.Object(fake_ai_result_repo)),
-        container.analysis_repo.override(providers.Object(fake_analysis_repo)),
         container.ai_provider_parsing.override(mock_ai_provider),
         container.ai_provider_reasoning.override(mock_ai_provider),
     ):

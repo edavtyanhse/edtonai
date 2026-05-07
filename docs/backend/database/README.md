@@ -1,237 +1,141 @@
 # Database Documentation
 
-PostgreSQL схема данных.
-
-## Содержание
-
-- [ERD Diagram](erd.puml) — PlantUML диаграмма
-- [Tables](#tables) — описание таблиц
-- [Indexes](#indexes) — индексы
-- [Relationships](#relationships) — связи
+PostgreSQL data model for EdTon.ai. The schema combines a global AI/cache layer
+with user-owned records and generated artifacts.
 
 ## ERD
 
-![ERD](erd.puml)
+- Source: [erd.puml](erd.puml)
+- The diagram uses large PlantUML fonts and grouped blocks so labels stay readable
+  in IDE preview/export.
 
-Для просмотра: установите PlantUML extension в VS Code или используйте [PlantUML Online](https://www.plantuml.com/plantuml/uml/).
+## Model Overview
 
-## Tables
+### Users And Authentication
 
-### Stage 1: Core Tables
+| Table | Purpose | Important notes |
+|---|---|---|
+| `users` | Application users | UUID primary key, unique email, active/verified flags. |
+| `refresh_tokens` | Refresh sessions | Stores `token_hash`, never the raw refresh token. |
+| `email_verifications` | Email verification links | Stores `token_hash`; `token` is nullable legacy compatibility only. |
+| `oauth_accounts` | External OAuth identities | Unique `(provider, provider_user_id)` mapped to `users.id`. |
 
-#### resume_raw
+### Global AI Cache Layer
 
-Хранит исходные тексты резюме.
+| Table | Purpose | Important notes |
+|---|---|---|
+| `resume_raw` | De-duplicated raw resume text and parsed resume columns | Global cache keyed by `content_hash`; not a user-owned edited document. |
+| `vacancy_raw` | De-duplicated raw vacancy text, optional `source_url`, parsed vacancy columns | Global cache keyed by `content_hash`; URL scraping must stay SSRF-protected. |
+| `ai_result` | LLM result cache | Unique `(operation, input_hash)` prevents duplicate AI calls for identical work. |
 
-| Column | Type | Constraints | Description |
-|--------|------|-------------|-------------|
-| `id` | UUID | PK, DEFAULT uuid_generate_v4() | Уникальный ID |
-| `source_text` | TEXT | NOT NULL | Исходный текст резюме |
-| `content_hash` | VARCHAR(64) | UNIQUE, NOT NULL, INDEX | SHA256 нормализованного текста |
-| `created_at` | TIMESTAMP | NOT NULL, DEFAULT now() | Время создания |
+`analysis_link` was removed. Match de-duplication is handled by
+`ai_result(operation, input_hash)`, and user-visible history belongs in
+user-owned artifact tables rather than a global resume/vacancy pair link.
 
-#### vacancy_raw
+### User Ownership And Private Overrides
 
-Хранит исходные тексты вакансий.
+| Table | Purpose | Important notes |
+|---|---|---|
+| `user_resume` | User ownership of a `resume_raw` record | `user_id` is UUID FK to `users.id`; unique `(user_id, resume_id)`. |
+| `user_vacancy` | User ownership of a `vacancy_raw` record | `user_id` is UUID FK to `users.id`; unique `(user_id, vacancy_id)`. |
+| `user_resume.parsed_data_override` | User-specific parsed resume edits | Keeps PATCH edits private and avoids mutating shared `resume_raw`. |
+| `user_vacancy.parsed_data_override` | User-specific parsed vacancy edits | Keeps PATCH edits private and avoids mutating shared `vacancy_raw`. |
 
-| Column | Type | Constraints | Description |
-|--------|------|-------------|-------------|
-| `id` | UUID | PK | Уникальный ID |
-| `source_text` | TEXT | NOT NULL | Исходный текст вакансии |
-| `content_hash` | VARCHAR(64) | UNIQUE, NOT NULL, INDEX | SHA256 нормализованного текста |
-| `created_at` | TIMESTAMP | NOT NULL, DEFAULT now() | Время создания |
+The raw tables remain useful for de-duplication and AI caching. User edits live
+on the owner mapping tables so two users with identical uploaded text cannot
+silently overwrite each other's parsed data.
 
-#### ai_result
+### Generated User Artifacts
 
-Универсальный кеш результатов LLM операций.
+| Table | Purpose | Important notes |
+|---|---|---|
+| `resume_version` | Adapted resume versions | `user_id` is required UUID FK; legacy `NULL` owners are migrated to the inactive archive user. |
+| `user_version` | Frontend-friendly history entries | `user_id` is required UUID FK; type is constrained to `adapt` or `ideal`. |
+| `ideal_resume` | Generated ideal resume for a vacancy/options hash | Global generated cache keyed by `input_hash`; user access must go through vacancy ownership. |
+| `feedback` | Authenticated product feedback | Stores `user_id` where available and `user_hash`; email is nullable legacy-only data. |
 
-| Column | Type | Constraints | Description |
-|--------|------|-------------|-------------|
-| `id` | UUID | PK | Уникальный ID |
-| `operation` | VARCHAR(50) | NOT NULL | Тип операции: `parse_resume`, `parse_vacancy`, `analyze_match`, `adapt_resume`, `generate_cover_letter` |
-| `input_hash` | VARCHAR(64) | NOT NULL, INDEX | SHA256 входных данных |
-| `output_json` | JSONB | NOT NULL | Результат от LLM |
-| `model` | VARCHAR(100) | NULL | Модель LLM |
-| `provider` | VARCHAR(50) | NULL | Провайдер (`deepseek`, `groq`) |
-| `error` | TEXT | NULL | Текст ошибки (если была) |
-| `created_at` | TIMESTAMP | NOT NULL, DEFAULT now() | Время создания |
+`user_version` intentionally duplicates resume/vacancy/result text for easy
+history rendering. Because this data can contain PII, future retention and
+export/delete policies should treat it as sensitive user content.
 
-**Unique constraint:** `(operation, input_hash)`
+## Current Relationships
 
-#### analysis_link
+```text
+users
+  -> refresh_tokens
+  -> email_verifications
+  -> oauth_accounts
+  -> user_resume -> resume_raw
+  -> user_vacancy -> vacancy_raw
+  -> resume_version
+  -> user_version
+  -> feedback
 
-Связывает резюме, вакансию и результат анализа.
-
-| Column | Type | Constraints | Description |
-|--------|------|-------------|-------------|
-| `id` | UUID | PK | Уникальный ID |
-| `resume_id` | UUID | FK → resume_raw.id, NOT NULL, INDEX | Ссылка на резюме |
-| `vacancy_id` | UUID | FK → vacancy_raw.id, NOT NULL, INDEX | Ссылка на вакансию |
-| `analysis_result_id` | UUID | FK → ai_result.id, NOT NULL, INDEX | Ссылка на результат анализа |
-| `created_at` | TIMESTAMP | NOT NULL, DEFAULT now() | Время создания |
-
-### Stage 2: Version & Ideal Tables
-
-#### resume_version
-
-История версий адаптированных резюме.
-
-| Column | Type | Constraints | Description |
-|--------|------|-------------|-------------|
-| `id` | UUID | PK | Уникальный ID версии |
-| `resume_id` | UUID | FK → resume_raw.id, NOT NULL, INDEX | Базовое резюме |
-| `vacancy_id` | UUID | FK → vacancy_raw.id, NOT NULL, INDEX | Целевая вакансия |
-| `parent_version_id` | UUID | FK → resume_version.id, NULL, INDEX | Родительская версия (для цепочки) |
-| `text` | TEXT | NOT NULL | Полный текст адаптированного резюме |
-| `change_log` | JSONB | NOT NULL | Список изменений [{checkbox_id, what_changed, where, ...}] |
-| `selected_checkbox_ids` | JSONB | NOT NULL | IDs выбранных улучшений |
-| `safety_notes` | JSONB | NOT NULL | Предупреждения от LLM |
-| `analysis_id` | UUID | FK → ai_result.id, NULL | Ссылка на анализ |
-| `provider` | VARCHAR(50) | NULL | Провайдер LLM |
-| `model` | VARCHAR(100) | NULL | Модель LLM |
-| `prompt_version` | VARCHAR(50) | NULL | Версия промпта |
-| `created_at` | TIMESTAMP | NOT NULL, DEFAULT now() | Время создания |
-
-#### ideal_resume
-
-Сгенерированные идеальные резюме для вакансий.
-
-| Column | Type | Constraints | Description |
-|--------|------|-------------|-------------|
-| `id` | UUID | PK | Уникальный ID |
-| `vacancy_id` | UUID | FK → vacancy_raw.id, NOT NULL, INDEX | Вакансия |
-| `vacancy_hash` | VARCHAR(64) | NOT NULL, INDEX | SHA256 текста вакансии |
-| `text` | TEXT | NOT NULL | Полный текст идеального резюме |
-| `generation_metadata` | JSONB | NOT NULL | Метаданные: keywords_used, structure, assumptions |
-| `options` | JSONB | NOT NULL | Опции генерации: language, template, seniority |
-| `input_hash` | VARCHAR(64) | UNIQUE, NOT NULL, INDEX | Хэш для кеширования |
-| `provider` | VARCHAR(50) | NULL | Провайдер LLM |
-| `model` | VARCHAR(100) | NULL | Модель LLM |
-| `created_at` | TIMESTAMP | NOT NULL, DEFAULT now() | Время создания |
-
-## Indexes
-
-| Table | Index | Columns | Type |
-|-------|-------|---------|------|
-| resume_raw | ix_resume_raw_content_hash | content_hash | UNIQUE |
-| vacancy_raw | ix_vacancy_raw_content_hash | content_hash | UNIQUE |
-| ai_result | ix_ai_result_input_hash | input_hash | BTREE |
-| ai_result | ix_ai_result_operation_input_hash | operation, input_hash | UNIQUE |
-| analysis_link | ix_analysis_link_resume_id | resume_id | BTREE |
-| analysis_link | ix_analysis_link_vacancy_id | vacancy_id | BTREE |
-| analysis_link | ix_analysis_link_analysis_result_id | analysis_result_id | BTREE |
-| resume_version | ix_resume_version_resume_id | resume_id | BTREE |
-| resume_version | ix_resume_version_vacancy_id | vacancy_id | BTREE |
-| resume_version | ix_resume_version_parent_version_id | parent_version_id | BTREE |
-| ideal_resume | ix_ideal_resume_vacancy_id | vacancy_id | BTREE |
-| ideal_resume | ix_ideal_resume_vacancy_hash | vacancy_hash | BTREE |
-| ideal_resume | ix_ideal_resume_input_hash | input_hash | UNIQUE |
-
-## Relationships
-
-### Stage 1
-
-```
-resume_raw (1) ←───── (N) analysis_link (N) ─────→ (1) vacancy_raw
-                              │
-                              │ (N)
-                              ▼
-                         (1) ai_result
+vacancy_raw
+  -> ideal_resume
 ```
 
-- `analysis_link.resume_id` → `resume_raw.id` (ON DELETE CASCADE)
-- `analysis_link.vacancy_id` → `vacancy_raw.id` (ON DELETE CASCADE)
-- `analysis_link.analysis_result_id` → `ai_result.id` (ON DELETE CASCADE)
+## Security And Integrity Rules
 
-### Stage 2
+- User-bound tables must use `UUID` foreign keys to `users.id`, not string IDs.
+- Raw card data must never be added to this schema. Future payments should use
+  provider-hosted checkout and store only provider IDs, statuses, hashes and
+  audit metadata.
+- Refresh and email verification tokens are bearer secrets. Store hashes only.
+- `resume_raw` and `vacancy_raw` are shared cache records. User-specific edits
+  belong in `user_resume` / `user_vacancy` overrides.
+- Match-analysis caching belongs to `ai_result`; do not reintroduce global
+  `analysis_link` unless a user-owned history/audit requirement appears.
+- Feedback should be attributable without storing email as the primary key.
+- Timestamps should use timezone-aware columns.
+- Sensitive text tables need future retention/delete policy before commercial
+  production.
 
-```
-resume_raw (1) ←───── (N) resume_version (N) ─────→ (1) vacancy_raw
-      │                        │
-      │                        ├── parent_version_id → resume_version.id (self-ref)
-      │                        │
-      │                        └── analysis_id → ai_result.id
-      │
-      └───────────────────────────────────────────────→ ideal_resume (N) ───→ (1) vacancy_raw
-```
+## Indexes And Constraints
 
-- `resume_version.resume_id` → `resume_raw.id` (ON DELETE CASCADE)
-- `resume_version.vacancy_id` → `vacancy_raw.id` (ON DELETE CASCADE)
-- `resume_version.parent_version_id` → `resume_version.id` (ON DELETE SET NULL)
-- `resume_version.analysis_id` → `ai_result.id` (ON DELETE SET NULL)
-- `ideal_resume.vacancy_id` → `vacancy_raw.id` (ON DELETE CASCADE)
+| Table | Constraint / Index | Purpose |
+|---|---|---|
+| `users.email` | unique | One account per email. |
+| `oauth_accounts(provider, provider_user_id)` | unique | Prevent duplicate OAuth identity links. |
+| `refresh_tokens.token_hash` | unique index | Safe refresh token lookup/rotation. |
+| `email_verifications.token_hash` | unique index | Safe verification token lookup. |
+| `resume_raw.content_hash` | unique index | Resume de-duplication. |
+| `vacancy_raw.content_hash` | unique index | Vacancy de-duplication. |
+| `ai_result(operation, input_hash)` | unique index | LLM cache key. |
+| `user_resume(user_id, resume_id)` | unique | Prevent duplicate ownership links. |
+| `user_vacancy(user_id, vacancy_id)` | unique | Prevent duplicate ownership links. |
+| `user_version.type` | check | Only `adapt` or `ideal`. |
+| `feedback.metric_type / score` | checks | CSAT 1-5, NPS 0-10. |
 
-## Hash Logic
+## Migration Notes
 
-### Text Normalization
+Alembic is the source for new schema changes. The historical SQL files in
+`backend/db/migrations` document the pre-Alembic baseline and should not be
+extended for new work.
 
-```python
-def normalize_text(text: str) -> str:
-    text = text.strip()
-    text = text.replace("\t", " ")
-    text = re.sub(r" +", " ", text)  # collapse spaces
-    text = re.sub(r"\n\s*\n+", "\n\n", text)  # collapse newlines
-    lines = [line.strip() for line in text.split("\n")]
-    return "\n".join(lines)
-```
+Important current Alembic revisions:
 
-### Hash Computation
+- `20260429_0001_baseline_existing_sql.py`: baseline marker for existing DBs.
+- `20260502_0002_user_resource_ownership.py`: initial ownership mappings.
+- `20260507_0003_harden_user_data_model.py`: UUID owner FKs, private parsed
+  overrides, hashed token storage, `analysis_link` removal, feedback privacy.
 
-```python
-def compute_hash(text: str) -> str:
-    normalized = normalize_text(text)
-    return hashlib.sha256(normalized.encode("utf-8")).hexdigest()
-```
+## Subscription Extension Point
 
-### Match Hash
+Future billing should attach to `users.id`, not to `resume_raw`, `vacancy_raw` or
+`ai_result`.
 
-Для `analyze_match` хэш вычисляется от конкатенации JSON:
+Recommended future tables:
 
-```python
-combined = json.dumps(parsed_resume, sort_keys=True) + json.dumps(parsed_vacancy, sort_keys=True)
-hash = hashlib.sha256(combined.encode("utf-8")).hexdigest()
-```
+- `billing_plan`
+- `billing_price`
+- `plan_entitlement`
+- `user_subscription`
+- `usage_quota`
+- `usage_event`
+- `payment_checkout_session`
+- `payment_webhook_event`
+- `payment_transaction`
 
-## JSONB Structures
-
-### ai_result.output_json для parse_resume
-
-```json
-{
-  "personal_info": {...},
-  "summary": "...",
-  "skills": [...],
-  "work_experience": [...],
-  "education": [...],
-  "certifications": [...],
-  "languages": [...],
-  "raw_sections": {...}
-}
-```
-
-### ai_result.output_json для parse_vacancy
-
-```json
-{
-  "job_title": "...",
-  "company": "...",
-  "required_skills": [...],
-  "preferred_skills": [...],
-  "experience_requirements": {...},
-  "responsibilities": [...],
-  "ats_keywords": [...]
-}
-```
-
-### ai_result.output_json для analyze_match
-
-```json
-{
-  "score": 75,
-  "score_breakdown": {...},
-  "matched_required_skills": [...],
-  "missing_required_skills": [...],
-  "gaps": [...],
-  "checkbox_options": [...]
-}
-```
+Entitlement checks should run in application services before expensive AI
+operations and usage should be recorded transactionally with idempotency keys.

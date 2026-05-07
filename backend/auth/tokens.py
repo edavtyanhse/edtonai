@@ -25,12 +25,12 @@ async def create_token_pair(
     expires_at = datetime.now(timezone.utc) + timedelta(
         days=settings.jwt_refresh_token_expire_days
     )
-    refresh = await refresh_repo.create(
+    refresh_token = await refresh_repo.create(
         user_id=user_id,
         expires_at=expires_at,
     )
     return TokenPair(
         access_token=access_token,
-        refresh_token=str(refresh.id),
+        refresh_token=refresh_token,
         expires_in=settings.jwt_access_token_expire_minutes * 60,
     )

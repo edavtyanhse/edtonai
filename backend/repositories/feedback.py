@@ -1,5 +1,7 @@
 """Feedback repository for database operations."""
 
+from uuid import UUID
+
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.models.feedback import Feedback
@@ -13,7 +15,8 @@ class FeedbackRepository:
 
     async def create(
         self,
-        user_email: str,
+        user_id: UUID,
+        user_hash: str,
         metric_type: str,
         score: int,
         feedback_text: str,
@@ -23,7 +26,8 @@ class FeedbackRepository:
     ) -> Feedback:
         """Create new feedback entry."""
         feedback = Feedback(
-            user_email=user_email,
+            user_id=user_id,
+            user_hash=user_hash,
             metric_type=metric_type,
             score=score,
             feedback_text=feedback_text,

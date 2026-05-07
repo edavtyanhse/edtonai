@@ -49,7 +49,6 @@ SQL_COMMANDS = [
     # 4. Enable RLS
     "ALTER TABLE user_version ENABLE ROW LEVEL SECURITY;",
     "ALTER TABLE resume_raw ENABLE ROW LEVEL SECURITY;",
-    "ALTER TABLE analysis_link ENABLE ROW LEVEL SECURITY;",
     "ALTER TABLE vacancy_raw ENABLE ROW LEVEL SECURITY;",
     "ALTER TABLE ai_result ENABLE ROW LEVEL SECURITY;",
     "ALTER TABLE resume_version ENABLE ROW LEVEL SECURITY;",
@@ -69,8 +68,6 @@ SQL_COMMANDS = [
     "CREATE POLICY \"Authenticated users can access resume_raw\" ON resume_raw FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');",
     'DROP POLICY IF EXISTS "Authenticated users can access vacancy_raw" ON vacancy_raw;',
     "CREATE POLICY \"Authenticated users can access vacancy_raw\" ON vacancy_raw FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');",
-    'DROP POLICY IF EXISTS "Authenticated users can access analysis_link" ON analysis_link;',
-    "CREATE POLICY \"Authenticated users can access analysis_link\" ON analysis_link FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');",
     'DROP POLICY IF EXISTS "Authenticated users can access ai_result" ON ai_result;',
     "CREATE POLICY \"Authenticated users can access ai_result\" ON ai_result FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');",
     'DROP POLICY IF EXISTS "Authenticated users can access resume_version" ON resume_version;',
