@@ -332,8 +332,8 @@ def upgrade() -> None:
         "ALTER TABLE feedback "
         "ADD COLUMN IF NOT EXISTS user_hash VARCHAR(64)"
     )
-    _backfill_feedback_user_hashes()
     op.alter_column("feedback", "user_email", nullable=True)
+    _backfill_feedback_user_hashes()
     op.alter_column("feedback", "user_hash", nullable=False)
     op.execute("CREATE INDEX IF NOT EXISTS ix_feedback_user_id ON feedback (user_id)")
     op.execute("CREATE INDEX IF NOT EXISTS ix_feedback_user_hash ON feedback (user_hash)")
