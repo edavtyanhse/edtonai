@@ -11,7 +11,36 @@ steps:
     args: ['push', '$_AR_HOSTNAME/$PROJECT_ID/$_AR_REPO/backend']
 
   # ==========================================
-  # 2. Backend: Deploy
+  # 2. Backend: Migrate DB
+  # ==========================================
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'Migrate Backend DB'
+    args:
+      - 'run'
+      - '--rm'
+      - '-w'
+      - '/app/backend'
+      - '-e'
+      - 'POSTGRES_USER=$_POSTGRES_USER'
+      - '-e'
+      - 'POSTGRES_PASSWORD=$_POSTGRES_PASSWORD'
+      - '-e'
+      - 'POSTGRES_HOST=$_POSTGRES_HOST'
+      - '-e'
+      - 'POSTGRES_PORT=$_POSTGRES_PORT'
+      - '-e'
+      - 'POSTGRES_DB=$_POSTGRES_DB'
+      - '-e'
+      - 'LOG_LEVEL=INFO'
+      - '$_AR_HOSTNAME/$PROJECT_ID/$_AR_REPO/backend'
+      - 'alembic'
+      - '-c'
+      - 'alembic.ini'
+      - 'upgrade'
+      - 'head'
+
+  # ==========================================
+  # 3. Backend: Deploy
   # ==========================================
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     id: 'Deploy Backend'
@@ -32,10 +61,10 @@ steps:
       - '--memory'
       - '2Gi'
       - '--set-env-vars'
-      - 'POSTGRES_USER=$_POSTGRES_USER,POSTGRES_PASSWORD=$_POSTGRES_PASSWORD,POSTGRES_HOST=$_POSTGRES_HOST,POSTGRES_PORT=$_POSTGRES_PORT,POSTGRES_DB=$_POSTGRES_DB,AI_PROVIDER=$_AI_PROVIDER,DEEPSEEK_API_KEY=$_DEEPSEEK_API_KEY,DEEPSEEK_BASE_URL=$_DEEPSEEK_BASE_URL,AI_MODEL=$_AI_MODEL,AI_TIMEOUT_SECONDS=120,AI_MAX_RETRIES=3,AI_TEMPERATURE=0.3,AI_MAX_TOKENS=8192,LOG_LEVEL=INFO,GROQ_API_KEY=$_GROQ_API_KEY,AI_PROVIDER_PARSING=$_AI_PROVIDER_PARSING,AI_PROVIDER_REASONING=$_AI_PROVIDER_REASONING,HF_TOKEN=$_HF_TOKEN,HF_ENDPOINT_URL=$_HF_ENDPOINT_URL,DB_AUTO_CREATE=true,JWT_SECRET_KEY=$_JWT_SECRET_KEY,SMTP_HOST=smtp.yandex.ru,SMTP_PORT=465,SMTP_USERNAME=$_SMTP_USERNAME,SMTP_PASSWORD=$_SMTP_PASSWORD,SMTP_FROM_EMAIL=$_SMTP_USERNAME,FRONTEND_URL=$_FRONTEND_URL,BACKEND_URL=$_BACKEND_URL,GOOGLE_OAUTH_CLIENT_ID=$_GOOGLE_OAUTH_CLIENT_ID,GOOGLE_OAUTH_CLIENT_SECRET=$_GOOGLE_OAUTH_CLIENT_SECRET,YANDEX_OAUTH_CLIENT_ID=$_YANDEX_OAUTH_CLIENT_ID,YANDEX_OAUTH_CLIENT_SECRET=$_YANDEX_OAUTH_CLIENT_SECRET'
+      - 'POSTGRES_USER=$_POSTGRES_USER,POSTGRES_PASSWORD=$_POSTGRES_PASSWORD,POSTGRES_HOST=$_POSTGRES_HOST,POSTGRES_PORT=$_POSTGRES_PORT,POSTGRES_DB=$_POSTGRES_DB,AI_PROVIDER=$_AI_PROVIDER,DEEPSEEK_API_KEY=$_DEEPSEEK_API_KEY,DEEPSEEK_BASE_URL=$_DEEPSEEK_BASE_URL,AI_MODEL=$_AI_MODEL,AI_TIMEOUT_SECONDS=120,AI_MAX_RETRIES=3,AI_TEMPERATURE=0.3,AI_MAX_TOKENS=8192,LOG_LEVEL=INFO,GROQ_API_KEY=$_GROQ_API_KEY,AI_PROVIDER_PARSING=$_AI_PROVIDER_PARSING,AI_PROVIDER_REASONING=$_AI_PROVIDER_REASONING,HF_TOKEN=$_HF_TOKEN,HF_ENDPOINT_URL=$_HF_ENDPOINT_URL,DB_AUTO_CREATE=false,JWT_SECRET_KEY=$_JWT_SECRET_KEY,SMTP_HOST=smtp.yandex.ru,SMTP_PORT=465,SMTP_USERNAME=$_SMTP_USERNAME,SMTP_PASSWORD=$_SMTP_PASSWORD,SMTP_FROM_EMAIL=$_SMTP_USERNAME,FRONTEND_URL=$_FRONTEND_URL,BACKEND_URL=$_BACKEND_URL,GOOGLE_OAUTH_CLIENT_ID=$_GOOGLE_OAUTH_CLIENT_ID,GOOGLE_OAUTH_CLIENT_SECRET=$_GOOGLE_OAUTH_CLIENT_SECRET,YANDEX_OAUTH_CLIENT_ID=$_YANDEX_OAUTH_CLIENT_ID,YANDEX_OAUTH_CLIENT_SECRET=$_YANDEX_OAUTH_CLIENT_SECRET'
 
   # ==========================================
-  # 3. Frontend: Build & Push
+  # 4. Frontend: Build & Push
   # ==========================================
   - name: 'gcr.io/cloud-builders/docker'
     id: 'Build Frontend'
@@ -52,7 +81,7 @@ steps:
     args: ['push', '$_AR_HOSTNAME/$PROJECT_ID/$_AR_REPO/frontend']
 
   # ==========================================
-  # 4. Frontend: Deploy
+  # 5. Frontend: Deploy
   # ==========================================
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     id: 'Deploy Frontend'
