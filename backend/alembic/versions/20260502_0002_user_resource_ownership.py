@@ -7,9 +7,6 @@ Create Date: 2026-05-02
 
 from collections.abc import Sequence
 
-import sqlalchemy as sa
-from sqlalchemy.dialects import postgresql
-
 from alembic import op
 
 revision: str = "20260502_0002"
@@ -19,46 +16,54 @@ depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
-    op.create_table(
-        "user_resume",
-        sa.Column("id", postgresql.UUID(as_uuid=True), nullable=False),
-        sa.Column("user_id", sa.String(length=255), nullable=False),
-        sa.Column("resume_id", postgresql.UUID(as_uuid=True), nullable=False),
-        sa.Column("created_at", sa.DateTime(), nullable=False),
-        sa.ForeignKeyConstraint(["resume_id"], ["resume_raw.id"], ondelete="CASCADE"),
-        sa.PrimaryKeyConstraint("id"),
-        sa.UniqueConstraint(
-            "user_id",
-            "resume_id",
-            name="uq_user_resume_owner_record",
-        ),
+    # Production databases may already contain these tables from the historical
+    # SQL baseline or DB_AUTO_CREATE. Keep the first Alembic delta idempotent so
+    # previously unstamped databases can still reach current revisions safely.
+    op.execute(
+        """
+        CREATE TABLE IF NOT EXISTS user_resume (
+            id UUID PRIMARY KEY,
+            user_id VARCHAR(255) NOT NULL,
+            resume_id UUID NOT NULL REFERENCES resume_raw(id) ON DELETE CASCADE,
+            created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL,
+            CONSTRAINT uq_user_resume_owner_record UNIQUE (user_id, resume_id)
+        )
+        """
     )
-    op.create_index("ix_user_resume_resume_id", "user_resume", ["resume_id"])
-    op.create_index("ix_user_resume_user_id", "user_resume", ["user_id"])
-
-    op.create_table(
-        "user_vacancy",
-        sa.Column("id", postgresql.UUID(as_uuid=True), nullable=False),
-        sa.Column("user_id", sa.String(length=255), nullable=False),
-        sa.Column("vacancy_id", postgresql.UUID(as_uuid=True), nullable=False),
-        sa.Column("created_at", sa.DateTime(), nullable=False),
-        sa.ForeignKeyConstraint(
-            ["vacancy_id"],
-            ["vacancy_raw.id"],
-            ondelete="CASCADE",
-        ),
-        sa.PrimaryKeyConstraint("id"),
-        sa.UniqueConstraint(
-            "user_id",
-            "vacancy_id",
-            name="uq_user_vacancy_owner_record",
-        ),
+    op.execute(
+        "CREATE INDEX IF NOT EXISTS ix_user_resume_resume_id "
+        "ON user_resume (resume_id)"
     )
-    op.create_index("ix_user_vacancy_vacancy_id", "user_vacancy", ["vacancy_id"])
-    op.create_index("ix_user_vacancy_user_id", "user_vacancy", ["user_id"])
+    op.execute(
+        "CREATE INDEX IF NOT EXISTS ix_user_resume_user_id "
+        "ON user_resume (user_id)"
+    )
 
-    op.add_column("resume_version", sa.Column("user_id", sa.String(length=255)))
-    op.create_index("ix_resume_version_user_id", "resume_version", ["user_id"])
+    op.execute(
+        """
+        CREATE TABLE IF NOT EXISTS user_vacancy (
+            id UUID PRIMARY KEY,
+            user_id VARCHAR(255) NOT NULL,
+            vacancy_id UUID NOT NULL REFERENCES vacancy_raw(id) ON DELETE CASCADE,
+            created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL,
+            CONSTRAINT uq_user_vacancy_owner_record UNIQUE (user_id, vacancy_id)
+        )
+        """
+    )
+    op.execute(
+        "CREATE INDEX IF NOT EXISTS ix_user_vacancy_vacancy_id "
+        "ON user_vacancy (vacancy_id)"
+    )
+    op.execute(
+        "CREATE INDEX IF NOT EXISTS ix_user_vacancy_user_id "
+        "ON user_vacancy (user_id)"
+    )
+
+    op.execute("ALTER TABLE resume_version ADD COLUMN IF NOT EXISTS user_id VARCHAR(255)")
+    op.execute(
+        "CREATE INDEX IF NOT EXISTS ix_resume_version_user_id "
+        "ON resume_version (user_id)"
+    )
 
     op.execute("UPDATE user_version SET user_id = 'legacy-anonymous' WHERE user_id IS NULL")
     op.alter_column("user_version", "user_id", nullable=False)

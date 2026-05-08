@@ -90,17 +90,18 @@ def _alter_timestamps_to_timestamptz() -> None:
 
 
 def _backfill_token_hashes() -> None:
+    op.execute("CREATE EXTENSION IF NOT EXISTS pgcrypto")
     op.execute(
         """
         UPDATE refresh_tokens
-        SET token_hash = encode(sha256(id::text::bytea), 'hex')
+        SET token_hash = encode(digest(id::text, 'sha256'), 'hex')
         WHERE token_hash IS NULL
         """
     )
     op.execute(
         """
         UPDATE email_verifications
-        SET token_hash = encode(sha256(COALESCE(token, id::text)::bytea), 'hex')
+        SET token_hash = encode(digest(COALESCE(token, id::text), 'sha256'), 'hex')
         WHERE token_hash IS NULL
         """
     )
@@ -111,10 +112,11 @@ def _backfill_feedback_user_hashes() -> None:
         """
         UPDATE feedback
         SET user_hash = encode(
-                sha256(
+                digest(
                     lower(
                         trim(COALESCE(user_email, 'legacy-feedback:' || id::text))
-                    )::bytea
+                    ),
+                    'sha256'
                 ),
                 'hex'
             ),
@@ -128,21 +130,21 @@ def upgrade() -> None:
     _ensure_legacy_user()
 
     # User-specific parsed overrides keep global raw cache immutable after edits.
-    op.add_column(
-        "user_resume",
-        sa.Column("parsed_data_override", postgresql.JSONB(), nullable=True),
+    op.execute(
+        "ALTER TABLE user_resume "
+        "ADD COLUMN IF NOT EXISTS parsed_data_override JSONB"
     )
-    op.add_column(
-        "user_resume",
-        sa.Column("parsed_at", sa.DateTime(timezone=True), nullable=True),
+    op.execute(
+        "ALTER TABLE user_resume "
+        "ADD COLUMN IF NOT EXISTS parsed_at TIMESTAMP WITH TIME ZONE"
     )
-    op.add_column(
-        "user_vacancy",
-        sa.Column("parsed_data_override", postgresql.JSONB(), nullable=True),
+    op.execute(
+        "ALTER TABLE user_vacancy "
+        "ADD COLUMN IF NOT EXISTS parsed_data_override JSONB"
     )
-    op.add_column(
-        "user_vacancy",
-        sa.Column("parsed_at", sa.DateTime(timezone=True), nullable=True),
+    op.execute(
+        "ALTER TABLE user_vacancy "
+        "ADD COLUMN IF NOT EXISTS parsed_at TIMESTAMP WITH TIME ZONE"
     )
 
     # Convert owner columns from strings to real users.id foreign keys.
@@ -152,93 +154,136 @@ def upgrade() -> None:
     _cast_user_id_column_to_uuid("resume_version")
     op.alter_column("resume_version", "user_id", nullable=False)
 
-    op.create_foreign_key(
-        "fk_user_resume_user_id_users",
-        "user_resume",
-        "users",
-        ["user_id"],
-        ["id"],
-        ondelete="CASCADE",
+    op.execute(
+        """
+        DO $$
+        BEGIN
+            IF NOT EXISTS (
+                SELECT 1 FROM pg_constraint
+                WHERE conname = 'fk_user_resume_user_id_users'
+            ) THEN
+                ALTER TABLE user_resume
+                    ADD CONSTRAINT fk_user_resume_user_id_users
+                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
+            END IF;
+        END $$;
+        """
     )
-    op.create_foreign_key(
-        "fk_user_vacancy_user_id_users",
-        "user_vacancy",
-        "users",
-        ["user_id"],
-        ["id"],
-        ondelete="CASCADE",
+    op.execute(
+        """
+        DO $$
+        BEGIN
+            IF NOT EXISTS (
+                SELECT 1 FROM pg_constraint
+                WHERE conname = 'fk_user_vacancy_user_id_users'
+            ) THEN
+                ALTER TABLE user_vacancy
+                    ADD CONSTRAINT fk_user_vacancy_user_id_users
+                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
+            END IF;
+        END $$;
+        """
     )
-    op.create_foreign_key(
-        "fk_user_version_user_id_users",
-        "user_version",
-        "users",
-        ["user_id"],
-        ["id"],
-        ondelete="CASCADE",
+    op.execute(
+        """
+        DO $$
+        BEGIN
+            IF NOT EXISTS (
+                SELECT 1 FROM pg_constraint
+                WHERE conname = 'fk_user_version_user_id_users'
+            ) THEN
+                ALTER TABLE user_version
+                    ADD CONSTRAINT fk_user_version_user_id_users
+                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
+            END IF;
+        END $$;
+        """
     )
-    op.create_foreign_key(
-        "fk_resume_version_user_id_users",
-        "resume_version",
-        "users",
-        ["user_id"],
-        ["id"],
-        ondelete="CASCADE",
+    op.execute(
+        """
+        DO $$
+        BEGIN
+            IF NOT EXISTS (
+                SELECT 1 FROM pg_constraint
+                WHERE conname = 'fk_resume_version_user_id_users'
+            ) THEN
+                ALTER TABLE resume_version
+                    ADD CONSTRAINT fk_resume_version_user_id_users
+                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
+            END IF;
+        END $$;
+        """
     )
 
     # Store only hashes of bearer secrets going forward.
-    op.add_column(
-        "refresh_tokens",
-        sa.Column("token_hash", sa.String(length=64), nullable=True),
+    op.execute(
+        "ALTER TABLE refresh_tokens "
+        "ADD COLUMN IF NOT EXISTS token_hash VARCHAR(64)"
     )
-    op.add_column(
-        "email_verifications",
-        sa.Column("token_hash", sa.String(length=64), nullable=True),
+    op.execute(
+        "ALTER TABLE email_verifications "
+        "ADD COLUMN IF NOT EXISTS token_hash VARCHAR(64)"
     )
     op.alter_column("email_verifications", "token", nullable=True)
     _backfill_token_hashes()
     op.alter_column("refresh_tokens", "token_hash", nullable=False)
     op.alter_column("email_verifications", "token_hash", nullable=False)
-    op.create_index(
-        "ix_refresh_tokens_token_hash",
-        "refresh_tokens",
-        ["token_hash"],
-        unique=True,
+    op.execute(
+        "CREATE UNIQUE INDEX IF NOT EXISTS ix_refresh_tokens_token_hash "
+        "ON refresh_tokens (token_hash)"
     )
-    op.create_index(
-        "ix_email_verifications_token_hash",
-        "email_verifications",
-        ["token_hash"],
-        unique=True,
+    op.execute(
+        "CREATE UNIQUE INDEX IF NOT EXISTS ix_email_verifications_token_hash "
+        "ON email_verifications (token_hash)"
     )
 
     # Keep feedback attributable without storing email as the primary identifier.
-    op.add_column(
-        "feedback",
-        sa.Column("user_id", postgresql.UUID(as_uuid=True), nullable=True),
+    op.execute(
+        "ALTER TABLE feedback "
+        "ADD COLUMN IF NOT EXISTS user_id UUID"
     )
-    op.add_column("feedback", sa.Column("user_hash", sa.String(length=64)))
+    op.execute(
+        "ALTER TABLE feedback "
+        "ADD COLUMN IF NOT EXISTS user_hash VARCHAR(64)"
+    )
     _backfill_feedback_user_hashes()
     op.alter_column("feedback", "user_email", nullable=True)
     op.alter_column("feedback", "user_hash", nullable=False)
-    op.create_index("ix_feedback_user_id", "feedback", ["user_id"])
-    op.create_index("ix_feedback_user_hash", "feedback", ["user_hash"])
-    op.create_foreign_key(
-        "fk_feedback_user_id_users",
-        "feedback",
-        "users",
-        ["user_id"],
-        ["id"],
-        ondelete="SET NULL",
+    op.execute("CREATE INDEX IF NOT EXISTS ix_feedback_user_id ON feedback (user_id)")
+    op.execute("CREATE INDEX IF NOT EXISTS ix_feedback_user_hash ON feedback (user_hash)")
+    op.execute(
+        """
+        DO $$
+        BEGIN
+            IF NOT EXISTS (
+                SELECT 1 FROM pg_constraint
+                WHERE conname = 'fk_feedback_user_id_users'
+            ) THEN
+                ALTER TABLE feedback
+                    ADD CONSTRAINT fk_feedback_user_id_users
+                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL;
+            END IF;
+        END $$;
+        """
     )
 
     # analysis_link duplicated ai_result cache semantics and had no read-path.
     op.execute("DROP TABLE IF EXISTS analysis_link")
 
     op.execute("UPDATE user_version SET type = 'adapt' WHERE type NOT IN ('adapt', 'ideal')")
-    op.create_check_constraint(
-        "ck_user_version_type",
-        "user_version",
-        "type IN ('adapt', 'ideal')",
+    op.execute(
+        """
+        DO $$
+        BEGIN
+            IF NOT EXISTS (
+                SELECT 1 FROM pg_constraint WHERE conname = 'ck_user_version_type'
+            ) THEN
+                ALTER TABLE user_version
+                    ADD CONSTRAINT ck_user_version_type
+                    CHECK (type IN ('adapt', 'ideal'));
+            END IF;
+        END $$;
+        """
     )
     op.execute(
         """
