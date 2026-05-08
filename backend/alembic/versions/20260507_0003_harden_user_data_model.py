@@ -126,6 +126,86 @@ def _backfill_feedback_user_hashes() -> None:
     )
 
 
+def _drop_user_version_rls_policies() -> None:
+    """Drop legacy RLS policies that depend on user_version.user_id type."""
+    op.execute('DROP POLICY IF EXISTS "Users can view own versions" ON user_version')
+    op.execute('DROP POLICY IF EXISTS "Users can insert own versions" ON user_version')
+    op.execute('DROP POLICY IF EXISTS "Users can update own versions" ON user_version')
+    op.execute('DROP POLICY IF EXISTS "Users can delete own versions" ON user_version')
+
+
+def _create_user_version_uuid_rls_policies() -> None:
+    """Recreate user_version policies after user_id becomes UUID."""
+    op.execute(
+        """
+        CREATE POLICY "Users can view own versions"
+        ON user_version
+        FOR SELECT
+        USING (user_id = auth.uid() OR user_id IS NULL)
+        """
+    )
+    op.execute(
+        """
+        CREATE POLICY "Users can insert own versions"
+        ON user_version
+        FOR INSERT
+        WITH CHECK (user_id = auth.uid() OR user_id IS NULL)
+        """
+    )
+    op.execute(
+        """
+        CREATE POLICY "Users can update own versions"
+        ON user_version
+        FOR UPDATE
+        USING (user_id = auth.uid())
+        """
+    )
+    op.execute(
+        """
+        CREATE POLICY "Users can delete own versions"
+        ON user_version
+        FOR DELETE
+        USING (user_id = auth.uid())
+        """
+    )
+
+
+def _create_user_version_text_rls_policies() -> None:
+    """Recreate legacy user_version policies for downgrade back to text user_id."""
+    op.execute(
+        """
+        CREATE POLICY "Users can view own versions"
+        ON user_version
+        FOR SELECT
+        USING (user_id = auth.uid()::text OR user_id IS NULL)
+        """
+    )
+    op.execute(
+        """
+        CREATE POLICY "Users can insert own versions"
+        ON user_version
+        FOR INSERT
+        WITH CHECK (user_id = auth.uid()::text OR user_id IS NULL)
+        """
+    )
+    op.execute(
+        """
+        CREATE POLICY "Users can update own versions"
+        ON user_version
+        FOR UPDATE
+        USING (user_id = auth.uid()::text)
+        """
+    )
+    op.execute(
+        """
+        CREATE POLICY "Users can delete own versions"
+        ON user_version
+        FOR DELETE
+        USING (user_id = auth.uid()::text)
+        """
+    )
+
+
 def upgrade() -> None:
     _ensure_legacy_user()
 
@@ -148,11 +228,13 @@ def upgrade() -> None:
     )
 
     # Convert owner columns from strings to real users.id foreign keys.
+    _drop_user_version_rls_policies()
     _cast_user_id_column_to_uuid("user_resume")
     _cast_user_id_column_to_uuid("user_vacancy")
     _cast_user_id_column_to_uuid("user_version")
     _cast_user_id_column_to_uuid("resume_version")
     op.alter_column("resume_version", "user_id", nullable=False)
+    _create_user_version_uuid_rls_policies()
 
     op.execute(
         """
@@ -322,6 +404,7 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
+    _drop_user_version_rls_policies()
     op.drop_constraint("ck_user_version_type", "user_version", type_="check")
     op.create_table(
         "analysis_link",
@@ -396,6 +479,7 @@ def downgrade() -> None:
             type_=sa.String(length=255),
             postgresql_using="user_id::text",
         )
+    _create_user_version_text_rls_policies()
 
     op.drop_column("user_vacancy", "parsed_at")
     op.drop_column("user_vacancy", "parsed_data_override")
