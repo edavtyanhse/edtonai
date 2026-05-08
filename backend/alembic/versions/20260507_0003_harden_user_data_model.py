@@ -246,7 +246,8 @@ def upgrade() -> None:
             ) THEN
                 ALTER TABLE user_resume
                     ADD CONSTRAINT fk_user_resume_user_id_users
-                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
+                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                    NOT VALID;
             END IF;
         END $$;
         """
@@ -261,7 +262,8 @@ def upgrade() -> None:
             ) THEN
                 ALTER TABLE user_vacancy
                     ADD CONSTRAINT fk_user_vacancy_user_id_users
-                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
+                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                    NOT VALID;
             END IF;
         END $$;
         """
@@ -276,7 +278,8 @@ def upgrade() -> None:
             ) THEN
                 ALTER TABLE user_version
                     ADD CONSTRAINT fk_user_version_user_id_users
-                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
+                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                    NOT VALID;
             END IF;
         END $$;
         """
@@ -291,7 +294,8 @@ def upgrade() -> None:
             ) THEN
                 ALTER TABLE resume_version
                     ADD CONSTRAINT fk_resume_version_user_id_users
-                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
+                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                    NOT VALID;
             END IF;
         END $$;
         """
