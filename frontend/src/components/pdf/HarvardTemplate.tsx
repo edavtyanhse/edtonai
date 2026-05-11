@@ -1,20 +1,23 @@
 import { Document, Page, Text, View, StyleSheet, Font } from '@react-pdf/renderer'
 import type { ParsedResume } from '@/api'
 
-// Register fonts for Cyrillic support
-// Using Roboto as a safe, clean sans-serif/serif alternative that supports Cyrillic
+// Register Roboto with full Latin + Cyrillic glyph coverage.
+// The previous cdnjs/ink TTFs were subsetted to Latin only, which silently
+// dropped all Cyrillic characters and made the preview look blank for
+// Russian-language resumes. jsdelivr serves the full hinted TTFs from the
+// upstream googlefonts repo with permissive CORS.
 Font.register({
   family: 'Roboto',
   fonts: [
     {
-      src: 'https://cdnjs.cloudflare.com/ajax/libs/ink/3.1.10/fonts/Roboto/roboto-regular-webfont.ttf',
+      src: 'https://cdn.jsdelivr.net/gh/googlefonts/roboto@main/src/hinted/Roboto-Regular.ttf',
     },
     {
-      src: 'https://cdnjs.cloudflare.com/ajax/libs/ink/3.1.10/fonts/Roboto/roboto-bold-webfont.ttf',
+      src: 'https://cdn.jsdelivr.net/gh/googlefonts/roboto@main/src/hinted/Roboto-Bold.ttf',
       fontWeight: 'bold',
     },
     {
-      src: 'https://cdnjs.cloudflare.com/ajax/libs/ink/3.1.10/fonts/Roboto/roboto-italic-webfont.ttf',
+      src: 'https://cdn.jsdelivr.net/gh/googlefonts/roboto@main/src/hinted/Roboto-Italic.ttf',
       fontStyle: 'italic',
     },
   ],

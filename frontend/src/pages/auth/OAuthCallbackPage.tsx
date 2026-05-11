@@ -2,37 +2,35 @@ import { useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Loader2, XCircle } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
-import { refreshTokenApi } from '@/api/auth'
 import { Button } from '@/components'
 
 export default function OAuthCallbackPage() {
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
-  const { setAuth } = useAuth()
+  const { user, loading } = useAuth()
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     const errorMsg = searchParams.get('error')
-
     if (errorMsg) {
       setError(errorMsg)
       return
     }
-
     window.history.replaceState({}, '', '/oauth/callback')
+  }, [searchParams])
 
-    const refreshAndAuth = async () => {
-      try {
-        const data = await refreshTokenApi()
-        setAuth(data.access_token, data.user)
-        navigate('/', { replace: true })
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Authentication failed')
-      }
+  // Wait for AuthProvider's mount-time refresh to complete, then redirect.
+  // Issuing our own refreshTokenApi() here used to race with AuthProvider —
+  // the second caller would receive 401 because the first call rotated the
+  // refresh-token cookie.
+  useEffect(() => {
+    if (error || loading) return
+    if (user) {
+      navigate('/', { replace: true })
+    } else {
+      setError('Authentication failed')
     }
-
-    refreshAndAuth()
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [error, loading, user, navigate])
 
   if (error) {
     return (
