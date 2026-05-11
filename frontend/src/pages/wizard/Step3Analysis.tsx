@@ -72,12 +72,12 @@ export default function Step3Analysis() {
           <Loader2 className="w-16 h-16 text-blue-500 animate-spin relative z-10" />
         </div>
         <div className="text-center space-y-2">
-          <h3 className="text-xl font-medium text-white">{t('wizard.step1.analyzing')}</h3>
+          <h3 className="text-xl font-medium text-slate-900 dark:text-white">{t('wizard.step1.analyzing')}</h3>
           <p className="text-yellow-400 max-w-md mx-auto text-sm">
             ⏳ {t('wizard.step3.analyzing_warning')}
           </p>
         </div>
-        <Button variant="ghost" onClick={goToPrevStep} className="text-slate-400 hover:text-white">
+        <Button variant="ghost" onClick={goToPrevStep} className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">
           <ArrowLeft className="w-4 h-4 mr-2" />
           {t('common.back_to_step')} 2
         </Button>
@@ -90,8 +90,8 @@ export default function Step3Analysis() {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-bold text-white">{t('wizard.steps.analysis')}</h1>
-          <p className="text-slate-400 mt-1">{t('wizard.step3.description')}</p>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{t('wizard.steps.analysis')}</h1>
+          <p className="text-slate-600 dark:text-slate-400 mt-1">{t('wizard.step3.description')}</p>
         </div>
         <div className="p-4 bg-red-900/20 border border-red-500/30 rounded-lg text-red-300">
           {analyzeMutation.error instanceof Error
@@ -102,7 +102,7 @@ export default function Step3Analysis() {
           <Button
             variant="ghost"
             onClick={goToPrevStep}
-            className="text-slate-400 hover:text-white"
+            className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
             {t('common.back_to_step')} 2
@@ -121,14 +121,14 @@ export default function Step3Analysis() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-white">{t('wizard.steps.analysis')}</h1>
-        <p className="text-slate-400 mt-1">{t('wizard.step3.description')}</p>
+        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{t('wizard.steps.analysis')}</h1>
+        <p className="text-slate-600 dark:text-slate-400 mt-1">{t('wizard.step3.description')}</p>
       </div>
 
       {hasAnalysis && (
         <div className="space-y-6">
           {/* Score */}
-          <div className="bg-slate-800 border border-slate-700 rounded-lg p-6">
+          <div className="bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold">{t('wizard.step3.score')}</h2>
               <div className="flex items-center gap-3">
@@ -195,8 +195,8 @@ export default function Step3Analysis() {
           {/* Skills match */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Required skills */}
-            <div className="bg-slate-800 border border-slate-700 rounded-lg p-4">
-              <h3 className="font-medium text-white mb-3">{t('wizard.step3.required_skills')}</h3>
+            <div className="bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg p-4">
+              <h3 className="font-medium text-slate-900 dark:text-white mb-3">{t('wizard.step3.required_skills')}</h3>
               <div className="space-y-2">
                 {analysis.matched_required_skills.map((skill: string) => (
                   <SkillBadge key={skill} skill={skill} matched />
@@ -212,8 +212,8 @@ export default function Step3Analysis() {
             </div>
 
             {/* Preferred skills */}
-            <div className="bg-slate-800 border border-slate-700 rounded-lg p-4">
-              <h3 className="font-medium text-white mb-3">{t('wizard.step3.preferred_skills')}</h3>
+            <div className="bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg p-4">
+              <h3 className="font-medium text-slate-900 dark:text-white mb-3">{t('wizard.step3.preferred_skills')}</h3>
               <div className="space-y-2">
                 {analysis.matched_preferred_skills.map((skill: string) => (
                   <SkillBadge key={skill} skill={skill} matched />
@@ -231,8 +231,8 @@ export default function Step3Analysis() {
 
           {/* Gaps */}
           {analysis.gaps.length > 0 && (
-            <div className="bg-slate-800 border border-slate-700 rounded-lg p-4">
-              <h3 className="font-medium text-white mb-3">
+            <div className="bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg p-4">
+              <h3 className="font-medium text-slate-900 dark:text-white mb-3">
                 {t('wizard.step3.gaps')} ({analysis.gaps.length})
               </h3>
               <div className="space-y-3">
@@ -258,9 +258,9 @@ export default function Step3Analysis() {
                         }`}
                       />
                       <div>
-                        <p className="text-sm font-medium text-white">{gap.message}</p>
+                        <p className="text-sm font-medium text-slate-900 dark:text-white">{gap.message}</p>
                         {gap.suggestion && (
-                          <p className="text-sm text-slate-300 mt-1">{gap.suggestion}</p>
+                          <p className="text-sm text-slate-700 dark:text-slate-300 mt-1">{gap.suggestion}</p>
                         )}
                         <span className="inline-block mt-1 text-xs text-slate-500">
                           {gap.target_section}
@@ -278,7 +278,7 @@ export default function Step3Analysis() {
             <Button
               variant="ghost"
               onClick={goToPrevStep}
-              className="text-slate-400 hover:text-white"
+              className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
               {t('common.back_to_step')} 2
@@ -319,10 +319,10 @@ function ScoreCard({
   const percentage = (value / maxValue) * 100
 
   return (
-    <div className="bg-slate-700 rounded-lg p-3">
+    <div className="bg-slate-200 dark:bg-slate-700 rounded-lg p-3">
       <div className="flex items-center justify-between mb-1">
-        <span className="text-sm text-slate-300">{label}</span>
-        <span className="text-sm font-medium text-white">
+        <span className="text-sm text-slate-700 dark:text-slate-300">{label}</span>
+        <span className="text-sm font-medium text-slate-900 dark:text-white">
           {value}/{maxValue}
         </span>
       </div>

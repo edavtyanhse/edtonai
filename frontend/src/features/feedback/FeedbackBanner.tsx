@@ -41,10 +41,10 @@ export function FeedbackBanner({ onClick }: FeedbackBannerProps) {
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
-            <h3 className="text-lg font-semibold text-white">{title}</h3>
+            <h3 className="text-lg font-semibold text-slate-900 dark:text-white">{title}</h3>
             <Sparkles className="w-4 h-4 text-yellow-400" />
           </div>
-          <p className="text-sm text-slate-400 leading-relaxed">{description}</p>
+          <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">{description}</p>
         </div>
         <div className="flex-shrink-0 self-center">
           <span className="inline-flex items-center gap-2 px-5 py-2.5 bg-brand-600 hover:bg-brand-500 text-white text-sm font-medium rounded-lg transition-colors group-hover:bg-brand-500">

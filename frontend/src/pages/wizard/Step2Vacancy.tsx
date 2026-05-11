@@ -117,7 +117,7 @@ export default function Step2Vacancy() {
           <Button
             variant="ghost"
             onClick={handleChangeVacancy}
-            className="text-slate-400 hover:text-white"
+            className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
           >
             <RefreshCw className="w-4 h-4 mr-2" />
             {t('wizard.step2.change_vacancy')}
@@ -129,18 +129,18 @@ export default function Step2Vacancy() {
       {mode === 'input' ? (
         <div className="space-y-6">
           {/* URL Input */}
-          <div className="bg-slate-800 p-4 border border-slate-700 rounded-lg shadow-sm">
-            <label className="block text-sm font-medium text-slate-300 mb-2">
+          <div className="bg-white dark:bg-slate-800 p-4 border border-slate-300 dark:border-slate-700 rounded-lg shadow-sm">
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
               {t('wizard.step2.import_url')}
             </label>
             <div className="flex gap-2">
               <div className="relative flex-1">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <LinkIcon className="h-4 w-4 text-slate-400" />
+                  <LinkIcon className="h-4 w-4 text-slate-600 dark:text-slate-400" />
                 </div>
                 <input
                   type="url"
-                  className="block w-full pl-10 pr-3 py-2 border border-slate-600 rounded-md leading-5 bg-slate-900 text-white placeholder-slate-500 focus:outline-none focus:placeholder-slate-400 focus:ring-1 focus:ring-brand-500 focus:border-brand-500 sm:text-sm"
+                  className="block w-full pl-10 pr-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md leading-5 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white placeholder-slate-500 focus:outline-none focus:placeholder-slate-400 focus:ring-1 focus:ring-brand-500 focus:border-brand-500 sm:text-sm"
                   placeholder="https://hh.ru/vacancy/..."
                   value={url}
                   onChange={(e) => setUrl(e.target.value)}
@@ -158,10 +158,10 @@ export default function Step2Vacancy() {
 
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t border-slate-700" />
+              <span className="w-full border-t border-slate-300 dark:border-slate-700" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-slate-900 px-2 text-slate-500">{t('wizard.step1.text_tab')}</span>
+              <span className="bg-slate-50 dark:bg-slate-900 px-2 text-slate-500">{t('wizard.step1.text_tab')}</span>
             </div>
           </div>
 
@@ -224,7 +224,7 @@ export default function Step2Vacancy() {
               <Button
                 variant="ghost"
                 onClick={handleChangeVacancy}
-                className="text-slate-400 hover:text-white"
+                className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
               >
                 <RefreshCw className="w-4 h-4 mr-2" />
                 {t('wizard.step2.change_vacancy')}

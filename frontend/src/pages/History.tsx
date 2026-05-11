@@ -96,12 +96,12 @@ export default function History() {
         <Button
           variant="ghost"
           onClick={() => navigate('/')}
-          className="text-slate-400 hover:text-white"
+          className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
           {t('common.back', 'Back')}
         </Button>
-        <h1 className="text-2xl font-bold text-white">{t('history.title', 'Version History')}</h1>
+        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{t('history.title', 'Version History')}</h1>
       </div>
 
       {listError && (
@@ -111,11 +111,11 @@ export default function History() {
       )}
 
       {isLoadingList ? (
-        <div className="text-center py-12 text-slate-400">Loading...</div>
+        <div className="text-center py-12 text-slate-600 dark:text-slate-400">Loading...</div>
       ) : versions.length === 0 ? (
         <div className="text-center py-12">
           <FileText className="w-12 h-12 text-slate-600 mx-auto mb-4" />
-          <p className="text-slate-400 mb-4">{t('history.empty', 'No saved versions yet')}</p>
+          <p className="text-slate-600 dark:text-slate-400 mb-4">{t('history.empty', 'No saved versions yet')}</p>
           <Button onClick={() => navigate('/')}>
             {t('history.create_first', 'Create your first version')}
           </Button>
@@ -130,14 +130,14 @@ export default function History() {
                 className={`p-3 rounded-lg border cursor-pointer transition-all ${
                   selectedVersionId === version.id
                     ? 'border-blue-500 bg-blue-500/10'
-                    : 'border-slate-700 bg-slate-800/50 hover:border-slate-600'
+                    : 'border-slate-300 dark:border-slate-700 bg-slate-100/70 dark:bg-slate-800/50 hover:border-slate-400 dark:hover:border-slate-600'
                 }`}
                 onClick={() => setSelectedVersionId(version.id)}
               >
                 <div className="flex items-center justify-between mb-1">
                   <div className="flex items-center gap-2">
                     <Sparkles className="w-3.5 h-3.5 text-blue-400" />
-                    <span className="text-sm font-medium text-white">
+                    <span className="text-sm font-medium text-slate-900 dark:text-white">
                       {version.title || t('history.adapted_resume', 'Adapted Resume')}
                     </span>
                   </div>
@@ -167,7 +167,7 @@ export default function History() {
           <div className="lg:col-span-3">
             {selectedVersionId ? (
               isLoadingDetail ? (
-                <div className="bg-slate-800 rounded-xl border border-slate-700 p-8 text-center text-slate-400">
+                <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-300 dark:border-slate-700 p-8 text-center text-slate-600 dark:text-slate-400">
                   Loading...
                 </div>
               ) : selectedVersion ? (
@@ -178,9 +178,9 @@ export default function History() {
                 />
               ) : null
             ) : (
-              <div className="bg-slate-800/50 rounded-xl border border-slate-700 p-12 text-center">
+              <div className="bg-slate-100/70 dark:bg-slate-800/50 rounded-xl border border-slate-300 dark:border-slate-700 p-12 text-center">
                 <Eye className="w-10 h-10 mx-auto mb-3 text-slate-600" />
-                <p className="text-slate-400">
+                <p className="text-slate-600 dark:text-slate-400">
                   {t('history.select_version', 'Select a version to view details')}
                 </p>
               </div>
@@ -251,13 +251,13 @@ function VersionDetailView({
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div className="bg-slate-800/50 rounded-xl border border-slate-700 p-4">
+      <div className="bg-slate-100/70 dark:bg-slate-800/50 rounded-xl border border-slate-300 dark:border-slate-700 p-4">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-lg font-bold text-white">
+            <h2 className="text-lg font-bold text-slate-900 dark:text-white">
               {version.title || t('history.adapted_resume', 'Adapted Resume')}
             </h2>
-            <div className="flex items-center gap-3 mt-1 text-sm text-slate-400">
+            <div className="flex items-center gap-3 mt-1 text-sm text-slate-600 dark:text-slate-400">
               <span className="flex items-center gap-1">
                 <Calendar className="w-3.5 h-3.5" />
                 {formatDate(version.created_at)}
@@ -274,24 +274,24 @@ function VersionDetailView({
                 variant="outline"
                 size="sm"
                 onClick={() => setShowExportDropdown(!showExportDropdown)}
-                className="text-slate-300 border-slate-600 hover:bg-slate-700"
+                className="text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-600 hover:bg-slate-200 dark:hover:bg-slate-700"
               >
                 <Eye className="w-4 h-4 mr-1" />
                 {t('wizard.step4.export', 'Export')}
                 <ChevronDown className="w-3 h-3 ml-1" />
               </Button>
               {showExportDropdown && (
-                <div className="absolute right-0 mt-1 w-48 bg-slate-800 border border-slate-700 rounded-lg shadow-xl z-10">
+                <div className="absolute right-0 mt-1 w-48 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg shadow-xl z-10">
                   <button
                     onClick={() => handleExport('pdf')}
-                    className="w-full px-3 py-2 text-sm text-left text-slate-300 hover:bg-slate-700 rounded-t-lg flex items-center gap-2"
+                    className="w-full px-3 py-2 text-sm text-left text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-t-lg flex items-center gap-2"
                   >
                     <Download className="w-4 h-4" />
                     PDF Preview
                   </button>
                   <button
                     onClick={() => handleExport('hh')}
-                    className="w-full px-3 py-2 text-sm text-left text-slate-300 hover:bg-slate-700 rounded-b-lg flex items-center gap-2"
+                    className="w-full px-3 py-2 text-sm text-left text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-b-lg flex items-center gap-2"
                   >
                     <FileText className="w-4 h-4" />
                     HH Export
@@ -309,7 +309,7 @@ function VersionDetailView({
 
       {/* What Improved */}
       {hasChanges && (
-        <div className="bg-slate-800/50 rounded-xl border border-slate-700 p-4">
+        <div className="bg-slate-100/70 dark:bg-slate-800/50 rounded-xl border border-slate-300 dark:border-slate-700 p-4">
           <h3 className="text-sm font-semibold text-green-400 mb-3 flex items-center gap-2">
             <Sparkles className="w-4 h-4" />
             {t('wizard.step4.what_improved', 'What Improved')}
@@ -329,8 +329,8 @@ function VersionDetailView({
       )}
 
       {/* Tabs */}
-      <div className="bg-slate-800/50 rounded-xl border border-slate-700 overflow-hidden">
-        <div className="flex border-b border-slate-700">
+      <div className="bg-slate-100/70 dark:bg-slate-800/50 rounded-xl border border-slate-300 dark:border-slate-700 overflow-hidden">
+        <div className="flex border-b border-slate-300 dark:border-slate-700">
           {(['result', 'resume', 'vacancy'] as const).map((tab) => (
             <button
               key={tab}
@@ -338,7 +338,7 @@ function VersionDetailView({
               className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
                 activeTab === tab
                   ? 'text-blue-400 border-b-2 border-blue-500 bg-blue-500/5'
-                  : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
+                  : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-800 dark:hover:text-slate-200'
               }`}
             >
               {tab === 'result'
@@ -449,7 +449,7 @@ function FormattedText({ text }: { text: string }) {
         if (line.trim() === '') return <div key={i} className="h-3" />
         if (sectionPattern.test(line.trim())) {
           return (
-            <div key={i} className="mt-5 mb-1.5 pb-1 border-b border-slate-600">
+            <div key={i} className="mt-5 mb-1.5 pb-1 border-b border-slate-300 dark:border-slate-600">
               <span className="text-xs font-bold uppercase tracking-widest text-blue-400">
                 {line.trim()}
               </span>
@@ -458,7 +458,7 @@ function FormattedText({ text }: { text: string }) {
         }
         return (
           <div key={i} className={`${line.trim().startsWith('•') ? 'pl-4' : 'pl-3'} py-0.5`}>
-            <span className="text-slate-400 text-[13px] leading-relaxed">{line}</span>
+            <span className="text-slate-600 dark:text-slate-400 text-[13px] leading-relaxed">{line}</span>
           </div>
         )
       })}
@@ -502,7 +502,7 @@ function ResumeDiffViewer({ oldText, newText }: { oldText: string; newText: stri
 
         if (isSectionHeading(fullText)) {
           return (
-            <div key={lineIdx} className="mt-5 mb-1.5 pb-1 border-b border-slate-600">
+            <div key={lineIdx} className="mt-5 mb-1.5 pb-1 border-b border-slate-300 dark:border-slate-600">
               <span className="text-xs font-bold uppercase tracking-widest text-blue-400">
                 {fullText.trim()}
               </span>
@@ -540,7 +540,7 @@ function ResumeDiffViewer({ oldText, newText }: { oldText: string; newText: stri
                 )
               }
               return (
-                <span key={segIdx} className="text-slate-400 text-[13px] leading-relaxed">
+                <span key={segIdx} className="text-slate-600 dark:text-slate-400 text-[13px] leading-relaxed">
                   {seg.text}
                 </span>
               )

@@ -333,7 +333,7 @@ export default function Step4Improvement() {
           <Loader2 className="w-16 h-16 text-blue-500 animate-spin relative z-10" />
         </div>
         <div className="text-center space-y-2">
-          <h3 className="text-xl font-medium text-white">
+          <h3 className="text-xl font-medium text-slate-900 dark:text-white">
             {saveVersionMutation.isPending
               ? t('wizard.step4.applying')
               : t('wizard.step1.analyzing')}
@@ -351,7 +351,7 @@ export default function Step4Improvement() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
             {mode === 'analysis' ? t('wizard.step4.result_title') : t('wizard.step4.title')}
           </h1>
           <p className="text-gray-500 mt-1">
@@ -375,7 +375,7 @@ export default function Step4Improvement() {
               <Button
                 onClick={() => setShowExportDropdown(!showExportDropdown)}
                 disabled={reanalyzeMutation.isPending}
-                className="bg-slate-700 hover:bg-slate-600 border-slate-600"
+                className="bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 border-slate-300 dark:border-slate-600"
                 aria-haspopup="true"
                 aria-expanded={showExportDropdown}
                 aria-controls="export-menu"
@@ -397,10 +397,10 @@ export default function Step4Improvement() {
                     id="export-menu"
                     role="menu"
                     aria-labelledby="export-dropdown-trigger"
-                    className="absolute right-0 mt-2 w-56 bg-slate-800 rounded-lg shadow-xl border border-slate-700 z-20 py-1 overflow-hidden focus:outline-none"
+                    className="absolute right-0 mt-2 w-56 bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-slate-300 dark:border-slate-700 z-20 py-1 overflow-hidden focus:outline-none"
                   >
                     <button
-                      className={`w-full flex items-center px-4 py-3 text-sm transition-colors gap-3 focus:outline-none ${!state.parsedResume ? 'text-slate-500 cursor-not-allowed' : 'text-slate-200 hover:bg-slate-700 focus:bg-slate-700'}`}
+                      className={`w-full flex items-center px-4 py-3 text-sm transition-colors gap-3 focus:outline-none ${!state.parsedResume ? 'text-slate-500 cursor-not-allowed' : 'text-slate-800 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 focus:bg-slate-200 dark:focus:bg-slate-700'}`}
                       onClick={handleOpenPdfPreview}
                       disabled={!state.parsedResume}
                       role="menuitem"
@@ -410,7 +410,7 @@ export default function Step4Improvement() {
                         <div className="font-semibold">
                           {t('wizard.step4.preview_pdf', 'PDF Формат')}
                         </div>
-                        <div className="text-xs text-slate-400">
+                        <div className="text-xs text-slate-600 dark:text-slate-400">
                           {!state.parsedResume
                             ? t('wizard.step4.pdf_loading', 'Подготовка данных...')
                             : t('wizard.step4.pdf_desc', 'Для печати и отправки почтой')}
@@ -418,7 +418,7 @@ export default function Step4Improvement() {
                       </div>
                     </button>
                     <button
-                      className={`w-full flex items-center px-4 py-3 text-sm transition-colors gap-3 border-t border-slate-700 focus:outline-none ${!state.parsedResume ? 'text-slate-500 cursor-not-allowed' : 'text-slate-200 hover:bg-slate-700 focus:bg-slate-700'}`}
+                      className={`w-full flex items-center px-4 py-3 text-sm transition-colors gap-3 border-t border-slate-300 dark:border-slate-700 focus:outline-none ${!state.parsedResume ? 'text-slate-500 cursor-not-allowed' : 'text-slate-800 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 focus:bg-slate-200 dark:focus:bg-slate-700'}`}
                       onClick={handleOpenHhPreview}
                       disabled={!state.parsedResume}
                       role="menuitem"
@@ -428,7 +428,7 @@ export default function Step4Improvement() {
                         <div className="font-semibold">
                           {t('wizard.step4.hh_export', 'HeadHunter')}
                         </div>
-                        <div className="text-xs text-slate-400">
+                        <div className="text-xs text-slate-600 dark:text-slate-400">
                           {t('wizard.step4.hh_export_desc', 'Копирование блоков для hh.ru')}
                         </div>
                       </div>
@@ -455,8 +455,8 @@ export default function Step4Improvement() {
       {mode === 'checkboxes' ? (
         <div className="space-y-4">
           {/* Selection controls */}
-          <div className="flex items-center justify-between bg-slate-800 border border-slate-700 rounded-lg p-3">
-            <span className="text-sm text-slate-300">
+          <div className="flex items-center justify-between bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg p-3">
+            <span className="text-sm text-slate-700 dark:text-slate-300">
               {t('wizard.step4.selected')}: {selectedCount} / {totalCount}
             </span>
             <div className="flex gap-2">
@@ -470,7 +470,7 @@ export default function Step4Improvement() {
           </div>
 
           {/* Checkbox list */}
-          <div className="bg-slate-800 border border-slate-700 rounded-lg">
+          <div className="bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg">
             <CheckboxList
               options={checkboxOptions}
               selected={state.selectedCheckboxes}
@@ -497,7 +497,7 @@ export default function Step4Improvement() {
             <Button
               variant="ghost"
               onClick={goToPrevStep}
-              className="text-slate-400 hover:text-white"
+              className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
               {t('common.back_to_step')} 3
@@ -542,16 +542,16 @@ export default function Step4Improvement() {
 
           {/* Change review cards */}
           <div className="space-y-3">
-            <h3 className="font-medium text-white">{t('wizard.step4.changes_review')}</h3>
+            <h3 className="font-medium text-slate-900 dark:text-white">{t('wizard.step4.changes_review')}</h3>
             {pendingChanges.map((change, index) => (
               <div
                 key={index}
-                className={`bg-slate-800 border rounded-lg p-4 transition-colors ${
+                className={`bg-white dark:bg-slate-800 border rounded-lg p-4 transition-colors ${
                   change.status === 'confirmed'
                     ? 'border-green-500/30 bg-green-900/20'
                     : change.status === 'rejected'
                       ? 'border-red-500/30 bg-red-900/20 opacity-60'
-                      : 'border-slate-700'
+                      : 'border-slate-300 dark:border-slate-700'
                 }`}
               >
                 <div className="flex items-start justify-between gap-4">
@@ -571,7 +571,7 @@ export default function Step4Improvement() {
                         </span>
                       )}
                     </div>
-                    <p className="text-sm font-medium text-white">{change.what_changed}</p>
+                    <p className="text-sm font-medium text-slate-900 dark:text-white">{change.what_changed}</p>
                     {change.before_excerpt && (
                       <div className="mt-2 text-xs">
                         <span className="text-gray-500">{t('wizard.step4.before')} </span>
@@ -615,7 +615,7 @@ export default function Step4Improvement() {
             <Button
               variant="ghost"
               onClick={handleBackToCheckboxes}
-              className="text-slate-400 hover:text-white"
+              className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
               {t('wizard.step4.back_edit')}
@@ -634,7 +634,7 @@ export default function Step4Improvement() {
         /* mode === 'analysis' - Full analysis view */
         <div className="space-y-6">
           {/* 1. Score Panel - Full Width with ScoreCard bars */}
-          <div className="bg-slate-800 border border-slate-700 rounded-lg p-6">
+          <div className="bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold">{t('wizard.step4.score_new')}</h2>
               <div className="flex items-center gap-4">
@@ -711,13 +711,13 @@ export default function Step4Improvement() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Left: Resume Diff */}
             <div className="lg:col-span-2">
-              <h3 className="text-base font-semibold text-white flex items-center gap-2 mb-3">
+              <h3 className="text-base font-semibold text-slate-900 dark:text-white flex items-center gap-2 mb-3">
                 <Sparkles className="w-4 h-4 text-blue-400" />
                 {state.previousResumeText
                   ? t('wizard.step4.optimization_result')
                   : t('wizard.step4.current_resume')}
               </h3>
-              <div className="bg-slate-800 border border-slate-700 rounded-lg overflow-hidden">
+              <div className="bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg overflow-hidden">
                 <ResumeDiffViewer
                   oldText={state.previousResumeText || state.resumeText}
                   newText={state.resumeText}
@@ -766,8 +766,8 @@ export default function Step4Improvement() {
           {/* 3. Skills Section - Side by Side */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Required skills */}
-            <div className="bg-slate-800 border border-slate-700 rounded-lg p-5">
-              <h3 className="font-medium text-white mb-4 flex items-center gap-2">
+            <div className="bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg p-5">
+              <h3 className="font-medium text-slate-900 dark:text-white mb-4 flex items-center gap-2">
                 <CheckCircle className="w-4 h-4 text-blue-400" />
                 {t('wizard.step3.required_skills')}
               </h3>
@@ -786,8 +786,8 @@ export default function Step4Improvement() {
             </div>
 
             {/* Preferred skills */}
-            <div className="bg-slate-800 border border-slate-700 rounded-lg p-5">
-              <h3 className="font-medium text-white mb-4 flex items-center gap-2">
+            <div className="bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg p-5">
+              <h3 className="font-medium text-slate-900 dark:text-white mb-4 flex items-center gap-2">
                 <Sparkles className="w-4 h-4 text-yellow-500" />
                 {t('wizard.step3.preferred_skills')}
               </h3>
@@ -807,12 +807,12 @@ export default function Step4Improvement() {
           </div>
 
           {/* 4. Actions Footer */}
-          <div className="flex justify-between items-center pt-6 border-t border-slate-800">
+          <div className="flex justify-between items-center pt-6 border-t border-slate-200 dark:border-slate-800">
             <div className="flex gap-2">
               <Button
                 variant="outline"
                 onClick={reset}
-                className="text-slate-400 hover:text-white border-slate-700 hover:bg-slate-800"
+                className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800"
               >
                 <RotateCcw className="w-4 h-4 mr-2" />
                 {t('wizard.step4.start_over')}
@@ -840,7 +840,7 @@ export default function Step4Improvement() {
                     navigate('/')
                   }
                 }}
-                className="bg-slate-700 hover:bg-slate-600"
+                className="bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600"
               >
                 <Home className="w-4 h-4 mr-2" />
                 {t('common.done')}
@@ -864,7 +864,7 @@ export default function Step4Improvement() {
         isOpen={showSaveDialog}
         title={t('wizard.step4.apply_final')}
         message={
-          <p className="text-slate-300">
+          <p className="text-slate-700 dark:text-slate-300">
             {t(
               'wizard.step4.final_confirm_message',
               'Apply confirmed changes? The updated resume will become the base for further improvements.'
@@ -936,9 +936,9 @@ function ScoreCard({
   const percentage = (value / maxValue) * 100
 
   return (
-    <div className="bg-slate-800 rounded-lg p-3">
+    <div className="bg-white dark:bg-slate-800 rounded-lg p-3">
       <div className="flex items-center justify-between mb-1">
-        <span className="text-sm text-slate-400">{label}</span>
+        <span className="text-sm text-slate-600 dark:text-slate-400">{label}</span>
         <span className="text-sm font-medium">
           {value}/{maxValue}
         </span>
@@ -1043,12 +1043,12 @@ function ResumeDiffViewer({ oldText, newText }: { oldText: string; newText: stri
   if (!hasDiff) {
     const lines = formattedNew.split('\n')
     return (
-      <div className="bg-slate-900 p-4 overflow-auto max-h-[600px] custom-scrollbar font-mono">
+      <div className="bg-slate-50 dark:bg-slate-900 p-4 overflow-auto max-h-[600px] custom-scrollbar font-mono">
         {lines.map((line, i) => {
           if (line.trim() === '') return <div key={i} className="h-3" />
           if (isSectionHeading(line)) {
             return (
-              <div key={i} className="mt-5 mb-1.5 pb-1 border-b border-slate-600">
+              <div key={i} className="mt-5 mb-1.5 pb-1 border-b border-slate-300 dark:border-slate-600">
                 <span className="text-xs font-bold uppercase tracking-widest text-blue-400">
                   {line.trim()}
                 </span>
@@ -1057,7 +1057,7 @@ function ResumeDiffViewer({ oldText, newText }: { oldText: string; newText: stri
           }
           return (
             <div key={i} className={`${line.trim().startsWith('•') ? 'pl-4' : 'pl-3'} py-0.5`}>
-              <span className="text-slate-400 text-[13px] leading-relaxed">{line}</span>
+              <span className="text-slate-600 dark:text-slate-400 text-[13px] leading-relaxed">{line}</span>
             </div>
           )
         })}
@@ -1103,7 +1103,7 @@ function ResumeDiffViewer({ oldText, newText }: { oldText: string; newText: stri
     segments.some((s) => s.type === 'added' || s.type === 'removed')
 
   return (
-    <div className="bg-slate-900 p-4 overflow-auto max-h-[600px] custom-scrollbar font-mono">
+    <div className="bg-slate-50 dark:bg-slate-900 p-4 overflow-auto max-h-[600px] custom-scrollbar font-mono">
       {lines.map((lineSegments, lineIdx) => {
         // Empty line
         if (lineSegments.length === 0) return <div key={lineIdx} className="h-3" />
@@ -1117,7 +1117,7 @@ function ResumeDiffViewer({ oldText, newText }: { oldText: string; newText: stri
           return (
             <div
               key={lineIdx}
-              className={`mt-5 mb-1.5 pb-1 border-b border-slate-600 ${
+              className={`mt-5 mb-1.5 pb-1 border-b border-slate-300 dark:border-slate-600 ${
                 hasAdded ? 'border-green-500/40' : hasRemoved ? 'border-red-500/40' : ''
               }`}
             >
@@ -1164,7 +1164,7 @@ function ResumeDiffViewer({ oldText, newText }: { oldText: string; newText: stri
                 )
               }
               return (
-                <span key={segIdx} className="text-slate-400 text-[13px] leading-relaxed">
+                <span key={segIdx} className="text-slate-600 dark:text-slate-400 text-[13px] leading-relaxed">
                   {seg.text}
                 </span>
               )

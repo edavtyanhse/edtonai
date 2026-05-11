@@ -126,7 +126,7 @@ export default function Step1Resume() {
         className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors cursor-pointer relative ${
           hasFile
             ? 'border-green-500/50 bg-green-900/10'
-            : 'border-slate-600 hover:border-slate-500 hover:bg-slate-800/50'
+            : 'border-slate-300 dark:border-slate-600 hover:border-slate-400 dark:hover:border-slate-500 hover:bg-slate-100/70 dark:hover:bg-slate-800/50'
         }`}
         onDragOver={(e) => e.preventDefault()}
         onDrop={(e) => {
@@ -146,15 +146,15 @@ export default function Step1Resume() {
         {isProcessingFile ? (
           <div className="flex flex-col items-center justify-center py-4">
             <Loader2 className="w-8 h-8 text-blue-500 animate-spin mb-2" />
-            <p className="text-sm text-slate-300">{t('wizard.step1.analyzing')}</p>
+            <p className="text-sm text-slate-700 dark:text-slate-300">{t('wizard.step1.analyzing')}</p>
           </div>
         ) : hasFile ? (
           <div className="flex flex-col items-center justify-center py-4">
             <div className="w-12 h-12 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-3">
               <FileText className="w-6 h-6 text-green-400" />
             </div>
-            <h3 className="text-sm font-medium text-white">{t('wizard.step1.file_loaded')}</h3>
-            <p className="text-xs text-slate-400 mt-1">
+            <h3 className="text-sm font-medium text-slate-900 dark:text-white">{t('wizard.step1.file_loaded')}</h3>
+            <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
               {localText.length.toLocaleString()} {t('wizard.step1.characters')}
             </p>
             <button
@@ -175,8 +175,8 @@ export default function Step1Resume() {
             <div className="w-12 h-12 bg-blue-500/20 rounded-full flex items-center justify-center mx-auto mb-3">
               <UploadCloud className="w-6 h-6 text-blue-400" />
             </div>
-            <h3 className="text-sm font-medium text-white">{t('wizard.step1.upload_tab')}</h3>
-            <p className="text-xs text-slate-400 mt-1">{t('wizard.step1.supports')}</p>
+            <h3 className="text-sm font-medium text-slate-900 dark:text-white">{t('wizard.step1.upload_tab')}</h3>
+            <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">{t('wizard.step1.supports')}</p>
           </>
         )}
 
@@ -197,14 +197,14 @@ export default function Step1Resume() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">{t('wizard.step1.title')}</h1>
-          <p className="text-slate-400 mt-1">{t('wizard.step1.description')}</p>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{t('wizard.step1.title')}</h1>
+          <p className="text-slate-600 dark:text-slate-400 mt-1">{t('wizard.step1.description')}</p>
         </div>
         {mode === 'parsed' && (
           <Button
             variant="ghost"
             onClick={handleEditText}
-            className="text-slate-400 hover:text-white"
+            className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
           >
             <Edit3 className="w-4 h-4 mr-2" />
             {t('common.back_to_step')} 1
@@ -220,10 +220,10 @@ export default function Step1Resume() {
 
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t border-slate-700" />
+              <span className="w-full border-t border-slate-300 dark:border-slate-700" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-slate-900 px-2 text-slate-500">{t('wizard.step1.text_tab')}</span>
+              <span className="bg-slate-50 dark:bg-slate-900 px-2 text-slate-500">{t('wizard.step1.text_tab')}</span>
             </div>
           </div>
 
@@ -240,7 +240,7 @@ export default function Step1Resume() {
             <Button
               variant="ghost"
               onClick={() => navigate('/')}
-              className="text-slate-400 hover:text-white"
+              className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
               {t('common.back_to_home')}
@@ -289,7 +289,7 @@ export default function Step1Resume() {
             <Button
               variant="ghost"
               onClick={handleEditText}
-              className="text-slate-400 hover:text-white"
+              className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
               {t('common.back_to_step')} 1

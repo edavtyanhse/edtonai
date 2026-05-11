@@ -89,19 +89,19 @@ export default function HeadHunterPreview({ data, onClose }: Props) {
       aria-modal="true"
       aria-labelledby="hh-preview-title"
     >
-      <div className="bg-slate-900 border border-slate-700 w-full max-w-4xl h-[85vh] rounded-xl shadow-2xl flex flex-col overflow-hidden text-slate-100">
+      <div className="bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 w-full max-w-4xl h-[85vh] rounded-xl shadow-2xl flex flex-col overflow-hidden text-slate-100">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-slate-700 bg-slate-800/50">
+        <div className="flex items-center justify-between p-4 border-b border-slate-300 dark:border-slate-700 bg-slate-100/70 dark:bg-slate-800/50">
           <div>
             <div className="flex items-center gap-2">
-              <h2 id="hh-preview-title" className="text-xl font-bold text-white">
+              <h2 id="hh-preview-title" className="text-xl font-bold text-slate-900 dark:text-white">
                 {t('wizard.step4.hh_export', 'Экспорт для hh.ru')}
               </h2>
               <span className="px-2 py-0.5 bg-blue-500/20 text-blue-400 text-[10px] font-bold uppercase tracking-wider rounded border border-blue-500/30">
                 Beta
               </span>
             </div>
-            <p className="text-sm text-slate-400">
+            <p className="text-sm text-slate-600 dark:text-slate-400">
               {t(
                 'wizard.step4.hh_export_desc',
                 'Скопируйте блоки текста в форму резюме на HeadHunter'
@@ -111,7 +111,7 @@ export default function HeadHunterPreview({ data, onClose }: Props) {
           <Button
             variant="ghost"
             onClick={onClose}
-            className="text-slate-400 hover:text-white hover:bg-slate-700"
+            className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700"
             aria-label={t('common.close', 'Закрыть')}
           >
             <X className="w-5 h-5" />
@@ -119,12 +119,12 @@ export default function HeadHunterPreview({ data, onClose }: Props) {
         </div>
 
         {/* Tabs */}
-        <div className="flex border-b border-slate-700 bg-slate-900/50">
+        <div className="flex border-b border-slate-300 dark:border-slate-700 bg-white/50 dark:bg-slate-900/50">
           <button
             className={`flex-1 px-4 py-3 text-sm font-medium flex items-center justify-center gap-2 transition-colors ${
               activeTab === 'experience'
                 ? 'text-blue-400 border-b-2 border-blue-500 bg-blue-500/5'
-                : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
+                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-800 dark:hover:text-slate-200'
             }`}
             onClick={() => setActiveTab('experience')}
             aria-selected={activeTab === 'experience'}
@@ -138,7 +138,7 @@ export default function HeadHunterPreview({ data, onClose }: Props) {
             className={`flex-1 px-4 py-3 text-sm font-medium flex items-center justify-center gap-2 transition-colors ${
               activeTab === 'skills'
                 ? 'text-blue-400 border-b-2 border-blue-500 bg-blue-500/5'
-                : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
+                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-800 dark:hover:text-slate-200'
             }`}
             onClick={() => setActiveTab('skills')}
             aria-selected={activeTab === 'skills'}
@@ -154,7 +154,7 @@ export default function HeadHunterPreview({ data, onClose }: Props) {
             className={`flex-1 px-4 py-3 text-sm font-medium flex items-center justify-center gap-2 transition-colors ${
               activeTab === 'about'
                 ? 'text-blue-400 border-b-2 border-blue-500 bg-blue-500/5'
-                : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
+                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-800 dark:hover:text-slate-200'
             }`}
             onClick={() => setActiveTab('about')}
             aria-selected={activeTab === 'about'}
@@ -167,7 +167,7 @@ export default function HeadHunterPreview({ data, onClose }: Props) {
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-slate-900 custom-scrollbar">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-slate-50 dark:bg-slate-900 custom-scrollbar">
           {/* EXPERIENCE TAB */}
           {activeTab === 'experience' && (
             <div className="space-y-6">
@@ -191,15 +191,15 @@ export default function HeadHunterPreview({ data, onClose }: Props) {
                 return (
                   <div
                     key={i}
-                    className="bg-slate-800/50 rounded-lg border border-slate-700 shadow-sm p-4 hover:border-slate-600 transition-colors group"
+                    className="bg-slate-100/70 dark:bg-slate-800/50 rounded-lg border border-slate-300 dark:border-slate-700 shadow-sm p-4 hover:border-slate-400 dark:hover:border-slate-600 transition-colors group"
                   >
                     <div className="flex flex-col sm:flex-row justify-between items-start gap-3 mb-4">
                       <div className="flex-1">
-                        <h3 className="font-bold text-white text-lg">{exp.company}</h3>
+                        <h3 className="font-bold text-slate-900 dark:text-white text-lg">{exp.company}</h3>
                         <div className="flex items-center gap-2 mt-1">
                           <span className="text-blue-400 font-medium">{exp.title}</span>
                           <span className="text-slate-600">•</span>
-                          <span className="text-slate-400 text-xs">
+                          <span className="text-slate-600 dark:text-slate-400 text-xs">
                             {exp.start_date} — {exp.end_date || t('common.present', 'Present')}
                           </span>
                         </div>
@@ -211,7 +211,7 @@ export default function HeadHunterPreview({ data, onClose }: Props) {
                         className={`transition-all ${
                           copiedId === id
                             ? 'text-green-400 border-green-500/50 bg-green-500/10'
-                            : 'text-slate-300 border-slate-600 hover:bg-slate-700'
+                            : 'text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-600 hover:bg-slate-200 dark:hover:bg-slate-700'
                         }`}
                       >
                         {copiedId === id ? (
@@ -224,7 +224,7 @@ export default function HeadHunterPreview({ data, onClose }: Props) {
                           : t('wizard.step4.copy', 'Копировать')}
                       </Button>
                     </div>
-                    <div className="bg-slate-900/50 p-3 rounded text-sm text-slate-300 whitespace-pre-wrap border border-slate-700/50 font-mono leading-relaxed">
+                    <div className="bg-white/50 dark:bg-slate-900/50 p-3 rounded text-sm text-slate-700 dark:text-slate-300 whitespace-pre-wrap border border-slate-300/60 dark:border-slate-700/50 font-mono leading-relaxed">
                       {textToCopy}
                     </div>
                   </div>
@@ -236,9 +236,9 @@ export default function HeadHunterPreview({ data, onClose }: Props) {
           {/* SKILLS TAB */}
           {activeTab === 'skills' && (
             <div className="space-y-6">
-              <div className="bg-slate-800/50 rounded-lg border border-slate-700 shadow-sm p-4">
+              <div className="bg-slate-100/70 dark:bg-slate-800/50 rounded-lg border border-slate-300 dark:border-slate-700 shadow-sm p-4">
                 <div className="flex justify-between items-center mb-6">
-                  <h3 className="font-bold text-white uppercase tracking-wider text-xs">
+                  <h3 className="font-bold text-slate-900 dark:text-white uppercase tracking-wider text-xs">
                     {t('wizard.step3.required_skills', 'Ключевые навыки')}
                   </h3>
                   <Button
@@ -250,7 +250,7 @@ export default function HeadHunterPreview({ data, onClose }: Props) {
                     className={
                       copiedId === 'skills-all'
                         ? 'text-green-400 border-green-500/50 bg-green-500/10'
-                        : 'border-slate-600'
+                        : 'border-slate-300 dark:border-slate-600'
                     }
                   >
                     {copiedId === 'skills-all' ? (
@@ -293,9 +293,9 @@ export default function HeadHunterPreview({ data, onClose }: Props) {
           {/* ABOUT TAB */}
           {activeTab === 'about' && (
             <div className="space-y-6">
-              <div className="bg-slate-800/50 rounded-lg border border-slate-700 shadow-sm p-4">
+              <div className="bg-slate-100/70 dark:bg-slate-800/50 rounded-lg border border-slate-300 dark:border-slate-700 shadow-sm p-4">
                 <div className="flex justify-between items-center mb-4">
-                  <h3 className="font-bold text-white uppercase tracking-wider text-xs">
+                  <h3 className="font-bold text-slate-900 dark:text-white uppercase tracking-wider text-xs">
                     {t('wizard.step4.about', 'О себе')}
                   </h3>
                   <Button
@@ -305,7 +305,7 @@ export default function HeadHunterPreview({ data, onClose }: Props) {
                     className={
                       copiedId === 'summary'
                         ? 'text-green-400 border-green-500/50 bg-green-500/10'
-                        : 'border-slate-600'
+                        : 'border-slate-300 dark:border-slate-600'
                     }
                   >
                     {copiedId === 'summary' ? (
@@ -316,7 +316,7 @@ export default function HeadHunterPreview({ data, onClose }: Props) {
                     {t('wizard.step4.copy', 'Копировать')}
                   </Button>
                 </div>
-                <div className="bg-slate-900/50 p-4 rounded text-sm text-slate-300 whitespace-pre-wrap border border-slate-700/50 leading-relaxed italic">
+                <div className="bg-white/50 dark:bg-slate-900/50 p-4 rounded text-sm text-slate-700 dark:text-slate-300 whitespace-pre-wrap border border-slate-300/60 dark:border-slate-700/50 leading-relaxed italic">
                   {summary || t('wizard.step3.no_data', 'Нет данных')}
                 </div>
               </div>
@@ -325,10 +325,10 @@ export default function HeadHunterPreview({ data, onClose }: Props) {
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t border-slate-700 bg-slate-800/50 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="p-4 border-t border-slate-300 dark:border-slate-700 bg-slate-100/70 dark:bg-slate-800/50 flex flex-col sm:flex-row items-center justify-between gap-4">
           <Button
             variant="outline"
-            className="w-full sm:w-auto text-slate-300 border-slate-600 hover:bg-slate-700 order-2 sm:order-1"
+            className="w-full sm:w-auto text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-600 hover:bg-slate-200 dark:hover:bg-slate-700 order-2 sm:order-1"
             onClick={() => handleCopy(getFullExportText(), 'full-export')}
           >
             {copiedId === 'full-export' ? (

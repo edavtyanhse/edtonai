@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom'
 import { FileText, Sparkles, ArrowRight } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import LanguageSwitcher from '@/components/LanguageSwitcher'
+import ThemeSwitcher from '@/components/ThemeSwitcher'
 // FEEDBACK FEATURE - remove these imports to disable
 import { FeedbackBanner, FeedbackModal, useFeedback } from '@/features/feedback'
 
@@ -16,7 +17,8 @@ export default function HomePage() {
       <div className="max-w-4xl w-full">
         {/* Header */}
         <div className="text-center mb-12 relative">
-          <div className="absolute right-0 top-0">
+          <div className="absolute right-0 top-0 flex items-center gap-1">
+            <ThemeSwitcher />
             <LanguageSwitcher />
           </div>
           <h1 className="text-4xl font-bold text-gray-900 mb-4">{t('header.title')}</h1>

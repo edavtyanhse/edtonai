@@ -3,6 +3,7 @@ import { Menu, X, Globe, User as UserIcon, LogOut } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
 import { Language } from './types'
+import ThemeSwitcher from '@/components/ThemeSwitcher'
 
 interface HeaderProps {
   lang: Language
@@ -48,10 +49,10 @@ const Header: React.FC<HeaderProps> = ({ lang, toggleLang }) => {
 
   return (
     <header
-      className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${isScrolled ? 'bg-slate-900/80 backdrop-blur-lg border-b border-slate-800 py-3' : 'bg-transparent py-5'}`}
+      className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${isScrolled ? 'bg-white/80 dark:bg-slate-900/80 backdrop-blur-lg border-b border-slate-200 dark:border-slate-800 py-3' : 'bg-transparent py-5'}`}
     >
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
-        <div className="flex items-center gap-2 font-bold text-2xl text-white">
+        <div className="flex items-center gap-2 font-bold text-2xl text-slate-900 dark:text-white">
           <div className="w-8 h-8 bg-gradient-to-tr from-brand-600 to-indigo-500 rounded-lg flex items-center justify-center shadow-lg shadow-brand-500/20">
             <span className="text-white">E</span>
           </div>
@@ -62,33 +63,34 @@ const Header: React.FC<HeaderProps> = ({ lang, toggleLang }) => {
         <nav className="hidden md:flex items-center gap-8">
           <a
             href="#features"
-            className="text-slate-300 hover:text-white text-sm font-medium transition-colors"
+            className="text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white text-sm font-medium transition-colors"
           >
             {t.features}
           </a>
           <a
             href="#how-it-works"
-            className="text-slate-300 hover:text-white text-sm font-medium transition-colors"
+            className="text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white text-sm font-medium transition-colors"
           >
             {t.howItWorks}
           </a>
         </nav>
 
         <div className="hidden md:flex items-center gap-4">
+          <ThemeSwitcher />
           <button
             onClick={toggleLang}
-            className="text-slate-300 hover:text-white flex items-center gap-1 text-sm font-medium uppercase"
+            className="text-slate-700 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white flex items-center gap-1 text-sm font-medium uppercase transition-colors"
           >
             <Globe className="w-4 h-4" />
             {lang}
           </button>
-          <div className="h-4 w-px bg-slate-700 mx-2"></div>
+          <div className="h-4 w-px bg-slate-300 dark:bg-slate-700 mx-2"></div>
 
           {user ? (
             <>
               <button
                 onClick={handleLogout}
-                className="text-slate-400 hover:text-white transition-colors flex items-center gap-2 text-sm font-medium"
+                className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors flex items-center gap-2 text-sm font-medium"
               >
                 <LogOut className="w-4 h-4" />
                 {t.logout}
@@ -104,7 +106,7 @@ const Header: React.FC<HeaderProps> = ({ lang, toggleLang }) => {
             <>
               <Link
                 to="/login"
-                className="text-white font-medium text-sm hover:text-brand-300 transition-colors cursor-pointer"
+                className="text-slate-900 dark:text-white font-medium text-sm hover:text-brand-300 transition-colors cursor-pointer"
               >
                 {t.login}
               </Link>
@@ -119,35 +121,35 @@ const Header: React.FC<HeaderProps> = ({ lang, toggleLang }) => {
         </div>
 
         {/* Mobile Menu Button */}
-        <button className="md:hidden text-white" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
+        <button className="md:hidden text-slate-900 dark:text-white" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
           {mobileMenuOpen ? <X /> : <Menu />}
         </button>
       </div>
 
       {/* Mobile Menu */}
       {mobileMenuOpen && (
-        <div className="md:hidden absolute top-full left-0 w-full bg-slate-900 border-b border-slate-800 p-4 flex flex-col gap-4 animate-in slide-in-from-top-2">
+        <div className="md:hidden absolute top-full left-0 w-full bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 p-4 flex flex-col gap-4 animate-in slide-in-from-top-2">
           <a
             href="#features"
             onClick={() => setMobileMenuOpen(false)}
-            className="text-slate-300 hover:text-white py-2"
+            className="text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white py-2"
           >
             {t.features}
           </a>
           <a
             href="#how-it-works"
             onClick={() => setMobileMenuOpen(false)}
-            className="text-slate-300 hover:text-white py-2"
+            className="text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white py-2"
           >
             {t.howItWorks}
           </a>
-          <div className="h-px bg-slate-800 my-2" />
+          <div className="h-px bg-white dark:bg-slate-800 my-2" />
           <button
             onClick={() => {
               toggleLang()
               setMobileMenuOpen(false)
             }}
-            className="text-slate-300 hover:text-white py-2 flex items-center gap-2 uppercase"
+            className="text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white py-2 flex items-center gap-2 uppercase"
           >
             <Globe className="w-4 h-4" /> Switch to {lang === 'en' ? 'RU' : 'EN'}
           </button>
@@ -164,7 +166,7 @@ const Header: React.FC<HeaderProps> = ({ lang, toggleLang }) => {
                 </Link>
                 <button
                   onClick={handleLogout}
-                  className="text-slate-400 py-2 text-left flex items-center gap-2 justify-center"
+                  className="text-slate-600 dark:text-slate-400 py-2 text-left flex items-center gap-2 justify-center"
                 >
                   <LogOut className="w-4 h-4" /> {t.logout}
                 </button>
@@ -175,7 +177,7 @@ const Header: React.FC<HeaderProps> = ({ lang, toggleLang }) => {
               <Link
                 to="/login"
                 onClick={() => setMobileMenuOpen(false)}
-                className="text-white font-medium py-2 text-left"
+                className="text-slate-900 dark:text-white font-medium py-2 text-left"
               >
                 {t.login}
               </Link>

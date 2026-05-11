@@ -36,13 +36,13 @@ export default function OAuthCallbackPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-900 px-4">
-        <div className="max-w-md w-full bg-slate-800 p-8 rounded-xl shadow-lg border border-slate-700 text-center space-y-4">
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900 px-4">
+        <div className="max-w-md w-full bg-white dark:bg-slate-800 p-8 rounded-xl shadow-lg border border-slate-300 dark:border-slate-700 text-center space-y-4">
           <div className="w-16 h-16 bg-red-900/30 rounded-full flex items-center justify-center mx-auto border border-red-500/30">
             <XCircle className="w-8 h-8 text-red-400" />
           </div>
-          <h2 className="text-2xl font-bold text-white">Authentication Failed</h2>
-          <p className="text-slate-400">{error}</p>
+          <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Authentication Failed</h2>
+          <p className="text-slate-600 dark:text-slate-400">{error}</p>
           <Button onClick={() => navigate('/login')} className="w-full">
             Back to Login
           </Button>
@@ -52,7 +52,7 @@ export default function OAuthCallbackPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-900">
+    <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900">
       <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
     </div>
   )

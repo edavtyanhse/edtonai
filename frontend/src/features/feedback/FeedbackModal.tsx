@@ -81,13 +81,13 @@ export function FeedbackModal({ isOpen, onClose, source: _source = 'manual' }: F
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="w-full max-w-lg bg-slate-900 rounded-lg shadow-xl flex flex-col mx-4 border border-slate-700">
+      <div className="w-full max-w-lg bg-slate-50 dark:bg-slate-900 rounded-lg shadow-xl flex flex-col mx-4 border border-slate-300 dark:border-slate-700">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-slate-700">
-          <h2 className="text-2xl font-bold text-white">{title}</h2>
+        <div className="flex items-center justify-between p-6 border-b border-slate-300 dark:border-slate-700">
+          <h2 className="text-2xl font-bold text-slate-900 dark:text-white">{title}</h2>
           <button
             onClick={handleClose}
-            className="p-2 text-slate-400 hover:text-white transition-colors rounded-lg hover:bg-slate-800"
+            className="p-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"
             disabled={mutation.isPending}
           >
             <X className="w-5 h-5" />
@@ -99,17 +99,17 @@ export function FeedbackModal({ isOpen, onClose, source: _source = 'manual' }: F
           {submitted ? (
             <div className="flex flex-col items-center justify-center py-8 text-center">
               <CheckCircle className="w-16 h-16 text-green-500 mb-4" />
-              <p className="text-xl font-semibold text-white mb-2">Спасибо за отзыв!</p>
-              <p className="text-slate-400 mb-6">Ваше мнение помогает нам становиться лучше</p>
+              <p className="text-xl font-semibold text-slate-900 dark:text-white mb-2">Спасибо за отзыв!</p>
+              <p className="text-slate-600 dark:text-slate-400 mb-6">Ваше мнение помогает нам становиться лучше</p>
               <Button variant="primary" onClick={handleClose}>
                 Закрыть
               </Button>
             </div>
           ) : (
             <>
-              <p className="text-sm text-slate-400 mb-4">{description}</p>
+              <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">{description}</p>
               <div className="mb-4">
-                <p className="text-sm text-slate-300 mb-2">{scoreTitle}</p>
+                <p className="text-sm text-slate-700 dark:text-slate-300 mb-2">{scoreTitle}</p>
                 <div className="flex flex-wrap gap-2">
                   {(metricType === 'csat'
                     ? [1, 2, 3, 4, 5]
@@ -122,7 +122,7 @@ export function FeedbackModal({ isOpen, onClose, source: _source = 'manual' }: F
                       className={`h-9 w-9 rounded-md border text-sm font-medium transition-colors ${
                         score === value
                           ? 'bg-brand-600 border-brand-500 text-white'
-                          : 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700'
+                          : 'bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
                       }`}
                       disabled={mutation.isPending}
                     >
@@ -136,7 +136,7 @@ export function FeedbackModal({ isOpen, onClose, source: _source = 'manual' }: F
                 onChange={(e) => setFeedback(e.target.value)}
                 placeholder={placeholder}
                 rows={6}
-                className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent resize-none"
+                className="w-full px-4 py-3 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent resize-none"
                 disabled={mutation.isPending}
               />
               {mutation.isError && (
@@ -152,7 +152,7 @@ export function FeedbackModal({ isOpen, onClose, source: _source = 'manual' }: F
 
         {/* Footer */}
         {!submitted && (
-          <div className="flex items-center justify-end gap-3 p-6 border-t border-slate-700">
+          <div className="flex items-center justify-end gap-3 p-6 border-t border-slate-300 dark:border-slate-700">
             <Button variant="ghost" onClick={handleClose} disabled={mutation.isPending}>
               {lang === 'ru' ? 'Отмена' : 'Отмена'}
             </Button>

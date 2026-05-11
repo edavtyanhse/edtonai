@@ -1,6 +1,7 @@
 import { Check, Home } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import LanguageSwitcher from './LanguageSwitcher'
+import ThemeSwitcher from './ThemeSwitcher'
 
 export interface WizardStep {
   id: number
@@ -21,15 +22,15 @@ export default function WizardLayout({ steps, currentStep, children }: WizardLay
   const { t } = useTranslation()
 
   return (
-    <div className="min-h-screen bg-slate-900 text-white">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white">
       {/* Stepper Header */}
-      <div className="bg-slate-900/80 backdrop-blur-lg border-b border-slate-800 sticky top-0 z-40">
+      <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-lg border-b border-slate-200 dark:border-slate-800 sticky top-0 z-40">
         <div className="max-w-5xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-4">
               <button
                 onClick={() => navigate('/')}
-                className="flex items-center gap-2 p-2 hover:bg-slate-800 rounded-lg transition-colors text-slate-400 hover:text-white group"
+                className="flex items-center gap-2 p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white group"
                 title={t('wizard.home_tooltip')}
               >
                 <Home className="w-5 h-5" />
@@ -37,9 +38,12 @@ export default function WizardLayout({ steps, currentStep, children }: WizardLay
                   {t('common.back_home')}
                 </span>
               </button>
-              <h1 className="text-lg font-semibold text-white">{t('wizard.page_title')}</h1>
+              <h1 className="text-lg font-semibold text-slate-900 dark:text-white">{t('wizard.page_title')}</h1>
             </div>
-            <LanguageSwitcher />
+            <div className="flex items-center gap-1">
+              <ThemeSwitcher />
+              <LanguageSwitcher />
+            </div>
           </div>
           <nav aria-label="Progress">
             <ol className="flex items-center justify-between relative z-0">
@@ -54,7 +58,7 @@ export default function WizardLayout({ steps, currentStep, children }: WizardLay
                       {index > 0 && (
                         <div
                           className={`absolute left-0 right-1/2 top-5 h-0.5 -translate-y-1/2 ${
-                            isCompleted || isCurrent ? 'bg-brand-500' : 'bg-slate-800'
+                            isCompleted || isCurrent ? 'bg-brand-500' : 'bg-white dark:bg-slate-800'
                           }`}
                         />
                       )}
@@ -63,7 +67,7 @@ export default function WizardLayout({ steps, currentStep, children }: WizardLay
                       {index < steps.length - 1 && (
                         <div
                           className={`absolute left-1/2 right-0 top-5 h-0.5 -translate-y-1/2 ${
-                            isCompleted ? 'bg-brand-500' : 'bg-slate-800'
+                            isCompleted ? 'bg-brand-500' : 'bg-white dark:bg-slate-800'
                           }`}
                         />
                       )}
@@ -76,7 +80,7 @@ export default function WizardLayout({ steps, currentStep, children }: WizardLay
                               ? 'bg-brand-600 text-white shadow-lg shadow-brand-500/25'
                               : isCurrent
                                 ? 'bg-brand-500 text-white ring-4 ring-brand-500/20 shadow-lg shadow-brand-500/40 scale-110'
-                                : 'bg-slate-800 text-slate-500 border border-slate-700'
+                                : 'bg-white dark:bg-slate-800 text-slate-500 border border-slate-300 dark:border-slate-700'
                           }`}
                         >
                           {isCompleted ? <Check className="w-5 h-5" /> : step.id}
@@ -87,7 +91,7 @@ export default function WizardLayout({ steps, currentStep, children }: WizardLay
                               isCurrent
                                 ? 'text-brand-400'
                                 : isCompleted
-                                  ? 'text-white'
+                                  ? 'text-slate-900 dark:text-white'
                                   : 'text-slate-500'
                             }`}
                           >

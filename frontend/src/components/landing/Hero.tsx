@@ -46,7 +46,7 @@ const Hero: React.FC<HeroProps> = ({ lang }) => {
   const t = content[lang]
 
   return (
-    <section className="relative w-full min-h-screen flex items-center justify-center pt-24 pb-12 px-4 sm:px-6 lg:px-8 overflow-hidden bg-slate-900">
+    <section className="relative w-full min-h-screen flex items-center justify-center pt-24 pb-12 px-4 sm:px-6 lg:px-8 overflow-hidden bg-slate-50 dark:bg-slate-900">
       {/* Background Blobs */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-brand-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
@@ -62,10 +62,10 @@ const Hero: React.FC<HeroProps> = ({ lang }) => {
           transition={{ duration: 0.8 }}
           className="text-center lg:text-left"
         >
-          <h1 className="text-5xl lg:text-7xl font-extrabold tracking-tight text-white leading-tight mb-6">
+          <h1 className="text-5xl lg:text-7xl font-extrabold tracking-tight text-slate-900 dark:text-white leading-tight mb-6">
             {t.title}
           </h1>
-          <p className="text-lg text-slate-400 mb-8 max-w-2xl mx-auto lg:mx-0">{t.description}</p>
+          <p className="text-lg text-slate-600 dark:text-slate-400 mb-8 max-w-2xl mx-auto lg:mx-0">{t.description}</p>
           <div className="flex flex-col sm:flex-row items-center gap-4 justify-center lg:justify-start">
             <Link
               to="/wizard"
@@ -76,7 +76,7 @@ const Hero: React.FC<HeroProps> = ({ lang }) => {
             </Link>
             <Link
               to="/ideal-resume"
-              className="px-8 py-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-semibold text-lg border border-slate-700 transition-all flex items-center gap-2"
+              className="px-8 py-4 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-900 dark:text-white font-semibold text-lg border border-slate-300 dark:border-slate-700 transition-all flex items-center gap-2"
             >
               {t.ctaSecondary}
             </Link>
@@ -120,43 +120,43 @@ const Hero: React.FC<HeroProps> = ({ lang }) => {
 
           {/* Job Description Card */}
           <motion.div
-            className="absolute right-0 bottom-10 w-72 h-96 bg-slate-800 rounded-xl shadow-2xl p-6 z-0 border border-slate-700"
+            className="absolute right-0 bottom-10 w-72 h-96 bg-white dark:bg-slate-800 rounded-xl shadow-2xl p-6 z-0 border border-slate-300 dark:border-slate-700"
             initial={{ rotate: 5 }}
             animate={{ rotate: 2 }}
             transition={{ duration: 7, repeat: Infinity, repeatType: 'reverse' }}
           >
             <div className="flex items-center gap-3 mb-6">
               <div className="w-10 h-10 bg-indigo-500 rounded-lg flex items-center justify-center">
-                <FileText className="text-white w-6 h-6" />
+                <FileText className="text-slate-900 dark:text-white w-6 h-6" />
               </div>
               <div>
-                <div className="h-3 bg-slate-600 rounded w-24 mb-1" />
-                <div className="h-2 bg-slate-700 rounded w-16" />
+                <div className="h-3 bg-slate-300 dark:bg-slate-600 rounded w-24 mb-1" />
+                <div className="h-2 bg-slate-200 dark:bg-slate-700 rounded w-16" />
               </div>
             </div>
             <div className="space-y-3">
-              <div className="h-2 bg-slate-600 rounded w-full" />
-              <div className="h-2 bg-slate-600 rounded w-11/12" />
-              <div className="h-2 bg-slate-600 rounded w-full" />
-              <div className="h-2 bg-slate-600 rounded w-3/4" />
+              <div className="h-2 bg-slate-300 dark:bg-slate-600 rounded w-full" />
+              <div className="h-2 bg-slate-300 dark:bg-slate-600 rounded w-11/12" />
+              <div className="h-2 bg-slate-300 dark:bg-slate-600 rounded w-full" />
+              <div className="h-2 bg-slate-300 dark:bg-slate-600 rounded w-3/4" />
             </div>
             <div className="mt-6">
-              <div className="h-2 bg-slate-600 rounded w-1/3 mb-2" />
+              <div className="h-2 bg-slate-300 dark:bg-slate-600 rounded w-1/3 mb-2" />
               <div className="flex flex-wrap gap-2">
-                <span className="h-6 w-16 bg-slate-700 rounded-full" />
-                <span className="h-6 w-20 bg-slate-700 rounded-full" />
-                <span className="h-6 w-14 bg-slate-700 rounded-full" />
+                <span className="h-6 w-16 bg-slate-200 dark:bg-slate-700 rounded-full" />
+                <span className="h-6 w-20 bg-slate-200 dark:bg-slate-700 rounded-full" />
+                <span className="h-6 w-14 bg-slate-200 dark:bg-slate-700 rounded-full" />
               </div>
             </div>
           </motion.div>
 
           {/* Connection Badge */}
           <motion.div
-            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-20 h-20 bg-brand-500 rounded-full flex items-center justify-center shadow-xl z-20 border-4 border-slate-900"
+            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-20 h-20 bg-brand-500 rounded-full flex items-center justify-center shadow-xl z-20 border-4 border-slate-200 dark:border-slate-900"
             animate={{ scale: [1, 1.1, 1] }}
             transition={{ duration: 2, repeat: Infinity }}
           >
-            <RefreshCw className="w-8 h-8 text-white animate-spin-slow" />
+            <RefreshCw className="w-8 h-8 text-slate-900 dark:text-white animate-spin-slow" />
           </motion.div>
 
           {/* Floating Scores */}

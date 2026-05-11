@@ -146,8 +146,8 @@ export default function ResumeEditor({ data, onChange, readonly = false }: Resum
         <textarea
           className={`w-full px-3 py-2 border rounded-lg resize-none ${
             readonly
-              ? 'bg-slate-900/50 border-slate-700 cursor-not-allowed text-slate-400'
-              : 'bg-slate-900 border-slate-700 text-white focus:ring-2 focus:ring-brand-500 focus:border-transparent'
+              ? 'bg-white/50 dark:bg-slate-900/50 border-slate-300 dark:border-slate-700 cursor-not-allowed text-slate-600 dark:text-slate-400'
+              : 'bg-slate-50 dark:bg-slate-900 border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 focus:border-transparent'
           }`}
           rows={4}
           value={data.summary || ''}
@@ -257,16 +257,16 @@ function Section({
   children: React.ReactNode
 }) {
   return (
-    <div className="bg-slate-800 rounded-lg border border-slate-700 overflow-hidden">
+    <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-300 dark:border-slate-700 overflow-hidden">
       <button
         onClick={onToggle}
-        className="w-full px-4 py-3 flex items-center justify-between bg-slate-800/50 hover:bg-slate-700/50 transition-colors border-b border-slate-700/50"
+        className="w-full px-4 py-3 flex items-center justify-between bg-slate-100/70 dark:bg-slate-800/50 hover:bg-slate-200/60 dark:hover:bg-slate-700/50 transition-colors border-b border-slate-300/60 dark:border-slate-700/50"
       >
-        <span className="font-medium text-white">{title}</span>
+        <span className="font-medium text-slate-900 dark:text-white">{title}</span>
         {expanded ? (
-          <ChevronUp className="w-5 h-5 text-slate-400" />
+          <ChevronUp className="w-5 h-5 text-slate-600 dark:text-slate-400" />
         ) : (
-          <ChevronDown className="w-5 h-5 text-slate-400" />
+          <ChevronDown className="w-5 h-5 text-slate-600 dark:text-slate-400" />
         )}
       </button>
       {expanded && <div className="p-4">{children}</div>}
@@ -287,13 +287,13 @@ function InputField({
 }) {
   return (
     <div>
-      <label className="block text-sm font-medium text-slate-300 mb-1">{label}</label>
+      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{label}</label>
       <input
         type="text"
         className={`w-full px-3 py-2 border rounded-lg transition-colors ${
           readonly
-            ? 'bg-slate-900/50 border-slate-700 cursor-not-allowed text-slate-400'
-            : 'bg-slate-900 border-slate-700 text-white focus:ring-2 focus:ring-brand-500 focus:border-transparent placeholder:text-slate-500'
+            ? 'bg-white/50 dark:bg-slate-900/50 border-slate-300 dark:border-slate-700 cursor-not-allowed text-slate-600 dark:text-slate-400'
+            : 'bg-slate-50 dark:bg-slate-900 border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 focus:border-transparent placeholder:text-slate-500'
         }`}
         value={value}
         onChange={(e) => onChange(e.target.value)}
@@ -356,7 +356,7 @@ function TagEditor({
         <div className="flex gap-2">
           <input
             type="text"
-            className="flex-1 px-3 py-2 border border-slate-700 bg-slate-900 text-white rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent placeholder:text-slate-500"
+            className="flex-1 px-3 py-2 border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent placeholder:text-slate-500"
             placeholder={placeholder}
             value={input}
             onChange={(e) => setInput(e.target.value)}
@@ -450,7 +450,7 @@ function SkillTagEditor({
         <div className="flex gap-2">
           <input
             type="text"
-            className="flex-1 px-3 py-2 border border-slate-700 bg-slate-900 text-white rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent placeholder:text-slate-500"
+            className="flex-1 px-3 py-2 border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent placeholder:text-slate-500"
             placeholder={placeholder}
             value={input}
             onChange={(e) => setInput(e.target.value)}
@@ -521,8 +521,8 @@ function ExperienceItem({
         <textarea
           className={`w-full px-3 py-2 border rounded-lg resize-none ${
             readonly
-              ? 'bg-slate-900/50 border-slate-700 cursor-not-allowed text-slate-400'
-              : 'bg-slate-900 border-slate-700 text-white focus:ring-2 focus:ring-brand-500 focus:border-transparent'
+              ? 'bg-white/50 dark:bg-slate-900/50 border-slate-300 dark:border-slate-700 cursor-not-allowed text-slate-600 dark:text-slate-400'
+              : 'bg-slate-50 dark:bg-slate-900 border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 focus:border-transparent'
           }`}
           rows={3}
           value={[...(experience.responsibilities || []), ...(experience.achievements || [])].join(
@@ -640,9 +640,9 @@ function LanguageEditor({
           return (
             <div
               key={index}
-              className="flex items-center justify-between bg-slate-800 p-2 rounded border border-slate-700"
+              className="flex items-center justify-between bg-white dark:bg-slate-800 p-2 rounded border border-slate-300 dark:border-slate-700"
             >
-              <span className="text-white">{displayText}</span>
+              <span className="text-slate-900 dark:text-white">{displayText}</span>
               {!readonly && (
                 <button
                   onClick={() => handleRemove(index)}
@@ -660,14 +660,14 @@ function LanguageEditor({
         <div className="flex gap-2">
           <input
             type="text"
-            className="flex-1 px-3 py-2 border border-slate-700 bg-slate-900 text-white rounded-lg"
+            className="flex-1 px-3 py-2 border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white rounded-lg"
             placeholder="Язык (English)"
             value={input}
             onChange={(e) => setInput(e.target.value)}
           />
           <input
             type="text"
-            className="w-1/3 px-3 py-2 border border-slate-700 bg-slate-900 text-white rounded-lg"
+            className="w-1/3 px-3 py-2 border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white rounded-lg"
             placeholder="Уровень (B2)"
             value={proficiency}
             onChange={(e) => setProficiency(e.target.value)}

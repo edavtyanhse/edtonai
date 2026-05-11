@@ -38,7 +38,7 @@ describe('Button', () => {
     expect(screen.getByRole('button').className).toContain('text-red-400')
 
     rerender(<Button variant="secondary">Secondary</Button>)
-    expect(screen.getByRole('button').className).toContain('bg-slate-800')
+    expect(screen.getByRole('button').className).toContain('bg-white dark:bg-slate-800')
   })
 
   it('applies size classes', () => {

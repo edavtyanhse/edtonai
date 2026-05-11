@@ -90,7 +90,7 @@ const Features: React.FC<FeaturesProps> = ({ lang }) => {
   const icons = [Target, Wand2, FileCheck, BarChart3, Zap, ShieldCheck]
 
   return (
-    <section className="py-24 px-4 sm:px-6 lg:px-8 bg-slate-900 relative">
+    <section className="py-24 px-4 sm:px-6 lg:px-8 bg-slate-50 dark:bg-slate-900 relative">
       <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-slate-700 to-transparent" />
 
       <div className="container mx-auto">
@@ -98,8 +98,8 @@ const Features: React.FC<FeaturesProps> = ({ lang }) => {
           <h2 className="text-brand-400 font-semibold tracking-wide uppercase text-sm mb-3">
             {t.subtitle}
           </h2>
-          <h3 className="text-3xl md:text-4xl font-bold text-white mb-6">{t.title}</h3>
-          <p className="text-slate-400 text-lg">{t.description}</p>
+          <h3 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white mb-6">{t.title}</h3>
+          <p className="text-slate-600 dark:text-slate-400 text-lg">{t.description}</p>
         </div>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -108,13 +108,13 @@ const Features: React.FC<FeaturesProps> = ({ lang }) => {
             return (
               <div
                 key={index}
-                className="glass-card p-8 rounded-2xl hover:bg-white/10 transition-colors group cursor-default border border-slate-700 hover:border-slate-600 bg-slate-800/50"
+                className="glass-card p-8 rounded-2xl hover:bg-white/10 transition-colors group cursor-default border border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600 bg-slate-100/70 dark:bg-slate-800/50"
               >
                 <div className="w-12 h-12 bg-brand-900/50 rounded-lg flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300 border border-brand-500/20">
                   <Icon className="w-6 h-6 text-brand-400" />
                 </div>
-                <h4 className="text-xl font-semibold text-white mb-3">{feature.title}</h4>
-                <p className="text-slate-400 leading-relaxed">{feature.description}</p>
+                <h4 className="text-xl font-semibold text-slate-900 dark:text-white mb-3">{feature.title}</h4>
+                <p className="text-slate-600 dark:text-slate-400 leading-relaxed">{feature.description}</p>
               </div>
             )
           })}

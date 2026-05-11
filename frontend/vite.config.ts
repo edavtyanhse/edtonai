@@ -5,6 +5,7 @@ import { resolve } from 'path'
 import { viteStaticCopy } from 'vite-plugin-static-copy'
 
 export default defineConfig({
+  // @ts-expect-error vitest config attached to vite config
   test: {
     globals: true,
     environment: 'happy-dom',
