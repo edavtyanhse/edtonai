@@ -41,7 +41,11 @@ export default function Step2Vacancy() {
 
   // Parse mutation
   const parseMutation = useMutation({
-    mutationFn: () => parseVacancy({ vacancy_text: localText, url: url || undefined }),
+    mutationFn: () =>
+      parseVacancy({
+        vacancy_text: localText.trim() || undefined,
+        url: url.trim() || undefined,
+      }),
     onSuccess: (data) => {
       setVacancyText(data.raw_text)
       setLocalText(data.raw_text)

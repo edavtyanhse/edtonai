@@ -111,7 +111,7 @@ export default function IdealResumePage() {
       let vacancyId: string | undefined
 
       if (isUrl) {
-        const parsed = await parseVacancy({ vacancy_text: '', url: vacancyUrl })
+        const parsed = await parseVacancy({ url: vacancyUrl })
         vacancyId = parsed.vacancy_id
         resolvedVacancyText = parsed.raw_text
         setVacancyText(resolvedVacancyText)
