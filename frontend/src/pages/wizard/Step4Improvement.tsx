@@ -262,7 +262,25 @@ export default function Step4Improvement() {
     coverLetterMutation.mutate()
   }
 
-  const handleOpenPdfPreview = () => {
+  // Parse the latest result text if it differs from what's already structured,
+  // so previews reflect the improved resume rather than the original.
+  // The structured parsedResume is only refreshed after Save → reanalyzeMutation,
+  // but we want previews to be correct before that too.
+  const refreshParsedFromResult = async (): Promise<boolean> => {
+    if (!state.resultText) return !!state.parsedResume
+    try {
+      const parsed = await parseResume({ resume_text: state.resultText })
+      if (parsed?.parsed_resume) {
+        updateParsedResume(parsed.parsed_resume)
+        return true
+      }
+    } catch (e) {
+      console.error('Re-parse for preview failed:', e)
+    }
+    return !!state.parsedResume
+  }
+
+  const handleOpenPdfPreview = async () => {
     setShowExportDropdown(false)
     trackBehaviorEvent('export_clicked', {
       step: 'step_4',
@@ -271,18 +289,20 @@ export default function Step4Improvement() {
       },
     })
 
-    if (!state.parsedResume) {
-      console.warn('PDF preview: parsedResume not available yet')
+    const ok = await refreshParsedFromResult()
+    if (!ok) {
+      console.warn('PDF preview: no parsed resume to render')
       return
     }
     setShowPdfPreview(true)
   }
 
-  const handleOpenHhPreview = () => {
+  const handleOpenHhPreview = async () => {
     setShowExportDropdown(false)
 
-    if (!state.parsedResume) {
-      console.warn('HH preview: parsedResume not available yet')
+    const ok = await refreshParsedFromResult()
+    if (!ok) {
+      console.warn('HH preview: no parsed resume to render')
       return
     }
     setShowHhPreview(true)
