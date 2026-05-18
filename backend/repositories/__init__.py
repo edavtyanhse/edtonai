@@ -1,6 +1,12 @@
 """Repository layer for database operations."""
 
 from .ai_result import AIResultRepository
+from .billing import (
+    BillingPlanRepository,
+    PaymentEventRepository,
+    SubscriptionRepository,
+    UsageEventRepository,
+)
 from .ideal_resume import IdealResumeRepository
 from .resume import ResumeRepository
 from .resume_version import ResumeVersionRepository
@@ -17,4 +23,9 @@ __all__ = [
     "IdealResumeRepository",
     # Stage 3
     "UserVersionRepository",
+    # Commercial billing
+    "BillingPlanRepository",
+    "SubscriptionRepository",
+    "UsageEventRepository",
+    "PaymentEventRepository",
 ]

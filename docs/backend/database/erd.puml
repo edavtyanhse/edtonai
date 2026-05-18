@@ -210,6 +210,153 @@ package "User Ownership and Artifacts" {
     }
 }
 
+package "Billing and Subscriptions" {
+    entity billing_plan <<table>> {
+        id : UUID PK
+        --
+        code : varchar(64) UNIQUE
+        title : varchar(255)
+        billing_period : varchar(32)
+        trial_days : integer
+        is_active : bool
+        created_at : timestamptz
+        updated_at : timestamptz
+    }
+
+    entity billing_price <<table>> {
+        id : UUID PK
+        --
+        plan_id : UUID FK
+        provider : varchar(32)
+        provider_price_id : varchar(255)? UNIQUE
+        amount_minor : integer
+        currency : varchar(3)
+        billing_period : varchar(32)
+        is_active : bool
+        created_at : timestamptz
+        updated_at : timestamptz
+    }
+
+    entity plan_entitlement <<table>> {
+        id : UUID PK
+        --
+        plan_id : UUID FK
+        feature_code : varchar(64)
+        limit_value : integer?
+        reset_period : varchar(32)?
+        metadata : jsonb
+        created_at : timestamptz
+        updated_at : timestamptz
+        --
+        plan_id, feature_code : UNIQUE
+    }
+
+    entity billing_customer <<table>> {
+        id : UUID PK
+        --
+        user_id : UUID FK
+        provider : varchar(32)
+        provider_customer_id : varchar(255)
+        created_at : timestamptz
+        updated_at : timestamptz
+        --
+        user_id, provider : UNIQUE
+        provider, provider_customer_id : UNIQUE
+    }
+
+    entity user_subscription <<table>> {
+        id : UUID PK
+        --
+        user_id : UUID FK
+        plan_id : UUID FK
+        billing_customer_id : UUID? FK
+        provider : varchar(32)
+        provider_subscription_id : varchar(255)? UNIQUE
+        status : trialing | active | past_due | canceled | expired | paused
+        trial_start : timestamptz?
+        trial_end : timestamptz?
+        current_period_start : timestamptz?
+        current_period_end : timestamptz?
+        cancel_at_period_end : bool
+        next_billing_at : timestamptz?
+        provider_mandate_id : varchar(255)?
+        created_at : timestamptz
+        updated_at : timestamptz
+    }
+
+    entity usage_event <<table>> {
+        id : UUID PK
+        --
+        user_id : UUID FK
+        subscription_id : UUID? FK
+        feature_code : varchar(64)
+        operation : varchar(100)
+        quantity : integer
+        status : varchar(32)
+        idempotency_key : varchar(128)?
+        resource_type : varchar(64)?
+        resource_id : varchar(128)?
+        metadata : jsonb
+        created_at : timestamptz
+        --
+        user_id, feature_code, idempotency_key : UNIQUE
+    }
+
+    entity payment_checkout_session <<table>> {
+        id : UUID PK
+        --
+        user_id : UUID FK
+        plan_id : UUID FK
+        price_id : UUID FK
+        provider : varchar(32)
+        provider_session_id : varchar(255)
+        status : created | redirected | completed | expired | canceled
+        success_url : varchar(2048)?
+        cancel_url : varchar(2048)?
+        created_at : timestamptz
+        expires_at : timestamptz?
+        completed_at : timestamptz?
+        --
+        provider, provider_session_id : UNIQUE
+    }
+
+    entity payment_transaction <<table>> {
+        id : UUID PK
+        --
+        user_id : UUID FK
+        subscription_id : UUID? FK
+        checkout_session_id : UUID? FK
+        provider : varchar(32)
+        provider_payment_id : varchar(255)
+        amount_minor : integer
+        currency : varchar(3)
+        status : pending | succeeded | failed | canceled | refunded | chargeback
+        paid_at : timestamptz?
+        refunded_at : timestamptz?
+        created_at : timestamptz
+        updated_at : timestamptz
+        --
+        provider, provider_payment_id : UNIQUE
+    }
+
+    entity payment_provider_event <<table>> {
+        id : UUID PK
+        --
+        provider : varchar(32)
+        provider_event_id : varchar(255)
+        event_type : varchar(128)
+        provider_payment_id : varchar(255)?
+        provider_subscription_id : varchar(255)?
+        payload_hash : varchar(64)
+        processing_status : received | processed | ignored | failed
+        error : text?
+        received_at : timestamptz
+        processed_at : timestamptz?
+        --
+        provider, provider_event_id : UNIQUE
+    }
+}
+
 users ||--o{ refresh_tokens : user_id
 users ||--o{ email_verifications : user_id
 users ||--o{ oauth_accounts : user_id
@@ -219,6 +366,11 @@ users ||--o{ user_vacancy : user_id
 users ||--o{ resume_version : user_id
 users ||--o{ user_version : user_id
 users ||--o{ feedback : user_id
+users ||--o{ billing_customer : user_id
+users ||--o{ user_subscription : user_id
+users ||--o{ usage_event : user_id
+users ||--o{ payment_checkout_session : user_id
+users ||--o{ payment_transaction : user_id
 
 resume_raw ||--o{ user_resume : resume_id
 vacancy_raw ||--o{ user_vacancy : vacancy_id
@@ -230,6 +382,16 @@ ai_result ||--o{ resume_version : analysis_id
 ai_result ||--o{ user_version : analysis_id
 vacancy_raw ||--o{ ideal_resume : vacancy_id
 
+billing_plan ||--o{ billing_price : plan_id
+billing_plan ||--o{ plan_entitlement : plan_id
+billing_plan ||--o{ user_subscription : plan_id
+billing_customer ||--o{ user_subscription : billing_customer_id
+user_subscription ||--o{ usage_event : subscription_id
+user_subscription ||--o{ payment_transaction : subscription_id
+billing_plan ||--o{ payment_checkout_session : plan_id
+billing_price ||--o{ payment_checkout_session : price_id
+payment_checkout_session ||--o{ payment_transaction : checkout_session_id
+
 note bottom of user_resume
   User-specific parsed edits live here.
   Shared resume_raw stays immutable
@@ -239,6 +401,12 @@ end note
 note bottom of refresh_tokens
   Raw bearer tokens are never stored.
   Database keeps SHA-256 hashes only.
+end note
+
+note bottom of payment_provider_event
+  Stores sanitized event metadata
+  and payload_hash only. Raw webhook
+  payloads and card data stay out.
 end note
 
 @enduml

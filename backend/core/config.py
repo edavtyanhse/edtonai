@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from pydantic import computed_field, model_validator
+from pydantic import SecretStr, computed_field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # Корень проекта (edtonai/)
@@ -100,6 +100,45 @@ class Settings(BaseSettings):
     auth_rate_limit_per_minute: int = 20
     ai_rate_limit_per_minute: int = 120
     scraper_rate_limit_per_minute: int = 30
+    trusted_proxy_ips: str = ""
+    ai_monthly_free_quota: int = 20
+    ai_monthly_trial_quota: int = 100
+
+    @computed_field
+    @property
+    def trusted_proxy_ip_set(self) -> set[str]:
+        """Proxy IPs whose forwarded client headers may be trusted."""
+        return {
+            ip.strip()
+            for ip in self.trusted_proxy_ips.split(",")
+            if ip.strip()
+        }
+
+    # Scraper SSRF guard. Empty/unlisted hosts are blocked by default.
+    scraper_allowed_hosts: str = "hh.ru,hh.kz,headhunter.ru,headhunter.kz"
+    scraper_timeout_seconds: float = 15.0
+    scraper_max_html_bytes: int = 1_000_000
+    scraper_max_redirects: int = 5
+
+    @computed_field
+    @property
+    def scraper_allowed_host_set(self) -> set[str]:
+        """Normalized host allowlist for user-provided vacancy URLs."""
+        return {
+            host.strip().lower()
+            for host in self.scraper_allowed_hosts.split(",")
+            if host.strip()
+        }
+
+    # Billing / payment provider selection.
+    payment_provider: str = "disabled"
+    payment_webhook_replay_tolerance_seconds: int = 300
+
+    # T-Bank internet acquiring. Secrets must stay backend-only.
+    tbank_terminal_key: str = ""
+    tbank_public_key: str = ""
+    tbank_password: SecretStr | None = None
+    tbank_webhook_secret: SecretStr | None = None
 
     # SMTP (email sending)
     smtp_host: str = "smtp.yandex.ru"
@@ -137,6 +176,9 @@ class Settings(BaseSettings):
     @model_validator(mode="after")
     def validate_security_defaults(self) -> "Settings":
         """Fail fast when production-like environments use unsafe secrets."""
+        def has_secret_value(secret: SecretStr | None) -> bool:
+            return secret is not None and bool(secret.get_secret_value().strip())
+
         env = self.app_env.lower()
         is_production_like = env not in {"dev", "development", "local", "test"}
         weak_jwt_secret = (
@@ -147,6 +189,28 @@ class Settings(BaseSettings):
             raise ValueError(
                 "JWT_SECRET_KEY must be set to a strong non-default value "
                 "outside development/test environments"
+            )
+        provider = self.payment_provider.lower()
+        if provider not in {"disabled", "tbank"}:
+            raise ValueError("PAYMENT_PROVIDER must be one of: disabled, tbank")
+        if provider == "tbank" and (
+            not self.tbank_terminal_key.strip()
+            or not has_secret_value(self.tbank_password)
+            or not has_secret_value(self.tbank_webhook_secret)
+        ):
+            raise ValueError(
+                "T-Bank payments require TBANK_TERMINAL_KEY, TBANK_PASSWORD, "
+                "and TBANK_WEBHOOK_SECRET"
+            )
+        if self.scraper_timeout_seconds <= 0:
+            raise ValueError("SCRAPER_TIMEOUT_SECONDS must be positive")
+        if self.scraper_max_html_bytes <= 0:
+            raise ValueError("SCRAPER_MAX_HTML_BYTES must be positive")
+        if self.scraper_max_redirects < 0:
+            raise ValueError("SCRAPER_MAX_REDIRECTS must be non-negative")
+        if self.payment_webhook_replay_tolerance_seconds <= 0:
+            raise ValueError(
+                "PAYMENT_WEBHOOK_REPLAY_TOLERANCE_SECONDS must be positive"
             )
         return self
 

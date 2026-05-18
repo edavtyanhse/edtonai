@@ -217,3 +217,60 @@ class IFeedbackRepository(Protocol):
         ui_variant: str | None = None,
         user_segment: str | None = None,
     ) -> Any: ...
+
+
+# ── Billing / Subscriptions ───────────────────────────────────────
+
+
+@runtime_checkable
+class IBillingPlanRepository(Protocol):
+    """Protocol for server-controlled plan and price reads."""
+
+    async def list_active_plans(self) -> list[Any]: ...
+
+    async def get_plan_by_code(self, code: str) -> Any: ...
+
+    async def get_active_price(self, plan_code: str, provider: str) -> Any: ...
+
+
+@runtime_checkable
+class ISubscriptionRepository(Protocol):
+    """Protocol for user-scoped subscription reads."""
+
+    async def get_current_for_user(self, user_id: UUID) -> Any: ...
+
+    async def get_by_provider_subscription_id(
+        self,
+        provider: str,
+        provider_subscription_id: str,
+    ) -> Any: ...
+
+
+@runtime_checkable
+class IUsageEventRepository(Protocol):
+    """Protocol for append-only usage audit events."""
+
+    async def create(
+        self,
+        user_id: UUID,
+        feature_code: str,
+        operation: str,
+        quantity: int,
+        status: str,
+        idempotency_key: str | None = None,
+        subscription_id: UUID | None = None,
+        resource_type: str | None = None,
+        resource_id: str | None = None,
+        metadata: dict[str, Any] | None = None,
+    ) -> Any: ...
+
+
+@runtime_checkable
+class IPaymentEventRepository(Protocol):
+    """Protocol for provider webhook/event idempotency."""
+
+    async def get_by_provider_event_id(
+        self,
+        provider: str,
+        provider_event_id: str,
+    ) -> Any: ...

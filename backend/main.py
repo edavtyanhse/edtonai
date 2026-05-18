@@ -24,10 +24,14 @@ container.wire()
 
 def _client_ip(request: Request) -> str:
     """Return best-effort client IP for local rate limiting."""
+    direct_client = request.client.host if request.client else "unknown"
+    trusted_proxy_ips = container.config().trusted_proxy_ip_set
     forwarded_for = request.headers.get("X-Forwarded-For")
-    if forwarded_for:
-        return forwarded_for.split(",", 1)[0].strip()
-    return request.client.host if request.client else "unknown"
+    if forwarded_for and direct_client in trusted_proxy_ips:
+        # Trusted proxies may append to X-Forwarded-For. The rightmost value is
+        # the peer seen by the trusted proxy and is harder for clients to spoof.
+        return forwarded_for.rsplit(",", 1)[-1].strip()
+    return direct_client
 
 
 def _rate_limit_rule(path: str) -> tuple[str, RateLimitRule] | None:

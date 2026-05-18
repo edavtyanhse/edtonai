@@ -1,6 +1,17 @@
 """ORM models."""
 
 from .ai_result import AIResult
+from .billing import (
+    BillingCustomer,
+    BillingPlan,
+    BillingPrice,
+    PaymentCheckoutSession,
+    PaymentProviderEvent,
+    PaymentTransaction,
+    PlanEntitlement,
+    UsageEvent,
+    UserSubscription,
+)
 from .email_verification import EmailVerification
 from .feedback import Feedback
 from .ideal_resume import IdealResume
@@ -28,4 +39,13 @@ __all__ = [
     "EmailVerification",
     "Feedback",
     "OAuthAccount",
+    "BillingPlan",
+    "BillingPrice",
+    "PlanEntitlement",
+    "BillingCustomer",
+    "UserSubscription",
+    "UsageEvent",
+    "PaymentCheckoutSession",
+    "PaymentTransaction",
+    "PaymentProviderEvent",
 ]

@@ -38,6 +38,12 @@ from backend.integration.oauth.base import OAuthProvider
 from backend.integration.oauth.google import GoogleOAuthProvider
 from backend.integration.oauth.yandex import YandexOAuthProvider
 from backend.repositories.ai_result import AIResultRepository
+from backend.repositories.billing import (
+    BillingPlanRepository,
+    PaymentEventRepository,
+    SubscriptionRepository,
+    UsageEventRepository,
+)
 from backend.repositories.email_verification import (
     EmailVerificationRepository,
 )
@@ -239,6 +245,10 @@ class Container(containers.DeclarativeContainer):
     ideal_resume_repo = providers.Factory(IdealResumeRepository, session=session)
     user_version_repo = providers.Factory(UserVersionRepository, session=session)
     feedback_repo = providers.Factory(FeedbackRepository, session=session)
+    billing_plan_repo = providers.Factory(BillingPlanRepository, session=session)
+    subscription_repo = providers.Factory(SubscriptionRepository, session=session)
+    usage_event_repo = providers.Factory(UsageEventRepository, session=session)
+    payment_event_repo = providers.Factory(PaymentEventRepository, session=session)
 
     # ── Services ──────────────────────────────────────────────────
 

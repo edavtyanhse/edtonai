@@ -1,10 +1,12 @@
 """Security hardening regression tests."""
 
 import pytest
+from starlette.requests import Request
 
 from backend.core.config import Settings
 from backend.errors.integration import ScraperError
 from backend.integration.scraper.scraper import WebScraper
+from backend.main import _client_ip, container
 from backend.tests.integration.conftest import InMemoryResumeRepo
 
 
@@ -51,12 +53,80 @@ async def test_scraper_blocks_loopback_url():
         await WebScraper.fetch_text("http://127.0.0.1/vacancy")
 
 
+@pytest.mark.anyio
+async def test_scraper_blocks_unlisted_public_host_before_network():
+    with pytest.raises(ScraperError, match="host is not allowed"):
+        await WebScraper.fetch_text("https://example.com/vacancy")
+
+
 def test_production_rejects_weak_jwt_secret(monkeypatch):
     monkeypatch.setenv("APP_ENV", "production")
     monkeypatch.setenv("JWT_SECRET_KEY", "short")
 
     with pytest.raises(ValueError, match="JWT_SECRET_KEY"):
         Settings()
+
+
+def test_enabled_tbank_provider_requires_backend_secrets(monkeypatch):
+    monkeypatch.setenv("PAYMENT_PROVIDER", "tbank")
+    monkeypatch.delenv("TBANK_TERMINAL_KEY", raising=False)
+    monkeypatch.delenv("TBANK_PASSWORD", raising=False)
+    monkeypatch.delenv("TBANK_WEBHOOK_SECRET", raising=False)
+
+    with pytest.raises(ValueError, match="T-Bank payments require"):
+        Settings()
+
+
+def test_enabled_tbank_provider_rejects_blank_secret_values(monkeypatch):
+    monkeypatch.setenv("PAYMENT_PROVIDER", "tbank")
+    monkeypatch.setenv("TBANK_TERMINAL_KEY", "terminal-test")
+    monkeypatch.setenv("TBANK_PASSWORD", " ")
+    monkeypatch.setenv("TBANK_WEBHOOK_SECRET", "")
+
+    with pytest.raises(ValueError, match="T-Bank payments require"):
+        Settings()
+
+
+def test_enabled_tbank_provider_rejects_blank_terminal_key(monkeypatch):
+    monkeypatch.setenv("PAYMENT_PROVIDER", "tbank")
+    monkeypatch.setenv("TBANK_TERMINAL_KEY", " ")
+    monkeypatch.setenv("TBANK_PASSWORD", "password-test")
+    monkeypatch.setenv("TBANK_WEBHOOK_SECRET", "webhook-test")
+
+    with pytest.raises(ValueError, match="T-Bank payments require"):
+        Settings()
+
+
+def test_rate_limit_ip_ignores_untrusted_forwarded_for():
+    request = Request(
+        {
+            "type": "http",
+            "method": "GET",
+            "path": "/auth/login",
+            "headers": [(b"x-forwarded-for", b"203.0.113.10")],
+            "client": ("198.51.100.20", 12345),
+        }
+    )
+
+    assert _client_ip(request) == "198.51.100.20"
+
+
+def test_rate_limit_ip_uses_forwarded_for_from_trusted_proxy():
+    class _Config:
+        trusted_proxy_ip_set = {"198.51.100.20"}
+
+    with container.config.override(_Config()):
+        request = Request(
+            {
+                "type": "http",
+                "method": "GET",
+                "path": "/auth/login",
+                "headers": [(b"x-forwarded-for", b"192.0.2.99, 203.0.113.10")],
+                "client": ("198.51.100.20", 12345),
+            }
+        )
+
+        assert _client_ip(request) == "203.0.113.10"
 
 
 @pytest.mark.anyio

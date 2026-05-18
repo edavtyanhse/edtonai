@@ -58,6 +58,24 @@ silently overwrite each other's parsed data.
 history rendering. Because this data can contain PII, future retention and
 export/delete policies should treat it as sensitive user content.
 
+### Billing And Subscriptions
+
+| Table | Purpose | Important notes |
+|---|---|---|
+| `billing_plan` | Backend-controlled commercial plans | Unique `code`, active flag, trial days and billing period. |
+| `billing_price` | Backend-controlled provider prices | Stores amount/currency and optional provider price ID; frontend must not control price. |
+| `plan_entitlement` | Plan feature limits | Unique `(plan_id, feature_code)` for server-authoritative entitlements. |
+| `billing_customer` | User to provider customer mapping | Unique local user/provider and provider/customer pairs. |
+| `user_subscription` | Server-authoritative subscription state | One current subscription per user via partial unique index for active-like statuses. |
+| `usage_event` | Append-only usage audit | Unique `(user_id, feature_code, idempotency_key)` prevents duplicate usage charging. |
+| `payment_checkout_session` | Backend-created hosted checkout reference | Stores provider session ID and UX URLs, not card data or payment form payloads. |
+| `payment_transaction` | Provider payment attempt/transaction reference | Stores provider payment ID, amount, currency, status and timestamps only. |
+| `payment_provider_event` | Sanitized provider event journal | Stores event IDs, status and `payload_hash`, not raw sensitive webhook payloads. |
+
+The current billing model intentionally stops at persistence. Checkout creation,
+signed webhook processing and entitlement enforcement are separate application
+services that must be added before paid access is enabled.
+
 ## Current Relationships
 
 ```text
@@ -70,6 +88,11 @@ users
   -> resume_version
   -> user_version
   -> feedback
+  -> billing_customer
+  -> user_subscription
+  -> usage_event
+  -> payment_checkout_session
+  -> payment_transaction
 
 vacancy_raw
   -> ideal_resume
@@ -81,6 +104,10 @@ vacancy_raw
 - Raw card data must never be added to this schema. Future payments should use
   provider-hosted checkout and store only provider IDs, statuses, hashes and
   audit metadata.
+- Payment status, subscription status, prices and entitlements are
+  server-authoritative. Frontend success/cancel pages are UX only.
+- Provider webhook events must be verified and idempotently processed before
+  changing subscription state.
 - Refresh and email verification tokens are bearer secrets. Store hashes only.
 - `resume_raw` and `vacancy_raw` are shared cache records. User-specific edits
   belong in `user_resume` / `user_vacancy` overrides.
@@ -106,6 +133,14 @@ vacancy_raw
 | `user_vacancy(user_id, vacancy_id)` | unique | Prevent duplicate ownership links. |
 | `user_version.type` | check | Only `adapt` or `ideal`. |
 | `feedback.metric_type / score` | checks | CSAT 1-5, NPS 0-10. |
+| `billing_plan.code` | unique | Stable public plan code. |
+| `billing_customer(provider, provider_customer_id)` | unique | Prevent duplicate provider customer mappings. |
+| `user_subscription(provider, provider_subscription_id)` | unique | Idempotent provider subscription mapping. |
+| `user_subscription.user_id` | partial unique index | Only one current active-like subscription per user. |
+| `usage_event(user_id, feature_code, idempotency_key)` | unique | Prevent duplicate usage events on retries. |
+| `payment_checkout_session(provider, provider_session_id)` | unique | Prevent duplicate checkout session handling. |
+| `payment_transaction(provider, provider_payment_id)` | unique | Prevent duplicate payment transaction handling. |
+| `payment_provider_event(provider, provider_event_id)` | unique | Webhook/event idempotency key. |
 
 ## Migration Notes
 
@@ -119,23 +154,14 @@ Important current Alembic revisions:
 - `20260502_0002_user_resource_ownership.py`: initial ownership mappings.
 - `20260507_0003_harden_user_data_model.py`: UUID owner FKs, private parsed
   overrides, hashed token storage, `analysis_link` removal, feedback privacy.
+- `20260519_0004_add_billing_subscription_model.py`: billing plans, prices,
+  entitlements, subscriptions, usage events, hosted checkout references,
+  payment transactions and sanitized provider event journal.
 
-## Subscription Extension Point
+## Subscription Implementation Notes
 
-Future billing should attach to `users.id`, not to `resume_raw`, `vacancy_raw` or
-`ai_result`.
-
-Recommended future tables:
-
-- `billing_plan`
-- `billing_price`
-- `plan_entitlement`
-- `user_subscription`
-- `usage_quota`
-- `usage_event`
-- `payment_checkout_session`
-- `payment_webhook_event`
-- `payment_transaction`
-
+Billing attaches to `users.id`, not to `resume_raw`, `vacancy_raw` or `ai_result`.
 Entitlement checks should run in application services before expensive AI
-operations and usage should be recorded transactionally with idempotency keys.
+operations. Usage should be recorded transactionally with idempotency keys, and
+subscription activation must come only from verified provider events or trusted
+provider API confirmation.

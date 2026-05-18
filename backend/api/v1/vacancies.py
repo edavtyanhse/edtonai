@@ -33,7 +33,7 @@ async def parse_vacancy(
     if not text and source_url:
         from backend.integration.scraper import WebScraper
 
-        text = await WebScraper.fetch_text(source_url)
+        text = await WebScraper.fetch_text(source_url, settings=service.settings)
 
     if not text or len(text) < 10:
         raise HTTPException(

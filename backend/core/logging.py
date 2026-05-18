@@ -26,6 +26,11 @@ _SENSITIVE_PATTERNS = (
     re.compile(r"(access_token=)[^&\s]+", re.IGNORECASE),
     re.compile(r"(Cookie:\s*)[^,\n]+", re.IGNORECASE),
     re.compile(r"(Set-Cookie:\s*)[^,\n]+", re.IGNORECASE),
+    re.compile(r"(webhook[_-]?secret[\"'=:\s]+)[^&\s,\"'}]+", re.IGNORECASE),
+    re.compile(r"(signature[\"'=:\s]+)[^&\s,\"'}]+", re.IGNORECASE),
+    re.compile(r"(token[\"'=:\s]+)[^&\s,\"'}]+", re.IGNORECASE),
+    re.compile(r"(payment[_-]?url[\"'=:\s]+)[^&\s,\"'}]+", re.IGNORECASE),
+    re.compile(r"(password[\"'=:\s]+)[^&\s,\"'}]+", re.IGNORECASE),
 )
 
 

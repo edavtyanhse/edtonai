@@ -49,6 +49,10 @@ class TestContainerSmoke:
             "ideal_resume_repo",
             "user_version_repo",
             "feedback_repo",
+            "billing_plan_repo",
+            "subscription_repo",
+            "usage_event_repo",
+            "payment_event_repo",
         ]
         for name in expected:
             assert hasattr(container, name), f"Missing provider: {name}"
