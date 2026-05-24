@@ -71,6 +71,7 @@ class IMatchService(Protocol):
         parsed_vacancy: dict[str, Any],
         resume_text: str | None = None,
         vacancy_text: str | None = None,
+        user_id: str | UUID | None = None,
     ) -> MatchAnalysisResult: ...
 
     async def analyze_with_context(
@@ -79,6 +80,7 @@ class IMatchService(Protocol):
         parsed_vacancy: dict[str, Any],
         original_analysis: dict[str, Any],
         applied_checkbox_ids: list[str],
+        user_id: str | UUID | None = None,
     ) -> MatchAnalysisResult: ...
 
 

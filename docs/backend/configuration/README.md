@@ -118,7 +118,7 @@ class Container(DeclarativeContainer):
 | `AI_MAX_RETRIES` | int | `3` | Retry count on network errors |
 | `AI_TEMPERATURE` | float | `0.0` | LLM temperature |
 | `AI_MAX_TOKENS` | int | `4096` | Max output tokens |
-| `AI_MONTHLY_FREE_QUOTA` | int | `20` | Default monthly AI quota for future free entitlement gates |
+| `AI_MONTHLY_FREE_QUOTA` | int | `1000000` | Temporary pre-commercial monthly AI quota for free entitlement gates |
 | `AI_MONTHLY_TRIAL_QUOTA` | int | `100` | Default monthly AI quota for future trial entitlement gates |
 
 ### Security, Scraper And Billing Variables
@@ -134,6 +134,7 @@ class Container(DeclarativeContainer):
 | `SCRAPER_MAX_HTML_BYTES` | int | `1000000` | Max downloaded HTML/text response size |
 | `SCRAPER_MAX_REDIRECTS` | int | `5` | Max validated redirects |
 | `PAYMENT_PROVIDER` | str | `disabled` | Payment provider selector; currently `disabled` or `tbank` |
+| `BILLING_TEMPORARY_HIGH_FREE_QUOTA_ENABLED` | bool | `false` | Required explicit production opt-in when temporary free quota is very high |
 | `PAYMENT_WEBHOOK_REPLAY_TOLERANCE_SECONDS` | int | `300` | Future webhook replay window |
 | `TBANK_TERMINAL_KEY` | str | `""` | T-Bank terminal identifier, backend-side |
 | `TBANK_PUBLIC_KEY` | str | `""` | Optional T-Bank public identifier/key |

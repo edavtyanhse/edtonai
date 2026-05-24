@@ -49,12 +49,14 @@ class CoverLetterService(CachedAIService):
         vacancy_repo: IVacancyRepository,
         ai_provider: AIProvider,
         settings: Settings,
+        usage_service: Any | None = None,
     ) -> None:
         super().__init__(
             session=session,
             ai_provider=ai_provider,
             settings=settings,
             ai_result_repo=ai_result_repo,
+            usage_service=usage_service,
         )
         self.version_repo = version_repo
         self.user_version_repo = user_version_repo
@@ -208,40 +210,62 @@ class CoverLetterService(CachedAIService):
 
         # Step 7: Call LLM
         self.logger.info("Generating cover letter for version %s", resume_version_id)
-        cover_letter_json = await self.ai_provider.generate_json(
-            prompt, prompt_name=self.OPERATION
-        )
-
-        # Validate structure
-        required_keys = [
-            "cover_letter_text",
-            "structure",
-            "key_points_used",
-            "alignment_notes",
-        ]
-        missing_keys = [k for k in required_keys if k not in cover_letter_json]
-        if missing_keys:
-            raise AIResponseFormatError(
-                f"LLM returned incomplete JSON. Missing keys: {missing_keys}"
-            )
-        structure = cover_letter_json.get("structure") or {}
-        if not isinstance(structure, dict):
-            raise AIResponseFormatError(
-                "LLM returned invalid JSON: structure must be an object"
-            )
-        for k in ("opening", "body", "closing"):
-            if k not in structure:
-                raise AIResponseFormatError(
-                    f"LLM returned incomplete JSON. Missing structure key: {k}"
+        async with self._meter_ai_call(str(user_id), input_hash) as reservation:
+            reused_cache = await self._cache_for_reused_usage(reservation, input_hash)
+            if reused_cache is not None:
+                output = reused_cache.output_json or {}
+                structure = output.get("structure") or {}
+                if not isinstance(structure, dict):
+                    structure = {}
+                return CoverLetterResult(
+                    cover_letter_id=reused_cache.id,
+                    resume_version_id=resume_version_id,
+                    vacancy_id=vacancy_id,
+                    cover_letter_text=str(output.get("cover_letter_text", "")),
+                    structure=cast(dict[str, str], structure),
+                    key_points_used=list(output.get("key_points_used", []))
+                    if isinstance(output.get("key_points_used", []), list)
+                    else [],
+                    alignment_notes=list(output.get("alignment_notes", []))
+                    if isinstance(output.get("alignment_notes", []), list)
+                    else [],
+                    cache_hit=True,
                 )
 
-        # Step 8: Save to cache
-        ai_result = await self._save_to_cache(input_hash, cover_letter_json)
-        self.logger.info(
-            "Saved cover letter to cache: %s (model: %s)",
-            input_hash[:16],
-            self.model_name,
-        )
+            cover_letter_json = await self.ai_provider.generate_json(
+                prompt, prompt_name=self.OPERATION
+            )
+
+            # Validate structure
+            required_keys = [
+                "cover_letter_text",
+                "structure",
+                "key_points_used",
+                "alignment_notes",
+            ]
+            missing_keys = [k for k in required_keys if k not in cover_letter_json]
+            if missing_keys:
+                raise AIResponseFormatError(
+                    f"LLM returned incomplete JSON. Missing keys: {missing_keys}"
+                )
+            structure = cover_letter_json.get("structure") or {}
+            if not isinstance(structure, dict):
+                raise AIResponseFormatError(
+                    "LLM returned invalid JSON: structure must be an object"
+                )
+            for k in ("opening", "body", "closing"):
+                if k not in structure:
+                    raise AIResponseFormatError(
+                        f"LLM returned incomplete JSON. Missing structure key: {k}"
+                    )
+
+            # Step 8: Save to cache
+            ai_result = await self._save_to_cache(input_hash, cover_letter_json)
+            self.logger.info(
+                "Saved cover letter to cache: %s (model: %s)",
+                input_hash[:16],
+                self.model_name,
+            )
 
         return CoverLetterResult(
             cover_letter_id=ai_result.id,

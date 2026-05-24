@@ -12,6 +12,7 @@ from fastapi import Depends
 from backend.containers import Container
 from backend.services.adapt import AdaptResumeService
 from backend.services.analytics import AnalyticsService
+from backend.services.billing import BillingService
 from backend.services.cover_letter import CoverLetterService
 from backend.services.feedback import FeedbackService
 from backend.services.ideal import IdealResumeService
@@ -90,6 +91,14 @@ async def get_analytics_service(
     service: AnalyticsService = Depends(Provide[Container.analytics_service]),
 ) -> AnalyticsService:
     """Provide AnalyticsService assembled by DI container."""
+    return service
+
+
+@inject
+async def get_billing_service(
+    service: BillingService = Depends(Provide[Container.billing_service]),
+) -> BillingService:
+    """Provide BillingService assembled by DI container."""
     return service
 
 

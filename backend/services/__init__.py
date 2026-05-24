@@ -2,6 +2,14 @@
 
 from .adapt import AdaptResumeService
 from .analytics import AnalyticsService
+from .billing import (
+    BillingService,
+    EntitlementService,
+    PaymentStatusMapper,
+    PaymentWebhookService,
+    SubscriptionStateMachine,
+    UsageService,
+)
 from .cover_letter import CoverLetterService
 from .feedback import FeedbackService
 from .ideal import IdealResumeService
@@ -27,4 +35,10 @@ __all__ = [
     "VersionService",
     "FeedbackService",
     "AnalyticsService",
+    "BillingService",
+    "EntitlementService",
+    "PaymentStatusMapper",
+    "PaymentWebhookService",
+    "SubscriptionStateMachine",
+    "UsageService",
 ]

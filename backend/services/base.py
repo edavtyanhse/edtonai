@@ -8,11 +8,15 @@ CoverLetterService and IdealResumeService.
 from __future__ import annotations
 
 import logging
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.core.config import Settings
+from backend.domain.billing import UsageReservation
+from backend.errors.business import EntitlementDeniedError
 from backend.integration.ai.base import AIProvider
 from backend.repositories.interfaces import IAIResultRepository
 from backend.services.utils import get_model_name, get_provider_name
@@ -43,11 +47,13 @@ class CachedAIService:
         ai_provider: AIProvider,
         settings: Settings,
         ai_result_repo: IAIResultRepository | None = None,
+        usage_service: Any | None = None,
     ) -> None:
         self.session = session
         self.ai_provider = ai_provider
         self.settings = settings
         self.ai_result_repo = ai_result_repo
+        self.usage_service = usage_service
         self.logger = logging.getLogger(type(self).__module__)
 
     # ── Provider info helpers ─────────────────────────────────────
@@ -146,3 +152,38 @@ class CachedAIService:
         in ``MatchService``).  The default implementation is a no-op.
         """
         return output_json
+
+    @asynccontextmanager
+    async def _meter_ai_call(
+        self,
+        user_id: str | None,
+        input_hash: str,
+        operation: str | None = None,
+    ) -> AsyncIterator[UsageReservation | None]:
+        """Track usage only around real provider calls, not cache hits."""
+        if self.usage_service is None or user_id is None:
+            yield None
+            return
+
+        async with self.usage_service.track_ai_call(
+            user_id=user_id,
+            operation=operation or self.OPERATION,
+            input_hash=input_hash,
+        ) as reservation:
+            yield reservation
+
+    async def _cache_for_reused_usage(
+        self,
+        reservation: UsageReservation | None,
+        input_hash: str,
+    ) -> Any | None:
+        """Return cache for duplicate idempotency hits or fail closed."""
+        if reservation is None or reservation.provider_call_allowed:
+            return None
+
+        cached = await self._check_cache(input_hash)
+        if cached is None:
+            raise EntitlementDeniedError(
+                "Identical operation is already being processed; retry shortly"
+            )
+        return cached

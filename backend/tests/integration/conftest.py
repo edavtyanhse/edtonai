@@ -239,6 +239,20 @@ class InMemoryAIResultRepo:
         return result
 
 
+class NoopUsageService:
+    """Usage service test double that preserves legacy integration test focus."""
+
+    def track_ai_call(self, user_id, operation: str, input_hash: str):
+        class _Context:
+            async def __aenter__(self):
+                return None
+
+            async def __aexit__(self, exc_type, exc, tb):
+                return False
+
+        return _Context()
+
+
 @pytest.fixture
 def mock_ai_provider():
     """Mock AI provider for tests that don't need real AI calls."""
@@ -270,6 +284,7 @@ async def client(mock_ai_provider):
         container.resume_repo.override(providers.Object(fake_resume_repo)),
         container.vacancy_repo.override(providers.Object(fake_vacancy_repo)),
         container.ai_result_repo.override(providers.Object(fake_ai_result_repo)),
+        container.usage_service.override(providers.Object(NoopUsageService())),
         container.ai_provider_parsing.override(mock_ai_provider),
         container.ai_provider_reasoning.override(mock_ai_provider),
     ):

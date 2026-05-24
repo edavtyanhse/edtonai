@@ -250,6 +250,37 @@ class ISubscriptionRepository(Protocol):
 class IUsageEventRepository(Protocol):
     """Protocol for append-only usage audit events."""
 
+    async def acquire_period_lock(
+        self,
+        user_id: UUID,
+        feature_code: str,
+        period_start: Any,
+    ) -> None: ...
+
+    async def get_by_idempotency_key(
+        self,
+        user_id: UUID,
+        feature_code: str,
+        idempotency_key: str,
+    ) -> Any: ...
+
+    async def count_for_period(
+        self,
+        user_id: UUID,
+        feature_code: str,
+        period_start: Any,
+        period_end: Any,
+        statuses: list[str],
+    ) -> int: ...
+
+    async def summary_for_period(
+        self,
+        user_id: UUID,
+        period_start: Any,
+        period_end: Any,
+        statuses: list[str],
+    ) -> dict[str, int]: ...
+
     async def create(
         self,
         user_id: UUID,
@@ -259,9 +290,17 @@ class IUsageEventRepository(Protocol):
         status: str,
         idempotency_key: str | None = None,
         subscription_id: UUID | None = None,
+        period_start: Any | None = None,
+        period_end: Any | None = None,
         resource_type: str | None = None,
         resource_id: str | None = None,
         metadata: dict[str, Any] | None = None,
+    ) -> Any: ...
+
+    async def update_status(
+        self,
+        event_id: UUID,
+        status: str,
     ) -> Any: ...
 
 
@@ -269,8 +308,71 @@ class IUsageEventRepository(Protocol):
 class IPaymentEventRepository(Protocol):
     """Protocol for provider webhook/event idempotency."""
 
+    async def claim_provider_event(
+        self,
+        provider: str,
+        provider_event_id: str,
+        event_type: str,
+        payload_hash: str,
+        provider_payment_id: str | None = None,
+        provider_subscription_id: str | None = None,
+        provider_status: str | None = None,
+    ) -> Any: ...
+
     async def get_by_provider_event_id(
         self,
         provider: str,
         provider_event_id: str,
+    ) -> Any: ...
+
+    async def payload_matches(
+        self,
+        event_id: UUID,
+        payload_hash: str,
+        provider_payment_id: str | None = None,
+        provider_subscription_id: str | None = None,
+        provider_status: str | None = None,
+    ) -> bool: ...
+
+    async def mark_processed(self, event_id: UUID) -> Any: ...
+
+    async def mark_ignored(self, event_id: UUID, reason: str | None = None) -> Any: ...
+
+    async def mark_failed(self, event_id: UUID, error: str) -> Any: ...
+
+
+@runtime_checkable
+class IPaymentCheckoutSessionRepository(Protocol):
+    """Protocol for backend-created hosted checkout references."""
+
+    async def create(
+        self,
+        user_id: UUID,
+        plan_id: UUID,
+        price_id: UUID,
+        provider: str,
+        provider_session_id: str,
+        status: str,
+        success_url: str | None = None,
+        cancel_url: str | None = None,
+        expires_at: Any | None = None,
+    ) -> Any: ...
+
+
+@runtime_checkable
+class IBillingAuditLogRepository(Protocol):
+    """Protocol for sanitized billing state audit events."""
+
+    async def create(
+        self,
+        action: str,
+        actor_type: str,
+        user_id: UUID | None = None,
+        subscription_id: UUID | None = None,
+        payment_transaction_id: UUID | None = None,
+        payment_provider_event_id: UUID | None = None,
+        old_status: str | None = None,
+        new_status: str | None = None,
+        reason: str | None = None,
+        metadata: dict[str, Any] | None = None,
     ) -> Any: ...

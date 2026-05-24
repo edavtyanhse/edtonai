@@ -4,6 +4,7 @@ from fastapi import APIRouter
 
 from .adapt import router as adapt_router
 from .analytics import router as analytics_router
+from .billing import router as billing_router
 from .cover_letter import router as cover_letter_router
 from .feedback import router as feedback_router  # FEEDBACK FEATURE - remove to disable
 from .ideal import router as ideal_router
@@ -33,3 +34,6 @@ router.include_router(analytics_router)
 # Feedback feature (controlled by settings.feedback_collection_enabled)
 # TO REMOVE: Delete this line and backend/api/v1/feedback.py
 router.include_router(feedback_router)
+
+# Commercial billing foundation
+router.include_router(billing_router)

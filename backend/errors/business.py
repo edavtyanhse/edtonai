@@ -58,3 +58,12 @@ class AccessDeniedError(AppError):
 
     def __init__(self, message: str = "Access denied") -> None:
         super().__init__(message)
+
+
+class EntitlementDeniedError(AppError):
+    """User is not entitled to perform a billable operation (HTTP 402)."""
+
+    status_code: int = 402
+
+    def __init__(self, message: str = "Subscription or quota does not allow this operation") -> None:
+        super().__init__(message)

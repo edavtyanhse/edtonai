@@ -50,12 +50,14 @@ class AdaptResumeService(CachedAIService):
         match_service: IMatchService,
         ai_provider: AIProvider,
         settings: Settings,
+        usage_service: Any | None = None,
     ) -> None:
         super().__init__(
             session=session,
             ai_provider=ai_provider,
             settings=settings,
             ai_result_repo=ai_result_repo,
+            usage_service=usage_service,
         )
         self.resume_repo = resume_repo
         self.vacancy_repo = vacancy_repo
@@ -228,7 +230,9 @@ class AdaptResumeService(CachedAIService):
 
         # Step 5: Get match analysis
         match_result = await self.match_service.analyze_and_cache(
-            parsed_resume, parsed_vacancy
+            parsed_resume,
+            parsed_vacancy,
+            user_id=user_id,
         )
         analysis = match_result.analysis
         analysis_id = match_result.analysis_id
@@ -283,27 +287,55 @@ class AdaptResumeService(CachedAIService):
             selected_improvements,
         )
 
-        adapt_output = await self.ai_provider.generate_json(
-            prompt, prompt_name=self.OPERATION
-        )
+        async with self._meter_ai_call(user_id, input_hash) as reservation:
+            reused_cache = await self._cache_for_reused_usage(reservation, input_hash)
+            if reused_cache is not None:
+                adapt_output = reused_cache.output_json
+                version = await self.version_repo.create(
+                    resume_id=actual_resume_id,
+                    vacancy_id=actual_vacancy_id,
+                    text=adapt_output["updated_resume_text"],
+                    change_log=adapt_output.get("change_log", []),
+                    selected_checkbox_ids=checkbox_ids_for_storage,
+                    analysis_id=analysis_id,
+                    parent_version_id=base_version_id,
+                    user_id=user_id,
+                    provider=self.provider_name,
+                    model=self.model_name,
+                )
+                await self.session.commit()
+                return AdaptResumeResult(
+                    version_id=version.id,
+                    parent_version_id=base_version_id,
+                    resume_id=actual_resume_id,
+                    vacancy_id=actual_vacancy_id,
+                    updated_resume_text=adapt_output["updated_resume_text"],
+                    change_log=adapt_output.get("change_log", []),
+                    applied_checkbox_ids=adapt_output.get("applied_checkbox_ids", []),
+                    cache_hit=True,
+                )
 
-        # Step 8: Save to AIResult cache
-        await self._save_to_cache(input_hash, adapt_output)
-        self.logger.info("Saved adapt_resume to cache: %s", input_hash[:16])
+            adapt_output = await self.ai_provider.generate_json(
+                prompt, prompt_name=self.OPERATION
+            )
 
-        # Step 9: Create ResumeVersion
-        version = await self.version_repo.create(
-            resume_id=actual_resume_id,
-            vacancy_id=actual_vacancy_id,
-            text=adapt_output["updated_resume_text"],
-            change_log=adapt_output.get("change_log", []),
-            selected_checkbox_ids=checkbox_ids_for_storage,
-            analysis_id=analysis_id,
-            parent_version_id=base_version_id,
-            user_id=user_id,
-            provider=self.provider_name,
-            model=self.model_name,
-        )
+            # Step 8: Save to AIResult cache
+            await self._save_to_cache(input_hash, adapt_output)
+            self.logger.info("Saved adapt_resume to cache: %s", input_hash[:16])
+
+            # Step 9: Create ResumeVersion
+            version = await self.version_repo.create(
+                resume_id=actual_resume_id,
+                vacancy_id=actual_vacancy_id,
+                text=adapt_output["updated_resume_text"],
+                change_log=adapt_output.get("change_log", []),
+                selected_checkbox_ids=checkbox_ids_for_storage,
+                analysis_id=analysis_id,
+                parent_version_id=base_version_id,
+                user_id=user_id,
+                provider=self.provider_name,
+                model=self.model_name,
+            )
         await self.session.commit()
 
         self.logger.info("Created resume version: %s", version.id)

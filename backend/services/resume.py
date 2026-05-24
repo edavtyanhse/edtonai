@@ -33,12 +33,14 @@ class ResumeService(CachedAIService):
         ai_result_repo: IAIResultRepository,
         ai_provider: AIProvider,
         settings: Settings,
+        usage_service: Any | None = None,
     ) -> None:
         super().__init__(
             session=session,
             ai_provider=ai_provider,
             settings=settings,
             ai_result_repo=ai_result_repo,
+            usage_service=usage_service,
         )
         self.resume_repo = resume_repo
 
@@ -125,17 +127,34 @@ class ResumeService(CachedAIService):
 
         # Call LLM
         prompt = PARSE_RESUME_PROMPT.replace("{{RESUME_TEXT}}", resume_text)
-        parsed_json = await self.ai_provider.generate_json(
-            prompt, prompt_name=self.OPERATION
-        )
+        async with self._meter_ai_call(user_id, ai_input_hash) as reservation:
+            reused_cache = await self._cache_for_reused_usage(
+                reservation,
+                ai_input_hash,
+            )
+            if reused_cache is not None:
+                if resume.parsed_at is None:
+                    set_resume_parsed_data(resume, reused_cache.output_json)
+                    resume.parsed_at = datetime.now(timezone.utc)
+                    await self.session.flush()
+                return ResumeParseResult(
+                    resume_id=resume.id,
+                    resume_hash=content_hash,
+                    parsed_resume=get_resume_parsed_data(resume),
+                    cache_hit=True,
+                )
 
-        # Save to cache
-        await self._save_to_cache(ai_input_hash, parsed_json)
+            parsed_json = await self.ai_provider.generate_json(
+                prompt, prompt_name=self.OPERATION
+            )
 
-        # Save parsed data to individual columns
-        set_resume_parsed_data(resume, parsed_json)
-        resume.parsed_at = datetime.now(timezone.utc)
-        await self.session.flush()
+            # Save to cache
+            await self._save_to_cache(ai_input_hash, parsed_json)
+
+            # Save parsed data to individual columns
+            set_resume_parsed_data(resume, parsed_json)
+            resume.parsed_at = datetime.now(timezone.utc)
+            await self.session.flush()
 
         return ResumeParseResult(
             resume_id=resume.id,

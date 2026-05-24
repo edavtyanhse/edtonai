@@ -11,6 +11,7 @@ PROJECT_ROOT = Path(__file__).parent.parent.parent
 DEFAULT_MAX_RESUME_CHARS = 15000
 DEFAULT_MAX_VACANCY_CHARS = 10000
 DEVELOPMENT_JWT_SECRET = "development-only-insecure-secret-change-me"
+TEMPORARY_HIGH_FREE_QUOTA_LIMIT = 10_000
 
 
 class Settings(BaseSettings):
@@ -101,8 +102,9 @@ class Settings(BaseSettings):
     ai_rate_limit_per_minute: int = 120
     scraper_rate_limit_per_minute: int = 30
     trusted_proxy_ips: str = ""
-    ai_monthly_free_quota: int = 20
+    ai_monthly_free_quota: int = 1_000_000
     ai_monthly_trial_quota: int = 100
+    billing_temporary_high_free_quota_enabled: bool = False
 
     @computed_field
     @property
@@ -189,6 +191,15 @@ class Settings(BaseSettings):
             raise ValueError(
                 "JWT_SECRET_KEY must be set to a strong non-default value "
                 "outside development/test environments"
+            )
+        if (
+            is_production_like
+            and self.ai_monthly_free_quota > TEMPORARY_HIGH_FREE_QUOTA_LIMIT
+            and not self.billing_temporary_high_free_quota_enabled
+        ):
+            raise ValueError(
+                "Temporary high AI_MONTHLY_FREE_QUOTA in production requires "
+                "BILLING_TEMPORARY_HIGH_FREE_QUOTA_ENABLED=true"
             )
         provider = self.payment_provider.lower()
         if provider not in {"disabled", "tbank"}:

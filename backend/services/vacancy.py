@@ -33,12 +33,14 @@ class VacancyService(CachedAIService):
         ai_result_repo: IAIResultRepository,
         ai_provider: AIProvider,
         settings: Settings,
+        usage_service: Any | None = None,
     ) -> None:
         super().__init__(
             session=session,
             ai_provider=ai_provider,
             settings=settings,
             ai_result_repo=ai_result_repo,
+            usage_service=usage_service,
         )
         self.vacancy_repo = vacancy_repo
 
@@ -139,17 +141,34 @@ class VacancyService(CachedAIService):
 
         # Call LLM
         prompt = PARSE_VACANCY_PROMPT.replace("{{VACANCY_TEXT}}", vacancy_text)
-        parsed_json = await self.ai_provider.generate_json(
-            prompt, prompt_name=self.OPERATION
-        )
+        async with self._meter_ai_call(user_id, ai_input_hash) as reservation:
+            reused_cache = await self._cache_for_reused_usage(
+                reservation,
+                ai_input_hash,
+            )
+            if reused_cache is not None:
+                if vacancy.parsed_at is None:
+                    set_vacancy_parsed_data(vacancy, reused_cache.output_json)
+                    vacancy.parsed_at = datetime.now(timezone.utc)
+                    await self.session.flush()
+                return VacancyParseResult(
+                    vacancy_id=vacancy.id,
+                    vacancy_hash=content_hash,
+                    parsed_vacancy=get_vacancy_parsed_data(vacancy),
+                    cache_hit=True,
+                )
 
-        # Save to cache
-        await self._save_to_cache(ai_input_hash, parsed_json)
+            parsed_json = await self.ai_provider.generate_json(
+                prompt, prompt_name=self.OPERATION
+            )
 
-        # Save parsed data to individual columns
-        set_vacancy_parsed_data(vacancy, parsed_json)
-        vacancy.parsed_at = datetime.now(timezone.utc)
-        await self.session.flush()
+            # Save to cache
+            await self._save_to_cache(ai_input_hash, parsed_json)
+
+            # Save parsed data to individual columns
+            set_vacancy_parsed_data(vacancy, parsed_json)
+            vacancy.parsed_at = datetime.now(timezone.utc)
+            await self.session.flush()
 
         return VacancyParseResult(
             vacancy_id=vacancy.id,

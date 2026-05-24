@@ -37,9 +37,12 @@ from backend.integration.email.service import EmailService
 from backend.integration.oauth.base import OAuthProvider
 from backend.integration.oauth.google import GoogleOAuthProvider
 from backend.integration.oauth.yandex import YandexOAuthProvider
+from backend.integration.payments.noop import NoopPaymentProvider
 from backend.repositories.ai_result import AIResultRepository
 from backend.repositories.billing import (
+    BillingAuditLogRepository,
     BillingPlanRepository,
+    PaymentCheckoutSessionRepository,
     PaymentEventRepository,
     SubscriptionRepository,
     UsageEventRepository,
@@ -60,6 +63,12 @@ from backend.repositories.user_version import UserVersionRepository
 from backend.repositories.vacancy import VacancyRepository
 from backend.services.adapt import AdaptResumeService
 from backend.services.analytics import AnalyticsService
+from backend.services.billing import (
+    BillingService,
+    EntitlementService,
+    PaymentWebhookService,
+    UsageService,
+)
 from backend.services.cover_letter import CoverLetterService
 from backend.services.feedback import FeedbackService
 from backend.services.ideal import IdealResumeService
@@ -249,6 +258,23 @@ class Container(containers.DeclarativeContainer):
     subscription_repo = providers.Factory(SubscriptionRepository, session=session)
     usage_event_repo = providers.Factory(UsageEventRepository, session=session)
     payment_event_repo = providers.Factory(PaymentEventRepository, session=session)
+    payment_checkout_session_repo = providers.Factory(
+        PaymentCheckoutSessionRepository,
+        session=session,
+    )
+    billing_audit_log_repo = providers.Factory(BillingAuditLogRepository, session=session)
+
+    entitlement_service = providers.Factory(
+        EntitlementService,
+        subscription_repo=subscription_repo,
+        settings=config,
+    )
+
+    usage_service = providers.Factory(
+        UsageService,
+        entitlement_service=entitlement_service,
+        usage_repo=usage_event_repo,
+    )
 
     # ── Services ──────────────────────────────────────────────────
 
@@ -259,6 +285,7 @@ class Container(containers.DeclarativeContainer):
         ai_result_repo=ai_result_repo,
         ai_provider=ai_provider_parsing,
         settings=config,
+        usage_service=usage_service,
     )
 
     vacancy_service = providers.Factory(
@@ -268,6 +295,7 @@ class Container(containers.DeclarativeContainer):
         ai_result_repo=ai_result_repo,
         ai_provider=ai_provider_parsing,
         settings=config,
+        usage_service=usage_service,
     )
 
     match_service = providers.Factory(
@@ -277,6 +305,7 @@ class Container(containers.DeclarativeContainer):
         ai_provider=ai_provider_reasoning,
         settings=config,
         scorer=resume_scorer,
+        usage_service=usage_service,
     )
 
     orchestrator_service = providers.Factory(
@@ -299,6 +328,7 @@ class Container(containers.DeclarativeContainer):
         match_service=match_service,
         ai_provider=ai_provider_reasoning,
         settings=config,
+        usage_service=usage_service,
     )
 
     ideal_resume_service = providers.Factory(
@@ -309,6 +339,7 @@ class Container(containers.DeclarativeContainer):
         vacancy_service=vacancy_service,
         ai_provider=ai_provider_reasoning,
         settings=config,
+        usage_service=usage_service,
     )
 
     cover_letter_service = providers.Factory(
@@ -320,6 +351,7 @@ class Container(containers.DeclarativeContainer):
         vacancy_repo=vacancy_repo,
         ai_provider=ai_provider_reasoning,
         settings=config,
+        usage_service=usage_service,
     )
 
     version_service = providers.Factory(
@@ -334,6 +366,23 @@ class Container(containers.DeclarativeContainer):
     )
 
     analytics_service = providers.Factory(AnalyticsService)
+
+    billing_service = providers.Factory(
+        BillingService,
+        plan_repo=billing_plan_repo,
+        subscription_repo=subscription_repo,
+        usage_repo=usage_event_repo,
+        entitlement_service=entitlement_service,
+        checkout_repo=payment_checkout_session_repo,
+        payment_provider=providers.Factory(NoopPaymentProvider),
+        settings=config,
+    )
+
+    payment_webhook_service = providers.Factory(
+        PaymentWebhookService,
+        payment_event_repo=payment_event_repo,
+        audit_log_repo=billing_audit_log_repo,
+    )
 
     # ── Auth ───────────────────────────────────────────────────────
 

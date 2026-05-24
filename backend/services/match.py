@@ -42,12 +42,14 @@ class MatchService(CachedAIService):
         ai_provider: AIProvider,
         settings: Settings,
         scorer: ResumeScorer | None = None,
+        usage_service: Any | None = None,
     ) -> None:
         super().__init__(
             session=session,
             ai_provider=ai_provider,
             settings=settings,
             ai_result_repo=ai_result_repo,
+            usage_service=usage_service,
         )
         self._scorer = scorer
 
@@ -349,6 +351,7 @@ class MatchService(CachedAIService):
         parsed_vacancy: dict[str, Any],
         resume_text: str | None = None,
         vacancy_text: str | None = None,
+        user_id: str | None = None,
     ) -> MatchAnalysisResult:
         """Analyze match and cache result.
 
@@ -412,15 +415,24 @@ class MatchService(CachedAIService):
             json.dumps(parsed_vacancy, ensure_ascii=False, indent=2),
         )
 
-        analysis_json = await self.ai_provider.generate_json(
-            prompt,
-            prompt_name=self.OPERATION,
-        )
-        analysis_json = self._clamp_scores(analysis_json)
-        analysis_json = self._ensure_gaps_for_missing_skills(analysis_json)
+        async with self._meter_ai_call(user_id, input_hash) as reservation:
+            reused_cache = await self._cache_for_reused_usage(reservation, input_hash)
+            if reused_cache is not None:
+                return MatchAnalysisResult(
+                    analysis_id=reused_cache.id,
+                    analysis=reused_cache.output_json,
+                    cache_hit=True,
+                )
 
-        # Save to cache
-        ai_result = await self._save_to_cache(input_hash, analysis_json)
+            analysis_json = await self.ai_provider.generate_json(
+                prompt,
+                prompt_name=self.OPERATION,
+            )
+            analysis_json = self._clamp_scores(analysis_json)
+            analysis_json = self._ensure_gaps_for_missing_skills(analysis_json)
+
+            # Save to cache
+            ai_result = await self._save_to_cache(input_hash, analysis_json)
 
         return MatchAnalysisResult(
             analysis_id=ai_result.id,
@@ -434,6 +446,7 @@ class MatchService(CachedAIService):
         parsed_vacancy: dict[str, Any],
         original_analysis: dict[str, Any],
         applied_checkbox_ids: list[str],
+        user_id: str | None = None,
     ) -> MatchAnalysisResult:
         """Re-analyze match with awareness of applied improvements.
 
@@ -507,56 +520,71 @@ class MatchService(CachedAIService):
             )
         )
 
-        analysis_json = await self.ai_provider.generate_json(
-            prompt,
-            prompt_name="analyze_match_with_context",
-        )
+        async with self._meter_ai_call(
+            user_id,
+            input_hash,
+            operation="analyze_match_with_context",
+        ) as reservation:
+            reused_cache = await self._cache_for_reused_usage(reservation, input_hash)
+            if reused_cache is not None:
+                return MatchAnalysisResult(
+                    analysis_id=reused_cache.id,
+                    analysis=reused_cache.output_json,
+                    cache_hit=True,
+                )
 
-        # Step 1: Deterministically move applied missing skills from missing→matched.
-        # Pass original missing lists so broad substring matching can catch skills
-        # referenced in combined/non-standard gap messages.
-        analysis_json = self._force_apply_skill_moves(
-            analysis_json,
-            applied_details,
-            orig_missing_req=original_analysis.get("missing_required_skills"),
-            orig_missing_pref=original_analysis.get("missing_preferred_skills"),
-        )
+            analysis_json = await self.ai_provider.generate_json(
+                prompt,
+                prompt_name="analyze_match_with_context",
+            )
 
-        # Step 2: Reconcile skills that were matched in original (LLM must not
-        # "forget" them) and remove any unexpected new gaps it hallucinated.
-        # Must happen BEFORE _clamp_scores so the score reflects all reconciled lists.
-        analysis_json = self._filter_new_gaps(analysis_json, original_analysis)
+            # Step 1: Deterministically move applied missing skills from missing→matched.
+            # Pass original missing lists so broad substring matching can catch skills
+            # referenced in combined/non-standard gap messages.
+            analysis_json = self._force_apply_skill_moves(
+                analysis_json,
+                applied_details,
+                orig_missing_req=original_analysis.get("missing_required_skills"),
+                orig_missing_pref=original_analysis.get("missing_preferred_skills"),
+            )
 
-        # Step 3: Remove gaps that the user already addressed.
-        applied_ids_set = set(applied_checkbox_ids)
-        analysis_json["gaps"] = [
-            g for g in analysis_json.get("gaps", [])
-            if g["id"] not in applied_ids_set
-        ]
-        analysis_json["checkbox_options"] = [
-            c for c in analysis_json.get("checkbox_options", [])
-            if c["id"] not in applied_ids_set
-        ]
+            # Step 2: Reconcile skills that were matched in original (LLM must not
+            # "forget" them) and remove any unexpected new gaps it hallucinated.
+            # Must happen BEFORE _clamp_scores so the score reflects reconciled lists.
+            analysis_json = self._filter_new_gaps(analysis_json, original_analysis)
 
-        # Step 4: Recalculate scores from the fully reconciled skill lists.
-        analysis_json = self._clamp_scores(analysis_json)
+            # Step 3: Remove gaps that the user already addressed.
+            applied_ids_set = set(applied_checkbox_ids)
+            analysis_json["gaps"] = [
+                g
+                for g in analysis_json.get("gaps", [])
+                if g["id"] not in applied_ids_set
+            ]
+            analysis_json["checkbox_options"] = [
+                c
+                for c in analysis_json.get("checkbox_options", [])
+                if c["id"] not in applied_ids_set
+            ]
 
-        # Step 5: Floor individual score categories to their original values.
-        # Applied improvements can only raise scores, never lower them.
-        orig_sb = original_analysis.get("score_breakdown", {})
-        new_sb = analysis_json.get("score_breakdown", {})
-        for cat in _SCORE_LIMITS:
-            orig_val = orig_sb.get(cat, {}).get("value", 0)
-            new_val = new_sb.get(cat, {}).get("value", 0)
-            if new_val < orig_val and cat in new_sb:
-                new_sb[cat]["value"] = orig_val
-        # Recalculate total after flooring
-        analysis_json["score"] = sum(
-            new_sb.get(cat, {}).get("value", 0) for cat in _SCORE_LIMITS
-        )
+            # Step 4: Recalculate scores from the fully reconciled skill lists.
+            analysis_json = self._clamp_scores(analysis_json)
 
-        # Save to cache
-        ai_result = await self._save_to_cache(input_hash, analysis_json)
+            # Step 5: Floor individual score categories to their original values.
+            # Applied improvements can only raise scores, never lower them.
+            orig_sb = original_analysis.get("score_breakdown", {})
+            new_sb = analysis_json.get("score_breakdown", {})
+            for cat in _SCORE_LIMITS:
+                orig_val = orig_sb.get(cat, {}).get("value", 0)
+                new_val = new_sb.get(cat, {}).get("value", 0)
+                if new_val < orig_val and cat in new_sb:
+                    new_sb[cat]["value"] = orig_val
+            # Recalculate total after flooring
+            analysis_json["score"] = sum(
+                new_sb.get(cat, {}).get("value", 0) for cat in _SCORE_LIMITS
+            )
+
+            # Save to cache
+            ai_result = await self._save_to_cache(input_hash, analysis_json)
 
         return MatchAnalysisResult(
             analysis_id=ai_result.id,

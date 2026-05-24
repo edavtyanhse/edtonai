@@ -68,6 +68,7 @@ class OrchestratorService:
                 vacancy_result.parsed_vacancy,
                 original_analysis,
                 applied_checkbox_ids,
+                user_id=user_id,
             )
         else:
             match_result = await self.match_service.analyze_and_cache(
@@ -75,6 +76,7 @@ class OrchestratorService:
                 vacancy_result.parsed_vacancy,
                 resume_text=resume_text,
                 vacancy_text=vacancy_text,
+                user_id=user_id,
             )
         self.logger.info(
             "Match analyzed: id=%s cache_hit=%s",

@@ -10,6 +10,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
+from backend.domain.billing import UsageReservation
 from backend.services.match import MatchService
 from backend.services.resume import ResumeService
 from backend.services.vacancy import VacancyService
@@ -54,6 +55,27 @@ def mock_ai_result_repo():
     saved.id = uuid.uuid4()
     repo.save = AsyncMock(return_value=saved)
     return repo
+
+
+class NoopUsageContext:
+    def __init__(self, reservation=None) -> None:
+        self._reservation = reservation
+
+    async def __aenter__(self):
+        return self._reservation
+
+    async def __aexit__(self, exc_type, exc, tb):
+        return False
+
+
+class MockUsageService:
+    def __init__(self, reservation=None) -> None:
+        self.calls: list[tuple[str, str, str]] = []
+        self._reservation = reservation
+
+    def track_ai_call(self, user_id: str, operation: str, input_hash: str):
+        self.calls.append((user_id, operation, input_hash))
+        return NoopUsageContext(self._reservation)
 
 
 # ── ResumeService ─────────────────────────────────────────────────
@@ -147,6 +169,85 @@ class TestResumeService:
         mock_resume_repo.get_by_hash.return_value = resume
 
         result = await service.parse_and_cache("My resume text")
+
+        assert result.cache_hit is True
+        mock_ai_provider.generate_json.assert_not_called()
+
+    @pytest.mark.anyio
+    async def test_parse_meters_usage_only_on_cache_miss(
+        self,
+        mock_session,
+        mock_resume_repo,
+        mock_ai_result_repo,
+        mock_ai_provider,
+        mock_settings,
+    ):
+        """Usage metering wraps real provider calls only."""
+        usage_service = MockUsageService()
+        service = ResumeService(
+            session=mock_session,
+            resume_repo=mock_resume_repo,
+            ai_result_repo=mock_ai_result_repo,
+            ai_provider=mock_ai_provider,
+            settings=mock_settings,
+            usage_service=usage_service,
+        )
+        mock_ai_provider.generate_json.return_value = {
+            "personal_info": {"name": "Metered"},
+            "skills": [],
+        }
+
+        result = await service.parse_and_cache("My resume text", user_id="user-1")
+
+        assert result.cache_hit is False
+        assert len(usage_service.calls) == 1
+        assert usage_service.calls[0][0] == "user-1"
+        assert usage_service.calls[0][1] == "parse_resume"
+
+        cached = MagicMock()
+        cached.output_json = {"personal_info": {"name": "Cached"}, "skills": []}
+        mock_ai_result_repo.get.return_value = cached
+
+        cached_result = await service.parse_and_cache("My resume text", user_id="user-1")
+
+        assert cached_result.cache_hit is True
+        assert len(usage_service.calls) == 1
+
+    @pytest.mark.anyio
+    async def test_parse_rechecks_cache_for_duplicate_committed_usage(
+        self,
+        mock_session,
+        mock_resume_repo,
+        mock_ai_result_repo,
+        mock_ai_provider,
+        mock_settings,
+    ):
+        """A reused committed idempotency key must not call the provider again."""
+        cached = MagicMock()
+        cached.output_json = {
+            "personal_info": {"name": "Cached after lock"},
+            "skills": [],
+        }
+        mock_ai_result_repo.get = AsyncMock(side_effect=[None, cached])
+        reservation = UsageReservation(
+            event_id=uuid.uuid4(),
+            user_id=uuid.uuid4(),
+            feature_code="ai_operation",
+            operation="parse_resume",
+            idempotency_key="parse_resume:same",
+            status="committed",
+            provider_call_allowed=False,
+        )
+        service = ResumeService(
+            session=mock_session,
+            resume_repo=mock_resume_repo,
+            ai_result_repo=mock_ai_result_repo,
+            ai_provider=mock_ai_provider,
+            settings=mock_settings,
+            usage_service=MockUsageService(reservation),
+        )
+
+        result = await service.parse_and_cache("My resume text", user_id="user-1")
 
         assert result.cache_hit is True
         mock_ai_provider.generate_json.assert_not_called()

@@ -69,12 +69,17 @@ export/delete policies should treat it as sensitive user content.
 | `user_subscription` | Server-authoritative subscription state | One current subscription per user via partial unique index for active-like statuses. |
 | `usage_event` | Append-only usage audit | Unique `(user_id, feature_code, idempotency_key)` prevents duplicate usage charging. |
 | `payment_checkout_session` | Backend-created hosted checkout reference | Stores provider session ID and UX URLs, not card data or payment form payloads. |
-| `payment_transaction` | Provider payment attempt/transaction reference | Stores provider payment ID, amount, currency, status and timestamps only. |
-| `payment_provider_event` | Sanitized provider event journal | Stores event IDs, status and `payload_hash`, not raw sensitive webhook payloads. |
+| `payment_transaction` | Provider payment attempt/transaction reference | Stores internal `status` plus raw `provider_status`, amount, currency and timestamps only. |
+| `payment_provider_event` | Sanitized provider event journal | Stores event IDs, raw provider status and `payload_hash`, not raw sensitive webhook payloads. |
+| `billing_audit_log` | Sanitized billing state audit | Stores safe status transitions and references; no raw provider payloads or card data. |
 
-The current billing model intentionally stops at persistence. Checkout creation,
-signed webhook processing and entitlement enforcement are separate application
-services that must be added before paid access is enabled.
+The current billing model is used by the application-level billing foundation:
+`EntitlementService` decides whether a user can perform a billable AI operation,
+`UsageService` reserves/commits/cancels usage around uncached provider calls, and
+`BillingService` exposes safe read-only plan/subscription/usage state. Checkout
+creation and signed webhook processing now have non-activating skeleton services;
+real provider integration and entitlement activation remain separate future
+phases.
 
 ## Current Relationships
 
@@ -93,6 +98,7 @@ users
   -> usage_event
   -> payment_checkout_session
   -> payment_transaction
+  -> billing_audit_log
 
 vacancy_raw
   -> ideal_resume
@@ -108,6 +114,10 @@ vacancy_raw
   server-authoritative. Frontend success/cancel pages are UX only.
 - Provider webhook events must be verified and idempotently processed before
   changing subscription state.
+- Store both internal normalized payment state and raw provider status. Business
+  rules must use the internal state; provider adapters own raw status mapping.
+- Noop/disabled provider paths must never activate `trialing` or `active`
+  subscriptions.
 - Refresh and email verification tokens are bearer secrets. Store hashes only.
 - `resume_raw` and `vacancy_raw` are shared cache records. User-specific edits
   belong in `user_resume` / `user_vacancy` overrides.
@@ -141,6 +151,7 @@ vacancy_raw
 | `payment_checkout_session(provider, provider_session_id)` | unique | Prevent duplicate checkout session handling. |
 | `payment_transaction(provider, provider_payment_id)` | unique | Prevent duplicate payment transaction handling. |
 | `payment_provider_event(provider, provider_event_id)` | unique | Webhook/event idempotency key. |
+| `billing_audit_log.*_id` | indexes | Support support/security investigations without storing raw payloads. |
 
 ## Migration Notes
 
@@ -161,7 +172,7 @@ Important current Alembic revisions:
 ## Subscription Implementation Notes
 
 Billing attaches to `users.id`, not to `resume_raw`, `vacancy_raw` or `ai_result`.
-Entitlement checks should run in application services before expensive AI
-operations. Usage should be recorded transactionally with idempotency keys, and
-subscription activation must come only from verified provider events or trusted
-provider API confirmation.
+Entitlement checks run in application services before uncached AI provider calls.
+Usage is reserved before expensive work, committed after success, and marked
+failed if the provider call raises. Subscription activation must come only from
+verified provider events or trusted provider API confirmation.

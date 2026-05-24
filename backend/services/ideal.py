@@ -9,7 +9,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.core.config import Settings
 from backend.domain.ideal import IdealResumeResult
-from backend.errors.business import VacancyNotFoundError, ValidationError
+from backend.errors.business import (
+    EntitlementDeniedError,
+    VacancyNotFoundError,
+    ValidationError,
+)
 from backend.integration.ai.base import AIProvider
 from backend.integration.ai.prompts import IDEAL_RESUME_PROMPT
 from backend.repositories.interfaces import IIdealResumeRepository, IVacancyRepository
@@ -37,12 +41,14 @@ class IdealResumeService(CachedAIService):
         vacancy_service: IVacancyService,
         ai_provider: AIProvider,
         settings: Settings,
+        usage_service: Any | None = None,
     ) -> None:
         super().__init__(
             session=session,
             ai_provider=ai_provider,
             settings=settings,
             ai_result_repo=None,  # IdealResumeService uses ideal_repo for caching
+            usage_service=usage_service,
         )
         self.vacancy_repo = vacancy_repo
         self.ideal_repo = ideal_repo
@@ -140,21 +146,36 @@ class IdealResumeService(CachedAIService):
         # Step 4: Build prompt and call LLM
         prompt = self._build_prompt(parsed_vacancy, options)
 
-        ideal_output = await self.ai_provider.generate_json(
-            prompt, prompt_name=self.OPERATION
-        )
+        async with self._meter_ai_call(user_id, input_hash) as reservation:
+            if reservation is not None and not reservation.provider_call_allowed:
+                cached = await self.ideal_repo.get_by_input_hash(input_hash)
+                if cached is None:
+                    raise EntitlementDeniedError(
+                        "Identical operation is already being processed; retry shortly"
+                    )
+                return IdealResumeResult(
+                    ideal_id=cached.id,
+                    vacancy_id=actual_vacancy_id,
+                    ideal_resume_text=cached.text,
+                    metadata=cached.generation_metadata,
+                    cache_hit=True,
+                )
 
-        # Step 5: Save IdealResume
-        ideal = await self.ideal_repo.create(
-            vacancy_id=actual_vacancy_id,
-            vacancy_hash=vacancy_hash,
-            text=ideal_output["ideal_resume_text"],
-            generation_metadata=ideal_output.get("metadata", {}),
-            options=options,
-            input_hash=input_hash,
-            provider=self.provider_name,
-            model=self.model_name,
-        )
+            ideal_output = await self.ai_provider.generate_json(
+                prompt, prompt_name=self.OPERATION
+            )
+
+            # Step 5: Save IdealResume
+            ideal = await self.ideal_repo.create(
+                vacancy_id=actual_vacancy_id,
+                vacancy_hash=vacancy_hash,
+                text=ideal_output["ideal_resume_text"],
+                generation_metadata=ideal_output.get("metadata", {}),
+                options=options,
+                input_hash=input_hash,
+                provider=self.provider_name,
+                model=self.model_name,
+            )
         await self.session.commit()
 
         self.logger.info("Created ideal resume: %s", ideal.id)

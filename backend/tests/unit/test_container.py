@@ -34,6 +34,10 @@ class TestContainerSmoke:
             "version_service",
             "feedback_service",
             "analytics_service",
+            "entitlement_service",
+            "usage_service",
+            "billing_service",
+            "payment_webhook_service",
         ]
         for name in expected:
             assert hasattr(container, name), f"Missing provider: {name}"
@@ -53,6 +57,8 @@ class TestContainerSmoke:
             "subscription_repo",
             "usage_event_repo",
             "payment_event_repo",
+            "payment_checkout_session_repo",
+            "billing_audit_log_repo",
         ]
         for name in expected:
             assert hasattr(container, name), f"Missing provider: {name}"

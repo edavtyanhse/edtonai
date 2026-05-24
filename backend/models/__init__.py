@@ -2,6 +2,7 @@
 
 from .ai_result import AIResult
 from .billing import (
+    BillingAuditLog,
     BillingCustomer,
     BillingPlan,
     BillingPrice,
@@ -41,6 +42,7 @@ __all__ = [
     "OAuthAccount",
     "BillingPlan",
     "BillingPrice",
+    "BillingAuditLog",
     "PlanEntitlement",
     "BillingCustomer",
     "UserSubscription",
