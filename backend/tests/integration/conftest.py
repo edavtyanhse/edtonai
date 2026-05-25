@@ -294,6 +294,7 @@ async def client(mock_ai_provider):
             base_url="http://test",
             headers={"Authorization": f"Bearer {access_token}"},
         ) as ac:
+            ac.fake_vacancy_repo = fake_vacancy_repo
             yield ac
 
 

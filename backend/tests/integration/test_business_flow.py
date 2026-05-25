@@ -1,7 +1,10 @@
 import uuid
 
+import httpx
 import pytest
 from httpx import AsyncClient
+
+from backend.integration.scraper.scraper import WebScraper
 
 # Mock data for AI responses
 MOCK_PARSED_RESUME = {
@@ -102,6 +105,79 @@ async def test_parse_vacancy_flow(client: AsyncClient, mock_ai_provider):
 
     # Verify AI was called
     mock_ai_provider.generate_json.assert_called_once()
+
+
+@pytest.mark.anyio
+async def test_parse_vacancy_url_stores_sanitized_source_url(
+    client: AsyncClient,
+    mock_ai_provider,
+    monkeypatch,
+):
+    """URL imports must not persist user-controlled query secrets."""
+    mock_ai_provider.generate_json.return_value = MOCK_PARSED_VACANCY
+
+    async def resolve_public_host(hostname: str, port: int) -> set[str]:
+        return {"8.8.8.8"}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.host == "api.hh.ru":
+            return httpx.Response(403, request=request)
+        return httpx.Response(
+            200,
+            headers={"content-type": "text/html; charset=utf-8"},
+            text="<html><body><h1>Бизнес-аналитик</h1><p>Описание вакансии</p></body></html>",
+            request=request,
+        )
+
+    transport = httpx.MockTransport(handler)
+
+    class MockAsyncClient(httpx.AsyncClient):
+        def __init__(self, *args, **kwargs):
+            kwargs["transport"] = transport
+            super().__init__(*args, **kwargs)
+
+    monkeypatch.setattr(WebScraper, "_resolve_host", staticmethod(resolve_public_host))
+    monkeypatch.setattr(
+        "backend.integration.scraper.scraper.httpx.AsyncClient",
+        MockAsyncClient,
+    )
+
+    response = await client.post(
+        "/v1/vacancies/parse",
+        json={"url": "http://hh.ru/vacancy/123?access_token=secret#fragment"},
+    )
+
+    assert response.status_code == 200
+    vacancy_id = response.json()["vacancy_id"]
+    repo = client.fake_vacancy_repo
+    vacancy = await repo.get_by_id(uuid.UUID(vacancy_id))
+    assert vacancy.source_url == "https://hh.ru/vacancy/123"
+    assert "access_token" not in vacancy.source_url
+    assert "secret" not in vacancy.source_url
+
+
+@pytest.mark.anyio
+async def test_parse_vacancy_mixed_input_stores_sanitized_source_url(
+    client: AsyncClient,
+    mock_ai_provider,
+):
+    """Even text-first submissions must not persist URL query secrets."""
+    mock_ai_provider.generate_json.return_value = MOCK_PARSED_VACANCY
+
+    response = await client.post(
+        "/v1/vacancies/parse",
+        json={
+            "vacancy_text": f"Manual vacancy text for mixed input {uuid.uuid4()}",
+            "url": "https://hh.ru/vacancy/123?access_token=secret#fragment",
+        },
+    )
+
+    assert response.status_code == 200
+    vacancy_id = response.json()["vacancy_id"]
+    vacancy = await client.fake_vacancy_repo.get_by_id(uuid.UUID(vacancy_id))
+    assert vacancy.source_url == "https://hh.ru/vacancy/123"
+    assert "access_token" not in vacancy.source_url
+    assert "secret" not in vacancy.source_url
 
 
 @pytest.mark.anyio

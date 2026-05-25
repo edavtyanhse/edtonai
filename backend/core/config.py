@@ -121,6 +121,7 @@ class Settings(BaseSettings):
     scraper_timeout_seconds: float = 15.0
     scraper_max_html_bytes: int = 1_000_000
     scraper_max_redirects: int = 5
+    hh_api_user_agent: str = "EdTonAI/1.0 (contact@edtonai.tech)"
 
     @computed_field
     @property
@@ -219,6 +220,15 @@ class Settings(BaseSettings):
             raise ValueError("SCRAPER_MAX_HTML_BYTES must be positive")
         if self.scraper_max_redirects < 0:
             raise ValueError("SCRAPER_MAX_REDIRECTS must be non-negative")
+        if (
+            not self.hh_api_user_agent.strip()
+            or len(self.hh_api_user_agent) > 256
+            or any(ord(char) < 32 or ord(char) == 127 for char in self.hh_api_user_agent)
+        ):
+            raise ValueError(
+                "HH_API_USER_AGENT must be non-empty, <=256 chars, "
+                "and must not contain control characters"
+            )
         if self.payment_webhook_replay_tolerance_seconds <= 0:
             raise ValueError(
                 "PAYMENT_WEBHOOK_REPLAY_TOLERANCE_SECONDS must be positive"

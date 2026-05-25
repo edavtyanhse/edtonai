@@ -37,11 +37,6 @@ class WebScraper:
         "Accept-Language": "ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7",
     }
 
-    _HH_API_HEADERS = {
-        "User-Agent": "EdtonAI/1.0 (resume-adapter)",
-        "Accept": "application/json",
-    }
-
     MAX_RETRIES = 2
 
     # ─── Public interface ───────────────────────────────────────────
@@ -59,7 +54,7 @@ class WebScraper:
         # Try HH.ru API path first
         vacancy_id = cls._extract_hh_vacancy_id(url)
         if vacancy_id:
-            return await cls._fetch_hh_api(vacancy_id, settings)
+            return await cls._fetch_hh_api(vacancy_id, url, settings)
 
         # Generic HTML scraping for non-HH URLs
         return await cls._fetch_html(url, settings)
@@ -77,48 +72,101 @@ class WebScraper:
         return match.group(1) if match else None
 
     @classmethod
-    async def _fetch_hh_api(cls, vacancy_id: str, settings: Settings) -> str:
+    async def _fetch_hh_api(
+        cls,
+        vacancy_id: str,
+        original_url: str,
+        settings: Settings,
+    ) -> str:
         """Fetch vacancy via HH.ru public API and format as clean text."""
         api_url = f"{_HH_API_BASE}/vacancies/{vacancy_id}"
 
         async with httpx.AsyncClient(timeout=settings.scraper_timeout_seconds) as client:
             for attempt in range(cls.MAX_RETRIES + 1):
                 try:
-                    resp = await client.get(api_url, headers=cls._HH_API_HEADERS)
+                    resp = await client.get(
+                        api_url,
+                        headers=cls._hh_api_headers(settings),
+                    )
                     resp.raise_for_status()
                     data = resp.json()
                     return cls._format_hh_vacancy(data)
                 except httpx.HTTPStatusError as e:
-                    if e.response.status_code == 404:
+                    status_code = e.response.status_code
+                    if status_code == 404:
                         raise ScraperError(
                             f"Вакансия не найдена на HH.ru (ID: {vacancy_id})",
                             status_code=404,
                         )
+                    if cls._should_fallback_to_hh_html(status_code):
+                        if attempt < cls.MAX_RETRIES:
+                            logger.warning(
+                                "HH.ru API attempt %d failed (%s), retrying...",
+                                attempt + 1,
+                                status_code,
+                            )
+                            continue
+                        logger.warning(
+                            "HH.ru API failed for vacancy %s with HTTP %s; "
+                            "falling back to HTML page",
+                            vacancy_id,
+                            status_code,
+                        )
+                        return await cls._fetch_html(
+                            cls._normalize_hh_vacancy_url(original_url),
+                            settings,
+                        )
+                    raise ScraperError(f"HH.ru API error: HTTP {status_code}")
+                except ValueError:
+                    raise ScraperError("HH.ru API returned invalid response")
+                except httpx.RequestError as e:
                     if attempt < cls.MAX_RETRIES:
                         logger.warning(
                             "HH.ru API attempt %d failed (%s), retrying...",
                             attempt + 1,
-                            e.response.status_code,
+                            type(e).__name__,
                         )
                         continue
-                    raise ScraperError(
-                        f"HH.ru API error: HTTP {e.response.status_code}"
+                    logger.error(
+                        "HH.ru API request failed after retries: %s",
+                        type(e).__name__,
                     )
-                except (httpx.RequestError, Exception) as e:
-                    if attempt < cls.MAX_RETRIES:
-                        logger.warning(
-                            "HH.ru API attempt %d failed (%s), retrying...",
-                            attempt + 1,
-                            str(e),
-                        )
-                        continue
-                    logger.error("HH.ru API failed after retries: %s", e)
-                    raise ScraperError(
-                        f"Не удалось получить вакансию с HH.ru: {str(e)}"
-                    )
+                    raise ScraperError("Не удалось получить вакансию с HH.ru")
 
         # Unreachable, but satisfies type checker
         raise ScraperError("HH.ru API request failed")
+
+    @staticmethod
+    def _hh_api_headers(settings: Settings) -> dict[str, str]:
+        user_agent = settings.hh_api_user_agent.strip()
+        return {
+            "User-Agent": user_agent,
+            "HH-User-Agent": user_agent,
+            "Accept": "application/json",
+        }
+
+    @staticmethod
+    def _should_fallback_to_hh_html(status_code: int) -> bool:
+        return status_code in {403, 429} or status_code >= 500
+
+    @staticmethod
+    def _normalize_hh_vacancy_url(url: str) -> str:
+        """Use HTTPS HH page without user-controlled query or fragment."""
+        parsed = urlparse(url)
+        hostname = parsed.hostname.lower() if parsed.hostname else "hh.ru"
+        return urlunparse(("https", hostname, parsed.path, "", "", ""))
+
+    @staticmethod
+    def sanitize_source_url(url: str | None) -> str | None:
+        """Return a safe URL variant for persistence."""
+        if not url:
+            return None
+        parsed = urlparse(url)
+        hostname = parsed.hostname.lower() if parsed.hostname else ""
+        if not hostname:
+            return None
+        scheme = "https" if hostname in _HH_ALLOWED_HOSTS else parsed.scheme
+        return urlunparse((scheme, hostname, parsed.path, "", "", ""))
 
     @classmethod
     def _format_hh_vacancy(cls, data: dict[str, Any]) -> str:
@@ -276,23 +324,52 @@ class WebScraper:
                     return cls._clean_html(html)
                 except ScraperError:
                     raise
-                except (httpx.HTTPError, Exception) as e:
+                except httpx.HTTPStatusError as e:
+                    status_code = e.response.status_code
+                    if attempt < cls.MAX_RETRIES:
+                        logger.warning(
+                            "Scrape attempt %d failed for %s: HTTP %s, retrying...",
+                            attempt + 1,
+                            cls._safe_url_for_log(url),
+                            status_code,
+                        )
+                        continue
+                    logger.error(
+                        "Failed to fetch vacancy URL %s: HTTP %s",
+                        cls._safe_url_for_log(url),
+                        status_code,
+                    )
+                    raise ScraperError("Failed to fetch URL (site may block bots)")
+                except httpx.HTTPError as e:
                     if attempt < cls.MAX_RETRIES:
                         logger.warning(
                             "Scrape attempt %d failed for %s: %s, retrying...",
                             attempt + 1,
                             cls._safe_url_for_log(url),
-                            str(e),
+                            type(e).__name__,
                         )
                         continue
                     logger.error(
                         "Failed to fetch vacancy URL %s: %s",
                         cls._safe_url_for_log(url),
-                        e,
+                        type(e).__name__,
                     )
-                    raise ScraperError(
-                        f"Failed to fetch URL (site may block bots): {str(e)}"
+                    raise ScraperError("Failed to fetch URL (site may block bots)")
+                except Exception as e:
+                    if attempt < cls.MAX_RETRIES:
+                        logger.warning(
+                            "Scrape attempt %d failed for %s: %s, retrying...",
+                            attempt + 1,
+                            cls._safe_url_for_log(url),
+                            type(e).__name__,
+                        )
+                        continue
+                    logger.error(
+                        "Failed to fetch vacancy URL %s: %s",
+                        cls._safe_url_for_log(url),
+                        type(e).__name__,
                     )
+                    raise ScraperError("Failed to fetch URL (site may block bots)")
 
         raise ScraperError("Failed to fetch URL after retries")
 
@@ -376,7 +453,8 @@ class WebScraper:
     def _is_blocked_ip(address: str) -> bool:
         ip = ipaddress.ip_address(address)
         return (
-            ip.is_private
+            not ip.is_global
+            or ip.is_private
             or ip.is_loopback
             or ip.is_link_local
             or ip.is_multicast

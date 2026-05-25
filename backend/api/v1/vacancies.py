@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from backend.api.dependencies import get_vacancy_service
 from backend.core.auth import require_auth
+from backend.integration.scraper import WebScraper
 from backend.schemas import (
     VacancyDetailResponse,
     VacancyParseRequest,
@@ -30,9 +31,8 @@ async def parse_vacancy(
     """
     text = request.vacancy_text
     source_url = request.url
+    persisted_source_url = WebScraper.sanitize_source_url(source_url)
     if not text and source_url:
-        from backend.integration.scraper import WebScraper
-
         text = await WebScraper.fetch_text(source_url, settings=service.settings)
 
     if not text or len(text) < 10:
@@ -40,7 +40,11 @@ async def parse_vacancy(
             status_code=422, detail="Vacancy text is empty or too short"
         )
 
-    result = await service.parse_and_cache(text, source_url=source_url, user_id=user_id)
+    result = await service.parse_and_cache(
+        text,
+        source_url=persisted_source_url,
+        user_id=user_id,
+    )
 
     return VacancyParseResponse(
         vacancy_id=result.vacancy_id,

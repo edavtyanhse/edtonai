@@ -1,9 +1,12 @@
 """Security hardening regression tests."""
 
+import logging
+
+import httpx
 import pytest
 from starlette.requests import Request
 
-from backend.core.config import Settings
+from backend.core.config import Settings, settings
 from backend.errors.integration import ScraperError
 from backend.integration.scraper.scraper import WebScraper
 from backend.main import _client_ip, container
@@ -57,6 +60,144 @@ async def test_scraper_blocks_loopback_url():
 async def test_scraper_blocks_unlisted_public_host_before_network():
     with pytest.raises(ScraperError, match="host is not allowed"):
         await WebScraper.fetch_text("https://example.com/vacancy")
+
+
+@pytest.mark.anyio
+async def test_hh_api_forbidden_falls_back_to_https_html_without_query(monkeypatch):
+    requested_urls: list[str] = []
+
+    async def resolve_public_host(hostname: str, port: int) -> set[str]:
+        return {"8.8.8.8"}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        requested_urls.append(str(request.url))
+        if request.url.host == "api.hh.ru":
+            assert request.headers["HH-User-Agent"] == settings.hh_api_user_agent
+            return httpx.Response(
+                403,
+                json={"errors": [{"type": "forbidden"}]},
+                request=request,
+            )
+        return httpx.Response(
+            200,
+            headers={"content-type": "text/html; charset=utf-8"},
+            text="<html><body><h1>Бизнес-аналитик</h1><p>Описание вакансии</p></body></html>",
+            request=request,
+        )
+
+    transport = httpx.MockTransport(handler)
+
+    class MockAsyncClient(httpx.AsyncClient):
+        def __init__(self, *args, **kwargs):
+            kwargs["transport"] = transport
+            super().__init__(*args, **kwargs)
+
+    monkeypatch.setattr(WebScraper, "_resolve_host", staticmethod(resolve_public_host))
+    monkeypatch.setattr(
+        "backend.integration.scraper.scraper.httpx.AsyncClient",
+        MockAsyncClient,
+    )
+
+    text = await WebScraper.fetch_text(
+        "http://hh.ru/vacancy/123?access_token=secret",
+        settings=settings,
+    )
+
+    assert "Бизнес-аналитик" in text
+    assert "https://hh.ru/vacancy/123" in requested_urls
+    assert all("access_token" not in url for url in requested_urls)
+
+
+@pytest.mark.anyio
+async def test_hh_api_not_found_does_not_fall_back_to_html(monkeypatch):
+    requested_hosts: list[str] = []
+
+    async def resolve_public_host(hostname: str, port: int) -> set[str]:
+        return {"8.8.8.8"}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        requested_hosts.append(request.url.host or "")
+        return httpx.Response(
+            404,
+            json={"errors": [{"type": "not_found"}]},
+            request=request,
+        )
+
+    transport = httpx.MockTransport(handler)
+
+    class MockAsyncClient(httpx.AsyncClient):
+        def __init__(self, *args, **kwargs):
+            kwargs["transport"] = transport
+            super().__init__(*args, **kwargs)
+
+    monkeypatch.setattr(WebScraper, "_resolve_host", staticmethod(resolve_public_host))
+    monkeypatch.setattr(
+        "backend.integration.scraper.scraper.httpx.AsyncClient",
+        MockAsyncClient,
+    )
+
+    with pytest.raises(ScraperError) as exc_info:
+        await WebScraper.fetch_text("https://hh.ru/vacancy/404", settings=settings)
+
+    assert exc_info.value.status_code == 404
+    assert requested_hosts == ["api.hh.ru"]
+
+
+@pytest.mark.anyio
+async def test_scraper_fetch_error_does_not_leak_url_query(monkeypatch, caplog):
+    async def resolve_public_host(hostname: str, port: int) -> set[str]:
+        return {"8.8.8.8"}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(403, request=request)
+
+    transport = httpx.MockTransport(handler)
+
+    class MockAsyncClient(httpx.AsyncClient):
+        def __init__(self, *args, **kwargs):
+            kwargs["transport"] = transport
+            super().__init__(*args, **kwargs)
+
+    monkeypatch.setattr(WebScraper, "_resolve_host", staticmethod(resolve_public_host))
+    monkeypatch.setattr(
+        "backend.integration.scraper.scraper.httpx.AsyncClient",
+        MockAsyncClient,
+    )
+
+    caplog.set_level(logging.WARNING)
+    with pytest.raises(ScraperError) as exc_info:
+        await WebScraper._fetch_html(
+            "https://hh.ru/vacancy/123?access_token=secret",
+            settings,
+        )
+
+    assert "access_token" not in exc_info.value.message
+    assert "secret" not in exc_info.value.message
+    assert "access_token" not in caplog.text
+    assert "secret" not in caplog.text
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize("address", ["100.64.0.1", "169.254.169.254", "2001:db8::1"])
+async def test_scraper_blocks_non_global_resolved_ips(monkeypatch, address: str):
+    async def resolve_non_global_host(hostname: str, port: int) -> set[str]:
+        return {address}
+
+    monkeypatch.setattr(
+        WebScraper,
+        "_resolve_host",
+        staticmethod(resolve_non_global_host),
+    )
+
+    with pytest.raises(ScraperError, match="Private or local network"):
+        await WebScraper.fetch_text("https://hh.ru/vacancy/123", settings=settings)
+
+
+def test_hh_api_user_agent_rejects_control_characters(monkeypatch):
+    monkeypatch.setenv("HH_API_USER_AGENT", "EdTonAI\r\nAuthorization: secret")
+
+    with pytest.raises(ValueError, match="HH_API_USER_AGENT"):
+        Settings()
 
 
 def test_production_rejects_weak_jwt_secret(monkeypatch):
