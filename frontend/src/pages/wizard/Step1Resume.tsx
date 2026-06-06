@@ -146,14 +146,18 @@ export default function Step1Resume() {
         {isProcessingFile ? (
           <div className="flex flex-col items-center justify-center py-4">
             <Loader2 className="w-8 h-8 text-blue-500 animate-spin mb-2" />
-            <p className="text-sm text-slate-700 dark:text-slate-300">{t('wizard.step1.analyzing')}</p>
+            <p className="text-sm text-slate-700 dark:text-slate-300">
+              {t('wizard.step1.analyzing')}
+            </p>
           </div>
         ) : hasFile ? (
           <div className="flex flex-col items-center justify-center py-4">
             <div className="w-12 h-12 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-3">
               <FileText className="w-6 h-6 text-green-400" />
             </div>
-            <h3 className="text-sm font-medium text-slate-900 dark:text-white">{t('wizard.step1.file_loaded')}</h3>
+            <h3 className="text-sm font-medium text-slate-900 dark:text-white">
+              {t('wizard.step1.file_loaded')}
+            </h3>
             <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
               {localText.length.toLocaleString()} {t('wizard.step1.characters')}
             </p>
@@ -175,8 +179,12 @@ export default function Step1Resume() {
             <div className="w-12 h-12 bg-blue-500/20 rounded-full flex items-center justify-center mx-auto mb-3">
               <UploadCloud className="w-6 h-6 text-blue-400" />
             </div>
-            <h3 className="text-sm font-medium text-slate-900 dark:text-white">{t('wizard.step1.upload_tab')}</h3>
-            <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">{t('wizard.step1.supports')}</p>
+            <h3 className="text-sm font-medium text-slate-900 dark:text-white">
+              {t('wizard.step1.upload_tab')}
+            </h3>
+            <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
+              {t('wizard.step1.supports')}
+            </p>
           </>
         )}
 
@@ -197,7 +205,9 @@ export default function Step1Resume() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{t('wizard.step1.title')}</h1>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
+            {t('wizard.step1.title')}
+          </h1>
           <p className="text-slate-600 dark:text-slate-400 mt-1">{t('wizard.step1.description')}</p>
         </div>
         {mode === 'parsed' && (
@@ -223,7 +233,9 @@ export default function Step1Resume() {
               <span className="w-full border-t border-slate-300 dark:border-slate-700" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-slate-50 dark:bg-slate-900 px-2 text-slate-500">{t('wizard.step1.text_tab')}</span>
+              <span className="bg-slate-50 dark:bg-slate-900 px-2 text-slate-500">
+                {t('wizard.step1.text_tab')}
+              </span>
             </div>
           </div>
 
@@ -325,13 +337,6 @@ export default function Step1Resume() {
               </Button>
             </div>
           </div>
-        </div>
-      )}
-
-      {/* Cache indicator */}
-      {parseMutation.data?.cache_hit && (
-        <div className="text-sm text-gray-500 bg-gray-50 px-3 py-2 rounded-lg">
-          ✓ {t('common.success')} (Cache)
         </div>
       )}
     </div>

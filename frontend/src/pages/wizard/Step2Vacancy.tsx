@@ -165,7 +165,9 @@ export default function Step2Vacancy() {
               <span className="w-full border-t border-slate-300 dark:border-slate-700" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-slate-50 dark:bg-slate-900 px-2 text-slate-500">{t('wizard.step1.text_tab')}</span>
+              <span className="bg-slate-50 dark:bg-slate-900 px-2 text-slate-500">
+                {t('wizard.step1.text_tab')}
+              </span>
             </div>
           </div>
 
@@ -264,13 +266,6 @@ export default function Step2Vacancy() {
               </Button>
             </div>
           </div>
-        </div>
-      )}
-
-      {/* Cache indicator */}
-      {parseMutation.data?.cache_hit && (
-        <div className="text-sm text-gray-500 bg-gray-50 px-3 py-2 rounded-lg">
-          ✓ {t('common.success')} (Cache)
         </div>
       )}
     </div>

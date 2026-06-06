@@ -402,11 +402,6 @@ Requirements:
                       {t('ideal.result_title', 'Ideal Resume')}
                     </span>
                   </div>
-                  {generateMutation.data?.cache_hit && (
-                    <span className="text-xs text-slate-600 dark:text-slate-400 bg-slate-200 dark:bg-slate-700 px-2 py-1 rounded">
-                      cached
-                    </span>
-                  )}
                 </div>
                 <div className="max-h-[600px] overflow-y-auto custom-scrollbar p-4 font-mono">
                   <FormattedResumeView text={resultText} />
@@ -440,7 +435,10 @@ Requirements:
                     </h3>
                     <div className="space-y-1">
                       {metadata.structure.map((s, i) => (
-                        <div key={i} className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
+                        <div
+                          key={i}
+                          className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400"
+                        >
                           <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
                           {s}
                         </div>
@@ -535,7 +533,9 @@ function OptionGroup<T>({
 }) {
   return (
     <div>
-      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">{label}</label>
+      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+        {label}
+      </label>
       <div className="flex gap-2 flex-wrap">
         {options.map((opt) => (
           <button
@@ -565,7 +565,10 @@ function FormattedResumeView({ text }: { text: string }) {
         if (line.trim() === '') return <div key={i} className="h-3" />
         if (SECTION_PATTERN.test(line.trim())) {
           return (
-            <div key={i} className="mt-5 mb-1.5 pb-1 border-b border-slate-300 dark:border-slate-600">
+            <div
+              key={i}
+              className="mt-5 mb-1.5 pb-1 border-b border-slate-300 dark:border-slate-600"
+            >
               <span className="text-xs font-bold uppercase tracking-widest text-blue-400">
                 {line.trim()}
               </span>
@@ -574,7 +577,9 @@ function FormattedResumeView({ text }: { text: string }) {
         }
         return (
           <div key={i} className={`${line.trim().startsWith('•') ? 'pl-4' : 'pl-3'} py-0.5`}>
-            <span className="text-slate-700 dark:text-slate-300 text-[13px] leading-relaxed">{line}</span>
+            <span className="text-slate-700 dark:text-slate-300 text-[13px] leading-relaxed">
+              {line}
+            </span>
           </div>
         )
       })}

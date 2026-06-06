@@ -313,13 +313,6 @@ export default function Step3Analysis() {
               <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
           </div>
-
-          {/* Cache indicator */}
-          {analyzeMutation.data?.cache_hit && (
-            <div className="text-sm text-app-text-subtle bg-app-surface-muted px-3 py-2 rounded-lg">
-              ✓ {t('common.success')} (Cache)
-            </div>
-          )}
         </div>
       )}
     </div>

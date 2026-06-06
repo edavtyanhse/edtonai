@@ -99,7 +99,7 @@ class WebScraper:
                             status_code=404,
                         )
                     if cls._should_fallback_to_hh_html(status_code):
-                        if attempt < cls.MAX_RETRIES:
+                        if status_code != 403 and attempt < cls.MAX_RETRIES:
                             logger.warning(
                                 "HH.ru API attempt %d failed (%s), retrying...",
                                 attempt + 1,
@@ -326,6 +326,15 @@ class WebScraper:
                     raise
                 except httpx.HTTPStatusError as e:
                     status_code = e.response.status_code
+                    if status_code == 451 and cls._is_hh_url(url):
+                        logger.warning(
+                            "HH.ru HTML page is unavailable from this environment: HTTP 451"
+                        )
+                        raise ScraperError(
+                            "HH.ru ограничил доступ к этой вакансии из облачной среды. "
+                            "Вставьте текст вакансии вручную.",
+                            status_code=422,
+                        )
                     if attempt < cls.MAX_RETRIES:
                         logger.warning(
                             "Scrape attempt %d failed for %s: HTTP %s, retrying...",
@@ -435,6 +444,11 @@ class WebScraper:
             hostname == allowed_host or hostname.endswith(f".{allowed_host}")
             for allowed_host in allowed_hosts
         )
+
+    @staticmethod
+    def _is_hh_url(url: str) -> bool:
+        hostname = urlparse(url).hostname
+        return bool(hostname and hostname.lower() in _HH_ALLOWED_HOSTS)
 
     @staticmethod
     async def _resolve_host(hostname: str, port: int) -> set[str]:

@@ -109,6 +109,47 @@ async def test_hh_api_forbidden_falls_back_to_https_html_without_query(monkeypat
 
 
 @pytest.mark.anyio
+async def test_hh_html_legal_restriction_returns_actionable_error(monkeypatch):
+    requested_urls: list[str] = []
+
+    async def resolve_public_host(hostname: str, port: int) -> set[str]:
+        return {"8.8.8.8"}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        requested_urls.append(str(request.url))
+        if request.url.host == "api.hh.ru":
+            return httpx.Response(403, request=request)
+        return httpx.Response(451, request=request)
+
+    transport = httpx.MockTransport(handler)
+
+    class MockAsyncClient(httpx.AsyncClient):
+        def __init__(self, *args, **kwargs):
+            kwargs["transport"] = transport
+            super().__init__(*args, **kwargs)
+
+    monkeypatch.setattr(WebScraper, "_resolve_host", staticmethod(resolve_public_host))
+    monkeypatch.setattr(
+        "backend.integration.scraper.scraper.httpx.AsyncClient",
+        MockAsyncClient,
+    )
+
+    with pytest.raises(ScraperError) as exc_info:
+        await WebScraper.fetch_text(
+            "https://hh.ru/vacancy/123?access_token=secret",
+            settings=settings,
+        )
+
+    assert exc_info.value.status_code == 422
+    assert "Вставьте текст вакансии вручную" in exc_info.value.message
+    assert requested_urls == [
+        "https://api.hh.ru/vacancies/123",
+        "https://hh.ru/vacancy/123",
+    ]
+    assert all("access_token" not in url for url in requested_urls)
+
+
+@pytest.mark.anyio
 async def test_hh_api_not_found_does_not_fall_back_to_html(monkeypatch):
     requested_hosts: list[str] = []
 

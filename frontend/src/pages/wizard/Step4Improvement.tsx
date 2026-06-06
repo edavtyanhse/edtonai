@@ -404,6 +404,7 @@ export default function Step4Improvement() {
                 variant="secondary"
                 onClick={() => setShowExportDropdown(!showExportDropdown)}
                 disabled={reanalyzeMutation.isPending}
+                className="min-w-[180px] sm:w-[280px]"
                 aria-haspopup="true"
                 aria-expanded={showExportDropdown}
                 aria-controls="export-menu"
@@ -468,6 +469,7 @@ export default function Step4Improvement() {
             <Button
               onClick={handleGenerateCoverLetter}
               disabled={!currentVersionId || coverLetterMutation.isPending}
+              className="min-w-[180px] sm:w-[280px]"
             >
               {coverLetterMutation.isPending ? (
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -748,16 +750,16 @@ export default function Step4Improvement() {
             </div>
 
             {/* Right: Improvements List */}
-            <div className="space-y-4">
+            <div className="flex flex-col gap-4 lg:h-[600px]">
               {/* Improvements - what got better */}
               {lastAppliedChanges.length > 0 && (
-                <div className="bg-app-success-soft/60 border border-app-success/30 rounded-lg p-4">
+                <div className="min-h-0 flex-1 bg-app-success-soft/60 border border-app-success/30 rounded-lg p-4 flex flex-col">
                   <h3 className="font-medium text-app-success mb-3 flex items-center gap-2">
                     <TrendingUp className="w-4 h-4" />
                     {t('wizard.step3.improvements')}
                   </h3>
                   {lastAppliedChanges.length > 0 ? (
-                    <div className="space-y-2">
+                    <div className="min-h-0 space-y-2 overflow-y-auto pr-1 custom-scrollbar">
                       {lastAppliedChanges.map((change, idx) => (
                         <div key={idx} className="flex gap-2 text-sm text-app-success">
                           <Check className="w-4 h-4 mt-0.5 text-app-success flex-shrink-0" />
