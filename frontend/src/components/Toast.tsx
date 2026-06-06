@@ -41,15 +41,15 @@ export function ToastProvider({ children }: { children: ReactNode }) {
 
 function ToastItem({ toast, onClose }: { toast: Toast; onClose: () => void }) {
   const icons = {
-    success: <CheckCircle className="w-5 h-5 text-green-500" />,
-    error: <AlertCircle className="w-5 h-5 text-red-500" />,
-    info: <Info className="w-5 h-5 text-blue-500" />,
+    success: <CheckCircle className="w-5 h-5 text-app-success" />,
+    error: <AlertCircle className="w-5 h-5 text-app-danger" />,
+    info: <Info className="w-5 h-5 text-app-accent" />,
   }
 
   const backgrounds = {
-    success: 'bg-green-50 border-green-200',
-    error: 'bg-red-50 border-red-200',
-    info: 'bg-blue-50 border-blue-200',
+    success: 'bg-app-success-soft border-app-success/30',
+    error: 'bg-app-danger-soft border-app-danger/30',
+    info: 'bg-app-accent-soft border-app-accent/30',
   }
 
   return (
@@ -57,8 +57,8 @@ function ToastItem({ toast, onClose }: { toast: Toast; onClose: () => void }) {
       className={`flex items-center gap-3 px-4 py-3 rounded-lg border shadow-lg min-w-[300px] max-w-md animate-slide-in ${backgrounds[toast.type]}`}
     >
       {icons[toast.type]}
-      <span className="flex-1 text-sm text-gray-700">{toast.message}</span>
-      <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+      <span className="flex-1 text-sm text-app-text-muted">{toast.message}</span>
+      <button onClick={onClose} className="text-app-text-subtle hover:text-app-text-muted">
         <X className="w-4 h-4" />
       </button>
     </div>

@@ -22,23 +22,23 @@ export default function WizardLayout({ steps, currentStep, children }: WizardLay
   const { t } = useTranslation()
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white">
+    <div className="min-h-screen bg-app-bg text-app-text">
       {/* Stepper Header */}
-      <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-lg border-b border-slate-200 dark:border-slate-800 sticky top-0 z-40">
+      <div className="bg-app-surface/80 backdrop-blur-lg border-b border-app-border sticky top-0 z-40">
         <div className="max-w-5xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-4">
               <button
                 onClick={() => navigate('/')}
-                className="flex items-center gap-2 p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white group"
+                className="flex items-center gap-2 p-2 hover:bg-app-surface-muted rounded-lg transition-colors text-app-text-muted hover:text-app-text group"
                 title={t('wizard.home_tooltip')}
               >
                 <Home className="w-5 h-5" />
-                <span className="text-sm font-medium group-hover:text-slate-900 dark:group-hover:text-white transition-colors">
+                <span className="text-sm font-medium group-hover:text-app-text transition-colors">
                   {t('common.back_home')}
                 </span>
               </button>
-              <h1 className="text-lg font-semibold text-slate-900 dark:text-white">{t('wizard.page_title')}</h1>
+              <h1 className="text-lg font-semibold text-app-text">{t('wizard.page_title')}</h1>
             </div>
             <div className="flex items-center gap-1">
               <ThemeSwitcher />
@@ -58,7 +58,7 @@ export default function WizardLayout({ steps, currentStep, children }: WizardLay
                       {index > 0 && (
                         <div
                           className={`absolute left-0 right-1/2 top-5 h-0.5 -translate-y-1/2 ${
-                            isCompleted || isCurrent ? 'bg-brand-500' : 'bg-white dark:bg-slate-800'
+                            isCompleted || isCurrent ? 'bg-app-accent' : 'bg-app-border'
                           }`}
                         />
                       )}
@@ -67,7 +67,7 @@ export default function WizardLayout({ steps, currentStep, children }: WizardLay
                       {index < steps.length - 1 && (
                         <div
                           className={`absolute left-1/2 right-0 top-5 h-0.5 -translate-y-1/2 ${
-                            isCompleted ? 'bg-brand-500' : 'bg-white dark:bg-slate-800'
+                            isCompleted ? 'bg-app-accent' : 'bg-app-border'
                           }`}
                         />
                       )}
@@ -77,10 +77,10 @@ export default function WizardLayout({ steps, currentStep, children }: WizardLay
                         <div
                           className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold z-10 transition-all duration-300 ${
                             isCompleted
-                              ? 'bg-brand-600 text-white shadow-lg shadow-brand-500/25'
+                              ? 'bg-app-accent text-white shadow-lg shadow-brand-500/25'
                               : isCurrent
-                                ? 'bg-brand-500 text-white ring-4 ring-brand-500/20 shadow-lg shadow-brand-500/40 scale-110'
-                                : 'bg-white dark:bg-slate-800 text-slate-500 border border-slate-300 dark:border-slate-700'
+                                ? 'bg-app-accent text-white ring-4 ring-app-accent/20 shadow-lg shadow-brand-500/40 scale-110'
+                                : 'bg-app-surface text-app-text-subtle border border-app-border'
                           }`}
                         >
                           {isCompleted ? <Check className="w-5 h-5" /> : step.id}
@@ -89,16 +89,16 @@ export default function WizardLayout({ steps, currentStep, children }: WizardLay
                           <div
                             className={`text-sm font-medium transition-colors ${
                               isCurrent
-                                ? 'text-brand-400'
+                                ? 'text-app-accent'
                                 : isCompleted
-                                  ? 'text-slate-900 dark:text-white'
-                                  : 'text-slate-500'
+                                  ? 'text-app-text'
+                                  : 'text-app-text-subtle'
                             }`}
                           >
                             {step.title}
                           </div>
                           <div
-                            className={`text-xs mt-0.5 hidden sm:block transition-colors ${isCurrent ? 'text-brand-300/70' : 'text-slate-600'}`}
+                            className={`text-xs mt-0.5 hidden sm:block transition-colors ${isCurrent ? 'text-app-accent/80' : 'text-app-text-muted'}`}
                           >
                             {step.subtitle}
                           </div>

@@ -31,10 +31,10 @@ export default function ConfirmDialog({
       <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={onClose} />
 
       {/* Dialog */}
-      <div className="relative bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl shadow-2xl max-w-md w-full mx-4 p-6">
+      <div className="relative bg-app-surface border border-app-border rounded-xl shadow-2xl max-w-md w-full mx-4 p-6">
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
+          className="absolute top-4 right-4 text-app-text-muted hover:text-app-text transition-colors"
         >
           <X className="w-5 h-5" />
         </button>
@@ -42,26 +42,22 @@ export default function ConfirmDialog({
         <div className="flex items-start gap-4">
           <div
             className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${
-              variant === 'danger' ? 'bg-red-900/20' : 'bg-blue-900/20'
+              variant === 'danger' ? 'bg-app-danger-soft' : 'bg-app-accent-soft'
             }`}
           >
             <AlertTriangle
-              className={`w-5 h-5 ${variant === 'danger' ? 'text-red-400' : 'text-blue-400'}`}
+              className={`w-5 h-5 ${variant === 'danger' ? 'text-app-danger' : 'text-app-accent'}`}
             />
           </div>
 
           <div className="flex-1">
-            <h3 className="text-lg font-semibold text-slate-900 dark:text-white">{title}</h3>
-            <div className="mt-2 text-sm text-slate-700 dark:text-slate-300">{message}</div>
+            <h3 className="text-lg font-semibold text-app-text">{title}</h3>
+            <div className="mt-2 text-sm text-app-text-muted">{message}</div>
           </div>
         </div>
 
         <div className="mt-6 flex justify-end gap-3">
-          <Button
-            variant="secondary"
-            onClick={onClose}
-            className="border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white"
-          >
+          <Button variant="secondary" onClick={onClose}>
             {cancelText}
           </Button>
           <Button

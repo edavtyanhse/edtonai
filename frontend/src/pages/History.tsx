@@ -11,8 +11,6 @@ import {
   Calendar,
   ArrowLeft,
   Check,
-  
-  
   Download,
   ChevronDown,
 } from 'lucide-react'
@@ -101,7 +99,9 @@ export default function History() {
           <ArrowLeft className="w-4 h-4 mr-2" />
           {t('common.back', 'Back')}
         </Button>
-        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{t('history.title', 'Version History')}</h1>
+        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
+          {t('history.title', 'Version History')}
+        </h1>
       </div>
 
       {listError && (
@@ -115,7 +115,9 @@ export default function History() {
       ) : versions.length === 0 ? (
         <div className="text-center py-12">
           <FileText className="w-12 h-12 text-slate-600 mx-auto mb-4" />
-          <p className="text-slate-600 dark:text-slate-400 mb-4">{t('history.empty', 'No saved versions yet')}</p>
+          <p className="text-slate-600 dark:text-slate-400 mb-4">
+            {t('history.empty', 'No saved versions yet')}
+          </p>
           <Button onClick={() => navigate('/')}>
             {t('history.create_first', 'Create your first version')}
           </Button>
@@ -449,7 +451,10 @@ function FormattedText({ text }: { text: string }) {
         if (line.trim() === '') return <div key={i} className="h-3" />
         if (sectionPattern.test(line.trim())) {
           return (
-            <div key={i} className="mt-5 mb-1.5 pb-1 border-b border-slate-300 dark:border-slate-600">
+            <div
+              key={i}
+              className="mt-5 mb-1.5 pb-1 border-b border-slate-300 dark:border-slate-600"
+            >
               <span className="text-xs font-bold uppercase tracking-widest text-blue-400">
                 {line.trim()}
               </span>
@@ -458,7 +463,9 @@ function FormattedText({ text }: { text: string }) {
         }
         return (
           <div key={i} className={`${line.trim().startsWith('•') ? 'pl-4' : 'pl-3'} py-0.5`}>
-            <span className="text-slate-600 dark:text-slate-400 text-[13px] leading-relaxed">{line}</span>
+            <span className="text-slate-600 dark:text-slate-400 text-[13px] leading-relaxed">
+              {line}
+            </span>
           </div>
         )
       })}
@@ -502,7 +509,10 @@ function ResumeDiffViewer({ oldText, newText }: { oldText: string; newText: stri
 
         if (isSectionHeading(fullText)) {
           return (
-            <div key={lineIdx} className="mt-5 mb-1.5 pb-1 border-b border-slate-300 dark:border-slate-600">
+            <div
+              key={lineIdx}
+              className="mt-5 mb-1.5 pb-1 border-b border-slate-300 dark:border-slate-600"
+            >
               <span className="text-xs font-bold uppercase tracking-widest text-blue-400">
                 {fullText.trim()}
               </span>
@@ -516,14 +526,14 @@ function ResumeDiffViewer({ oldText, newText }: { oldText: string; newText: stri
         return (
           <div
             key={lineIdx}
-            className={`${isBullet ? 'pl-4' : 'pl-3'} py-0.5 my-0.5 ${lineChanged ? 'border-l-3 border-blue-500/50 bg-blue-900/10 rounded-r' : ''}`}
+            className={`${isBullet ? 'pl-4' : 'pl-3'} py-0.5 my-0.5 ${lineChanged ? 'border-l-4 border-app-accent bg-app-accent-soft/60 rounded-r' : ''}`}
           >
             {lineSegments.map((seg, segIdx) => {
               if (seg.type === 'added') {
                 return (
                   <span
                     key={segIdx}
-                    className="bg-green-800/50 text-green-300 text-[13px] leading-relaxed px-0.5 rounded"
+                    className="bg-app-success-soft text-app-success text-[13px] leading-relaxed px-0.5 rounded"
                   >
                     {seg.text}
                   </span>
@@ -533,14 +543,14 @@ function ResumeDiffViewer({ oldText, newText }: { oldText: string; newText: stri
                 return (
                   <span
                     key={segIdx}
-                    className="bg-red-800/40 text-red-400 line-through text-[13px] leading-relaxed px-0.5 rounded opacity-70"
+                    className="bg-app-danger-soft text-app-danger line-through text-[13px] leading-relaxed px-0.5 rounded"
                   >
                     {seg.text}
                   </span>
                 )
               }
               return (
-                <span key={segIdx} className="text-slate-600 dark:text-slate-400 text-[13px] leading-relaxed">
+                <span key={segIdx} className="text-app-text-muted text-[13px] leading-relaxed">
                   {seg.text}
                 </span>
               )

@@ -30,10 +30,10 @@ frontend/src/pages/
 
 ### Режимы
 
-| Режим | Путь | Описание |
-|-------|------|----------|
-| **Адаптация резюме** | `/wizard` | 4-шаговый wizard: загрузка резюме → вакансия → анализ → улучшение |
-| **Идеальное резюме** | `/ideal-resume` | Генерация образца резюме по вакансии |
+| Режим                | Путь            | Описание                                                          |
+| -------------------- | --------------- | ----------------------------------------------------------------- |
+| **Адаптация резюме** | `/wizard`       | 4-шаговый wizard: загрузка резюме → вакансия → анализ → улучшение |
+| **Идеальное резюме** | `/ideal-resume` | Генерация образца резюме по вакансии                              |
 
 ### UI
 
@@ -69,21 +69,25 @@ function WizardPage() {
     <WizardProvider>
       <WizardContent />
     </WizardProvider>
-  )
+  );
 }
 
 function WizardContent() {
-  const { currentStep, setCurrentStep, canGoToStep } = useWizard()
-  
+  const { currentStep, setCurrentStep, canGoToStep } = useWizard();
+
   const renderStep = () => {
     switch (currentStep) {
-      case 1: return <Step1Resume />
-      case 2: return <Step2Vacancy />
-      case 3: return <Step3Analysis />
-      case 4: return <Step4Improvement />
+      case 1:
+        return <Step1Resume />;
+      case 2:
+        return <Step2Vacancy />;
+      case 3:
+        return <Step3Analysis />;
+      case 4:
+        return <Step4Improvement />;
     }
-  }
-  
+  };
+
   return (
     <WizardLayout
       currentStep={currentStep}
@@ -92,7 +96,7 @@ function WizardContent() {
     >
       {renderStep()}
     </WizardLayout>
-  )
+  );
 }
 ```
 
@@ -118,9 +122,9 @@ Step 1 (Resume) → Step 2 (Vacancy) → Step 3 (Analysis) → Step 4 (Improveme
 
 #### Режимы
 
-| Mode | Описание |
-|------|----------|
-| `input` | Textarea для ввода текста |
+| Mode     | Описание                     |
+| -------- | ---------------------------- |
+| `input`  | Textarea для ввода текста    |
 | `parsed` | Редактор распознанных данных |
 
 #### Flow
@@ -146,20 +150,20 @@ Step 1 (Resume) → Step 2 (Vacancy) → Step 3 (Analysis) → Step 4 (Improveme
 const parseMutation = useMutation({
   mutationFn: () => parseResume({ resume_text: localText }),
   onSuccess: (data) => {
-    setResumeText(localText)
-    setResumeData(data.resume_id, data.parsed_resume)
-    setMode('parsed')
+    setResumeText(localText);
+    setResumeData(data.resume_id, data.parsed_resume);
+    setMode("parsed");
   },
-})
+});
 
 const saveMutation = useMutation({
   mutationFn: (parsed: ParsedResume) =>
     updateResume(state.resumeId!, { parsed_data: parsed }),
   onSuccess: (data) => {
-    updateParsedResume(data.parsed_data)
-    setHasUnsavedChanges(false)
+    updateParsedResume(data.parsed_data);
+    setHasUnsavedChanges(false);
   },
-})
+});
 ```
 
 ---
@@ -169,6 +173,7 @@ const saveMutation = useMutation({
 **Файл:** `wizard/Step2Vacancy.tsx`
 
 Аналогично Step1, но для вакансии:
+
 - `parseVacancy()` API
 - `VacancyEditor` компонент
 
@@ -200,9 +205,9 @@ const analyzeMutation = useMutation({
       vacancy_text: state.vacancyText,
     }),
   onSuccess: (data) => {
-    setAnalysis(data.analysis_id, data.analysis)
+    setAnalysis(data.analysis_id, data.analysis);
   },
-})
+});
 ```
 
 #### Helper Components
@@ -212,14 +217,14 @@ const analyzeMutation = useMutation({
 function ScoreCard({ label, value, maxValue, comment }) {
   const percentage = (value / maxValue) * 100
   return (
-    <div className="bg-gray-50 rounded-lg p-3">
+    <div className="bg-app-surface-muted rounded-lg p-3">
       <div className="flex justify-between">
         <span>{label}</span>
         <span>{value}/{maxValue}</span>
       </div>
-      <div className="w-full bg-gray-200 rounded-full h-2">
-        <div 
-          className={percentage >= 70 ? 'bg-green-500' : ...}
+      <div className="w-full bg-app-border rounded-full h-2">
+        <div
+          className={percentage >= 70 ? 'bg-app-success' : ...}
           style={{ width: `${percentage}%` }}
         />
       </div>
@@ -249,11 +254,11 @@ function SkillBadge({ skill, matched }) {
 
 #### Режимы
 
-| Mode | Описание |
-|------|----------|
-| `checkboxes` | Выбор улучшений из списка |
-| `review` | Подтверждение/отклонение каждого изменения |
-| `analysis` | Результат улучшения с новым анализом |
+| Mode         | Описание                                   |
+| ------------ | ------------------------------------------ |
+| `checkboxes` | Выбор улучшений из списка                  |
+| `review`     | Подтверждение/отклонение каждого изменения |
+| `analysis`   | Результат улучшения с новым анализом       |
 
 #### Flow
 
@@ -307,11 +312,13 @@ const adaptMutation = useMutation({
       selected_checkbox_ids: state.selectedCheckboxes,
     }),
   onSuccess: (data) => {
-    setResult(data.updated_resume_text, data.change_log, data.safety_notes)
-    setPendingChanges(data.change_log.map(e => ({ ...e, status: 'pending' })))
-    setMode('review')
+    setResult(data.updated_resume_text, data.change_log, data.safety_notes);
+    setPendingChanges(
+      data.change_log.map((e) => ({ ...e, status: "pending" })),
+    );
+    setMode("review");
   },
-})
+});
 
 // Повторный анализ после подтверждения
 const reanalyzeMutation = useMutation({
@@ -321,10 +328,10 @@ const reanalyzeMutation = useMutation({
       vacancy_text: state.vacancyText,
     }),
   onSuccess: (data) => {
-    setAnalysis(data.analysis_id, data.analysis)
-    setMode('analysis')
+    setAnalysis(data.analysis_id, data.analysis);
+    setMode("analysis");
   },
-})
+});
 
 // Генерация сопроводительного письма
 const coverLetterMutation = useMutation({
@@ -333,16 +340,16 @@ const coverLetterMutation = useMutation({
       resume_version_id: currentVersionId!,
     }),
   onSuccess: (data) => {
-    setCoverLetterData(data)
-    setShowCoverLetterModal(true)
+    setCoverLetterData(data);
+    setShowCoverLetterModal(true);
   },
-})
+});
 
 // Сохранение и переход к анализу
 const saveVersionMutation = useMutation({
   mutationFn: (resumeText: string) =>
     createVersion({
-      type: 'adapt',
+      type: "adapt",
       title: versionTitle || undefined,
       resume_text: state.resumeText,
       vacancy_text: state.vacancyText,
@@ -350,30 +357,35 @@ const saveVersionMutation = useMutation({
       selected_checkbox_ids: state.selectedCheckboxes,
     }),
   onSuccess: (_, resumeText) => {
-    applyImprovedResume(resumeText)  // Make new base
-    reanalyzeMutation.mutate(resumeText)
+    applyImprovedResume(resumeText); // Make new base
+    reanalyzeMutation.mutate(resumeText);
   },
-})
+});
 ```
 
 #### Score Comparison
 
 ```tsx
-const scoreDiff = state.previousScore !== null && analysis 
-  ? analysis.score - state.previousScore 
-  : null
+const scoreDiff =
+  state.previousScore !== null && analysis
+    ? analysis.score - state.previousScore
+    : null;
 
 // Display
-{scoreDiff > 0 && (
-  <span className="text-green-600">
-    <TrendingUp /> +{scoreDiff}
-  </span>
-)}
-{scoreDiff < 0 && (
-  <span className="text-red-600">
-    <TrendingDown /> {scoreDiff}
-  </span>
-)}
+{
+  scoreDiff > 0 && (
+    <span className="text-app-success">
+      <TrendingUp /> +{scoreDiff}
+    </span>
+  );
+}
+{
+  scoreDiff < 0 && (
+    <span className="text-app-danger">
+      <TrendingDown /> {scoreDiff}
+    </span>
+  );
+}
 ```
 
 #### Iterative Improvement
@@ -381,8 +393,8 @@ const scoreDiff = state.previousScore !== null && analysis
 ```tsx
 const handleContinueImproving = () => {
   // Go back to checkbox selection for more improvements
-  setMode('checkboxes')
-}
+  setMode("checkboxes");
+};
 ```
 
 ---
@@ -414,12 +426,12 @@ const handleContinueImproving = () => {
       label="Текст вакансии"
     />
     <div className="flex gap-4">
-      <Select label="Язык" options={['ru', 'en', 'auto']} />
-      <Select label="Шаблон" options={['default', 'harvard']} />
+      <Select label="Язык" options={["ru", "en", "auto"]} />
+      <Select label="Шаблон" options={["default", "harvard"]} />
     </div>
     <Button onClick={generate}>Сгенерировать</Button>
   </div>
-  
+
   <div>
     <h2>Идеальное резюме</h2>
     <pre>{idealResume}</pre>
@@ -440,9 +452,9 @@ const handleContinueImproving = () => {
 
 ```tsx
 const { data: versions } = useQuery({
-  queryKey: ['versions'],
+  queryKey: ["versions"],
   queryFn: () => getVersions(50, 0),
-})
+});
 ```
 
 ### UI
@@ -458,9 +470,9 @@ const { data: versions } = useQuery({
     </tr>
   </thead>
   <tbody>
-    {versions.items.map(v => (
+    {versions.items.map((v) => (
       <tr key={v.id}>
-        <td>{v.title || 'Без названия'}</td>
+        <td>{v.title || "Без названия"}</td>
         <td>{v.type}</td>
         <td>{formatDate(v.created_at)}</td>
         <td>

@@ -12,6 +12,40 @@ interface CheckboxListProps {
   onAiGenerateChange?: (checkboxId: string, value: boolean) => void
 }
 
+function getImpactCardClass(
+  impact: string,
+  isSelected: boolean,
+  requiresUserInput: boolean
+): string {
+  const selectedRing = isSelected
+    ? requiresUserInput
+      ? 'ring-2 ring-amber-500/40'
+      : 'ring-2 ring-blue-500/40'
+    : ''
+
+  if (impact === 'high') {
+    return `${selectedRing} border-app-danger/35 border-l-4 border-l-app-danger bg-app-danger-soft/70 hover:bg-app-danger-soft`
+  }
+
+  if (impact === 'medium') {
+    return `${selectedRing} border-app-warning/35 border-l-4 border-l-app-warning bg-app-warning-soft/70 hover:bg-app-warning-soft`
+  }
+
+  return `${selectedRing} border-app-border border-l-4 border-l-app-border-strong bg-app-surface hover:bg-app-surface-muted`
+}
+
+function getImpactBadgeClass(impact: string): string {
+  if (impact === 'high') {
+    return 'bg-app-danger-soft text-app-danger'
+  }
+
+  if (impact === 'medium') {
+    return 'bg-app-warning-soft text-app-warning'
+  }
+
+  return 'bg-app-surface-muted text-app-text-muted'
+}
+
 export default function CheckboxList({
   options,
   selected,
@@ -79,7 +113,11 @@ export default function CheckboxList({
   const categoryOrder = ['skills', 'experience', 'ats', 'education', 'format', 'content', 'other']
 
   if (options.length === 0) {
-    return <div className="p-8 text-center text-slate-600 dark:text-slate-400">Нет доступных улучшений</div>
+    return (
+      <div className="p-8 text-center text-slate-600 dark:text-slate-400">
+        Нет доступных улучшений
+      </div>
+    )
   }
 
   return (
@@ -101,13 +139,11 @@ export default function CheckboxList({
                 return (
                   <div
                     key={option.id}
-                    className={`rounded-lg border transition-all ${
-                      isSelected
-                        ? option.requires_user_input
-                          ? 'border-amber-500/50 bg-amber-900/10'
-                          : 'border-blue-500/50 bg-blue-900/10'
-                        : 'border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600 bg-white dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700'
-                    }`}
+                    className={`rounded-lg border transition-all ${getImpactCardClass(
+                      option.impact,
+                      isSelected,
+                      option.requires_user_input
+                    )}`}
                   >
                     {/* Main checkbox row */}
                     <label className="flex items-start gap-3 p-3 cursor-pointer">
@@ -130,15 +166,13 @@ export default function CheckboxList({
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="text-sm font-medium text-slate-900 dark:text-white">{option.label}</span>
+                          <span className="text-sm font-medium text-slate-900 dark:text-white">
+                            {option.label}
+                          </span>
                           <span
-                            className={`text-xs px-1.5 py-0.5 rounded ${
-                              option.impact === 'high'
-                                ? 'bg-red-900/30 text-red-300'
-                                : option.impact === 'medium'
-                                  ? 'bg-yellow-900/30 text-yellow-300'
-                                  : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300'
-                            }`}
+                            className={`text-xs px-1.5 py-0.5 rounded font-semibold ${getImpactBadgeClass(
+                              option.impact
+                            )}`}
                           >
                             {option.impact === 'high'
                               ? 'важно'
@@ -147,7 +181,7 @@ export default function CheckboxList({
                                 : 'низкий'}
                           </span>
                           {option.requires_user_input && (
-                            <span className="text-xs px-1.5 py-0.5 rounded bg-amber-900/30 text-amber-300">
+                            <span className="text-xs px-1.5 py-0.5 rounded bg-app-warning-soft text-app-warning">
                               нужен ваш ввод
                             </span>
                           )}
@@ -159,7 +193,9 @@ export default function CheckboxList({
                           )}
                         </div>
                         {option.description && (
-                          <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">{option.description}</p>
+                          <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
+                            {option.description}
+                          </p>
                         )}
                       </div>
 

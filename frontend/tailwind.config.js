@@ -7,6 +7,29 @@ export default {
         sans: ['Inter', 'sans-serif'],
       },
       colors: {
+        app: {
+          bg: 'rgb(var(--color-app-bg) / <alpha-value>)',
+          surface: 'rgb(var(--color-app-surface) / <alpha-value>)',
+          'surface-muted': 'rgb(var(--color-app-surface-muted) / <alpha-value>)',
+          'surface-raised': 'rgb(var(--color-app-surface-raised) / <alpha-value>)',
+          border: 'rgb(var(--color-app-border) / <alpha-value>)',
+          'border-strong': 'rgb(var(--color-app-border-strong) / <alpha-value>)',
+          text: 'rgb(var(--color-app-text) / <alpha-value>)',
+          'text-muted': 'rgb(var(--color-app-text-muted) / <alpha-value>)',
+          'text-subtle': 'rgb(var(--color-app-text-subtle) / <alpha-value>)',
+          accent: 'rgb(var(--color-app-accent) / <alpha-value>)',
+          'accent-hover': 'rgb(var(--color-app-accent-hover) / <alpha-value>)',
+          'accent-soft': 'rgb(var(--color-app-accent-soft) / <alpha-value>)',
+          'accent-border': 'rgb(var(--color-app-accent-border) / <alpha-value>)',
+          'icon-tile': 'rgb(var(--color-app-icon-tile) / <alpha-value>)',
+          'icon-tile-border': 'rgb(var(--color-app-icon-tile-border) / <alpha-value>)',
+          success: 'rgb(var(--color-app-success) / <alpha-value>)',
+          'success-soft': 'rgb(var(--color-app-success-soft) / <alpha-value>)',
+          warning: 'rgb(var(--color-app-warning) / <alpha-value>)',
+          'warning-soft': 'rgb(var(--color-app-warning-soft) / <alpha-value>)',
+          danger: 'rgb(var(--color-app-danger) / <alpha-value>)',
+          'danger-soft': 'rgb(var(--color-app-danger-soft) / <alpha-value>)',
+        },
         primary: {
           50: '#eff6ff',
           100: '#dbeafe',
@@ -31,10 +54,10 @@ export default {
           800: '#1e40af',
           900: '#1e3a8a',
           950: '#172554',
-        }
+        },
       },
       animation: {
-        'blob': 'blob 7s infinite',
+        blob: 'blob 7s infinite',
         'spin-slow': 'spin 3s linear infinite',
       },
       keyframes: {
@@ -43,8 +66,8 @@ export default {
           '33%': { transform: 'translate(30px, -50px) scale(1.1)' },
           '66%': { transform: 'translate(-20px, 20px) scale(0.9)' },
           '100%': { transform: 'translate(0px, 0px) scale(1)' },
-        }
-      }
+        },
+      },
     },
   },
   plugins: [],

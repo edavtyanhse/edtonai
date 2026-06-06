@@ -41,7 +41,7 @@ export default function LandingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white selection:bg-brand-500 selection:text-white">
+    <div className="min-h-screen bg-app-bg text-app-text selection:bg-app-accent selection:text-white">
       <Header lang={lang} toggleLang={toggleLang} />
       <main>
         <Hero lang={lang} />

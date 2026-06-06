@@ -29,13 +29,13 @@ frontend/src/components/
 
 ### Props
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `variant` | `'primary' \| 'outline' \| 'ghost'` | `'primary'` | Визуальный стиль |
-| `size` | `'sm' \| 'md' \| 'lg'` | `'md'` | Размер кнопки |
-| `disabled` | `boolean` | `false` | Disabled state |
-| `className` | `string` | `''` | Доп. CSS классы |
-| `children` | `ReactNode` | - | Содержимое |
+| Prop        | Type                                                           | Default     | Description      |
+| ----------- | -------------------------------------------------------------- | ----------- | ---------------- |
+| `variant`   | `'primary' \| 'secondary' \| 'danger' \| 'ghost' \| 'outline'` | `'primary'` | Визуальный стиль |
+| `size`      | `'sm' \| 'md' \| 'lg'`                                         | `'md'`      | Размер кнопки    |
+| `disabled`  | `boolean`                                                      | `false`     | Disabled state   |
+| `className` | `string`                                                       | `''`        | Доп. CSS классы  |
+| `children`  | `ReactNode`                                                    | -           | Содержимое       |
 
 ### Использование
 
@@ -54,6 +54,12 @@ import { Button } from '@/components'
 // Ghost (минимальный стиль)
 <Button variant="ghost" size="sm">Отмена</Button>
 
+// Secondary
+<Button variant="secondary">Экспорт</Button>
+
+// Danger
+<Button variant="danger">Удалить</Button>
+
 // Loading state
 <Button disabled={isPending}>
   {isPending ? (
@@ -69,11 +75,17 @@ import { Button } from '@/components'
 
 ### Стили
 
-| Variant | Background | Border | Text |
-|---------|------------|--------|------|
-| `primary` | `bg-primary-600` | none | `text-white` |
-| `outline` | transparent | `border-gray-300` | `text-gray-700` |
-| `ghost` | transparent | none | `text-gray-600` |
+| Variant     | Background           | Border                 | Text                  |
+| ----------- | -------------------- | ---------------------- | --------------------- |
+| `primary`   | `bg-app-accent`      | transparent            | `text-white`          |
+| `secondary` | `bg-app-surface`     | `border-app-border`    | `text-app-text`       |
+| `danger`    | `bg-app-danger-soft` | `border-app-danger/30` | `text-app-danger`     |
+| `outline`   | transparent          | `border-app-border`    | `text-app-text-muted` |
+| `ghost`     | transparent          | none                   | `text-app-text-muted` |
+
+Не переопределяй цветовую схему primary-кнопки raw классами вроде
+`bg-slate-200`, если нужна светлая кнопка: используй `variant="secondary"` или
+`variant="outline"`.
 
 ---
 
@@ -83,20 +95,20 @@ Textarea с счётчиком символов и лимитом.
 
 ### Props
 
-| Prop | Type | Required | Description |
-|------|------|----------|-------------|
-| `value` | `string` | ✅ | Текущее значение |
-| `onChange` | `(value: string) => void` | ✅ | Callback изменения |
-| `maxLength` | `number` | ✅ | Максимум символов |
-| `label` | `string` | ❌ | Label над полем |
-| `placeholder` | `string` | ❌ | Placeholder |
-| `minHeight` | `number` | ❌ | Минимальная высота (px) |
-| `disabled` | `boolean` | ❌ | Disabled state |
+| Prop          | Type                      | Required | Description             |
+| ------------- | ------------------------- | -------- | ----------------------- |
+| `value`       | `string`                  | ✅       | Текущее значение        |
+| `onChange`    | `(value: string) => void` | ✅       | Callback изменения      |
+| `maxLength`   | `number`                  | ✅       | Максимум символов       |
+| `label`       | `string`                  | ❌       | Label над полем         |
+| `placeholder` | `string`                  | ❌       | Placeholder             |
+| `minHeight`   | `number`                  | ❌       | Минимальная высота (px) |
+| `disabled`    | `boolean`                 | ❌       | Disabled state          |
 
 ### Использование
 
 ```tsx
-import { TextAreaWithCounter } from '@/components'
+import { TextAreaWithCounter } from "@/components";
 
 <TextAreaWithCounter
   value={resumeText}
@@ -105,7 +117,7 @@ import { TextAreaWithCounter } from '@/components'
   label="Текст резюме"
   placeholder="Вставьте текст резюме..."
   minHeight={400}
-/>
+/>;
 ```
 
 ### Поведение
@@ -122,44 +134,49 @@ import { TextAreaWithCounter } from '@/components'
 
 ### Props
 
-| Prop | Type | Required | Description |
-|------|------|----------|-------------|
-| `options` | `CheckboxOption[]` | ✅ | Массив опций из анализа |
-| `selected` | `string[]` | ✅ | IDs выбранных опций |
-| `onChange` | `(ids: string[]) => void` | ✅ | Callback при изменении |
+| Prop       | Type                      | Required | Description             |
+| ---------- | ------------------------- | -------- | ----------------------- |
+| `options`  | `CheckboxOption[]`        | ✅       | Массив опций из анализа |
+| `selected` | `string[]`                | ✅       | IDs выбранных опций     |
+| `onChange` | `(ids: string[]) => void` | ✅       | Callback при изменении  |
 
 ### CheckboxOption
 
 ```typescript
 interface CheckboxOption {
-  id: string
-  label: string
-  impact: 'low' | 'medium' | 'high'
-  action_hint: string
-  enabled: boolean
-  priority: number  // 1-3
+  id: string;
+  label: string;
+  description: string;
+  category: string;
+  impact: "low" | "medium" | "high";
+  requires_user_input: boolean;
+  user_input_placeholder: string | null;
+  priority?: number;
+  enabled?: boolean;
 }
 ```
 
 ### Использование
 
 ```tsx
-import { CheckboxList } from '@/components'
+import { CheckboxList } from "@/components";
 
 <CheckboxList
   options={analysis.checkbox_options}
   selected={selectedCheckboxes}
   onChange={setSelectedCheckboxes}
-/>
+/>;
 ```
 
 ### Визуализация
 
-- **enabled=false** — серый, некликабельный
-- **priority=3** — выделение как high priority
-- **impact=high** — красная метка
-- **impact=medium** — жёлтая метка
-- **impact=low** — серая метка
+- **impact=high** — заметная danger-карточка: фон, левая полоса, badge
+- **impact=medium** — warning-карточка
+- **impact=low** — нейтральная карточка
+- **requires_user_input=true** — warning badge и раскрываемое поле ввода
+
+Цвета карточек строятся на `app-*` theme tokens, поэтому light/dark темы должны
+проверяться вместе.
 
 ---
 
@@ -169,15 +186,15 @@ import { CheckboxList } from '@/components'
 
 ### Props
 
-| Prop | Type | Required | Description |
-|------|------|----------|-------------|
-| `isOpen` | `boolean` | ✅ | Показать/скрыть |
-| `title` | `string` | ✅ | Заголовок |
-| `message` | `ReactNode` | ✅ | Содержимое (текст или JSX) |
-| `confirmText` | `string` | ❌ | Текст кнопки подтверждения |
-| `cancelText` | `string` | ❌ | Текст кнопки отмены |
-| `onConfirm` | `() => void` | ✅ | Callback подтверждения |
-| `onClose` | `() => void` | ✅ | Callback закрытия |
+| Prop          | Type         | Required | Description                |
+| ------------- | ------------ | -------- | -------------------------- |
+| `isOpen`      | `boolean`    | ✅       | Показать/скрыть            |
+| `title`       | `string`     | ✅       | Заголовок                  |
+| `message`     | `ReactNode`  | ✅       | Содержимое (текст или JSX) |
+| `confirmText` | `string`     | ❌       | Текст кнопки подтверждения |
+| `cancelText`  | `string`     | ❌       | Текст кнопки отмены        |
+| `onConfirm`   | `() => void` | ✅       | Callback подтверждения     |
+| `onClose`     | `() => void` | ✅       | Callback закрытия          |
 
 ### Использование
 
@@ -215,10 +232,10 @@ const [showDialog, setShowDialog] = useState(false)
 
 ### Props
 
-| Prop | Type | Required | Description |
-|------|------|----------|-------------|
-| `data` | `ParsedResume` | ✅ | Распознанные данные |
-| `onChange` | `(data: ParsedResume) => void` | ✅ | Callback изменения |
+| Prop       | Type                           | Required | Description         |
+| ---------- | ------------------------------ | -------- | ------------------- |
+| `data`     | `ParsedResume`                 | ✅       | Распознанные данные |
+| `onChange` | `(data: ParsedResume) => void` | ✅       | Callback изменения  |
 
 ### Секции
 
@@ -233,15 +250,15 @@ const [showDialog, setShowDialog] = useState(false)
 ### Использование
 
 ```tsx
-import ResumeEditor from '@/components/ResumeEditor'
+import ResumeEditor from "@/components/ResumeEditor";
 
 <ResumeEditor
   data={parsedResume}
   onChange={(updated) => {
-    updateParsedResume(updated)
-    setHasUnsavedChanges(true)
+    updateParsedResume(updated);
+    setHasUnsavedChanges(true);
   }}
-/>
+/>;
 ```
 
 ---
@@ -252,10 +269,10 @@ import ResumeEditor from '@/components/ResumeEditor'
 
 ### Props
 
-| Prop | Type | Required | Description |
-|------|------|----------|-------------|
-| `data` | `ParsedVacancy` | ✅ | Распознанные данные |
-| `onChange` | `(data: ParsedVacancy) => void` | ✅ | Callback изменения |
+| Prop       | Type                            | Required | Description         |
+| ---------- | ------------------------------- | -------- | ------------------- |
+| `data`     | `ParsedVacancy`                 | ✅       | Распознанные данные |
+| `onChange` | `(data: ParsedVacancy) => void` | ✅       | Callback изменения  |
 
 ### Секции
 
@@ -274,22 +291,18 @@ import ResumeEditor from '@/components/ResumeEditor'
 
 ### Props
 
-| Prop | Type | Required | Description |
-|------|------|----------|-------------|
-| `before` | `string` | ✅ | Исходный текст |
-| `after` | `string` | ✅ | Изменённый текст |
-| `mode` | `'inline' \| 'split'` | ❌ | Режим отображения |
+| Prop     | Type                  | Required | Description       |
+| -------- | --------------------- | -------- | ----------------- |
+| `before` | `string`              | ✅       | Исходный текст    |
+| `after`  | `string`              | ✅       | Изменённый текст  |
+| `mode`   | `'inline' \| 'split'` | ❌       | Режим отображения |
 
 ### Использование
 
 ```tsx
-import { DiffViewer } from '@/components'
+import { DiffViewer } from "@/components";
 
-<DiffViewer
-  before={originalResume}
-  after={improvedResume}
-  mode="split"
-/>
+<DiffViewer before={originalResume} after={improvedResume} mode="split" />;
 ```
 
 ---
@@ -306,10 +319,10 @@ import { DiffViewer } from '@/components'
     <Logo />
     <Navigation />
   </header>
-  
+
   <main className="flex-1 p-6">
     <div className="max-w-7xl mx-auto">
-      <Outlet />  {/* React Router outlet */}
+      <Outlet /> {/* React Router outlet */}
     </div>
   </main>
 </div>
@@ -329,12 +342,12 @@ Layout для wizard flow с боковой панелью шагов.
 
 ### Props
 
-| Prop | Type | Required | Description |
-|------|------|----------|-------------|
-| `currentStep` | `number` | ✅ | Текущий шаг (1-4) |
-| `onStepClick` | `(step: number) => void` | ✅ | Callback клика по шагу |
-| `canGoToStep` | `(step: number) => boolean` | ✅ | Можно ли перейти |
-| `children` | `ReactNode` | ✅ | Контент текущего шага |
+| Prop          | Type                        | Required | Description            |
+| ------------- | --------------------------- | -------- | ---------------------- |
+| `currentStep` | `number`                    | ✅       | Текущий шаг (1-4)      |
+| `onStepClick` | `(step: number) => void`    | ✅       | Callback клика по шагу |
+| `canGoToStep` | `(step: number) => boolean` | ✅       | Можно ли перейти       |
+| `children`    | `ReactNode`                 | ✅       | Контент текущего шага  |
 
 ### Шаги
 
@@ -360,7 +373,7 @@ Layout для wizard flow с боковой панелью шагов.
 
 ```tsx
 // App.tsx
-import { Toaster } from '@/components/Toast'
+import { Toaster } from "@/components/Toast";
 
 function App() {
   return (
@@ -368,26 +381,26 @@ function App() {
       <Routes>...</Routes>
       <Toaster />
     </>
-  )
+  );
 }
 ```
 
 ### Использование
 
 ```tsx
-import { toast } from '@/components/Toast'
+import { toast } from "@/components/Toast";
 
 // Success
-toast.success('Резюме сохранено!')
+toast.success("Резюме сохранено!");
 
 // Error
-toast.error('Ошибка при парсинге')
+toast.error("Ошибка при парсинге");
 
 // Info
-toast.info('Обработка...')
+toast.info("Обработка...");
 
 // With duration
-toast.success('Готово!', { duration: 5000 })
+toast.success("Готово!", { duration: 5000 });
 ```
 
 ---
@@ -399,16 +412,17 @@ toast.success('Готово!', { duration: 5000 })
 ### Использование
 
 ```tsx
-import { ErrorBoundary } from '@/components'
+import { ErrorBoundary } from "@/components";
 
 <ErrorBoundary>
   <App />
-</ErrorBoundary>
+</ErrorBoundary>;
 ```
 
 ### Fallback UI
 
 При ошибке показывает:
+
 - Сообщение об ошибке
 - Кнопка "Попробовать снова" (reset)
 - Ссылка на главную
@@ -421,15 +435,15 @@ import { ErrorBoundary } from '@/components'
 
 ### Props
 
-| Prop | Type | Required | Description |
-|------|------|----------|-------------|
-| `isOpen` | `boolean` | ✅ | Показать/скрыть |
-| `onClose` | `() => void` | ✅ | Callback закрытия |
-| `coverLetter` | `string` | ✅ | Полный текст письма |
-| `structure` | `CoverLetterStructure` | ❌ | Структура: opening, body, closing |
-| `keyPoints` | `string[]` | ❌ | Использованные факты из резюме |
-| `alignmentNotes` | `string[]` | ❌ | Соответствие вакансии |
-| `isLoading` | `boolean` | ❌ | Состояние загрузки |
+| Prop             | Type                   | Required | Description                       |
+| ---------------- | ---------------------- | -------- | --------------------------------- |
+| `isOpen`         | `boolean`              | ✅       | Показать/скрыть                   |
+| `onClose`        | `() => void`           | ✅       | Callback закрытия                 |
+| `coverLetter`    | `string`               | ✅       | Полный текст письма               |
+| `structure`      | `CoverLetterStructure` | ❌       | Структура: opening, body, closing |
+| `keyPoints`      | `string[]`             | ❌       | Использованные факты из резюме    |
+| `alignmentNotes` | `string[]`             | ❌       | Соответствие вакансии             |
+| `isLoading`      | `boolean`              | ❌       | Состояние загрузки                |
 
 ### Секции модала
 
@@ -446,7 +460,7 @@ import { ErrorBoundary } from '@/components'
 ### Использование
 
 ```tsx
-import { CoverLetterModal } from '@/components'
+import { CoverLetterModal } from "@/components";
 
 <CoverLetterModal
   isOpen={showModal}
@@ -455,7 +469,7 @@ import { CoverLetterModal } from '@/components'
   structure={data.structure}
   keyPoints={data.key_points_used}
   alignmentNotes={data.alignment_notes}
-/>
+/>;
 ```
 
 ---
@@ -464,23 +478,23 @@ import { CoverLetterModal } from '@/components'
 
 ```typescript
 // components/index.ts
-export { default as Button } from './Button'
-export { default as TextAreaWithCounter } from './TextAreaWithCounter'
-export { default as CheckboxList } from './CheckboxList'
-export { default as ConfirmDialog } from './ConfirmDialog'
-export { default as DiffViewer } from './DiffViewer'
-export { default as Layout } from './Layout'
-export { default as WizardLayout } from './WizardLayout'
-export { default as ResumeEditor } from './ResumeEditor'
-export { default as VacancyEditor } from './VacancyEditor'
-export { ErrorBoundary } from './ErrorBoundary'
-export { Toaster, toast } from './Toast'
-export { CoverLetterModal } from './CoverLetterModal'
+export { default as Button } from "./Button";
+export { default as TextAreaWithCounter } from "./TextAreaWithCounter";
+export { default as CheckboxList } from "./CheckboxList";
+export { default as ConfirmDialog } from "./ConfirmDialog";
+export { default as DiffViewer } from "./DiffViewer";
+export { default as Layout } from "./Layout";
+export { default as WizardLayout } from "./WizardLayout";
+export { default as ResumeEditor } from "./ResumeEditor";
+export { default as VacancyEditor } from "./VacancyEditor";
+export { ErrorBoundary } from "./ErrorBoundary";
+export { Toaster, toast } from "./Toast";
+export { CoverLetterModal } from "./CoverLetterModal";
 ```
 
 ### Import
 
 ```tsx
 // Single import
-import { Button, TextAreaWithCounter, CheckboxList } from '@/components'
+import { Button, TextAreaWithCounter, CheckboxList } from "@/components";
 ```

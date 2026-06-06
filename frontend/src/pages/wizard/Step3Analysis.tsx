@@ -16,6 +16,32 @@ import type { Gap } from '@/api'
 import { Button } from '@/components'
 import { trackBehaviorEvent } from '@/features/feedback/analytics'
 
+function getSeverityCardClass(severity: string): string {
+  if (severity === 'high') {
+    return 'bg-app-danger-soft/70 border-app-danger/35 border-l-4 border-l-app-danger'
+  }
+
+  if (severity === 'medium') {
+    return 'bg-app-warning-soft/70 border-app-warning/35 border-l-4 border-l-app-warning'
+  }
+
+  return 'bg-app-accent-soft/70 border-app-accent/35 border-l-4 border-l-app-accent'
+}
+
+function getSeverityIconClass(severity: string): string {
+  if (severity === 'high') return 'text-app-danger'
+  if (severity === 'medium') return 'text-app-warning'
+  return 'text-app-accent'
+}
+
+function getSeverityBadgeClass(severity: string): string {
+  if (severity === 'high') return 'bg-app-danger-soft text-app-danger'
+  if (severity === 'medium') {
+    return 'bg-app-warning-soft text-app-warning'
+  }
+  return 'bg-app-accent-soft text-app-accent'
+}
+
 export default function Step3Analysis() {
   const { t } = useTranslation()
   const { state, setAnalysis, goToNextStep, goToPrevStep } = useWizard()
@@ -72,12 +98,12 @@ export default function Step3Analysis() {
           <Loader2 className="w-16 h-16 text-blue-500 animate-spin relative z-10" />
         </div>
         <div className="text-center space-y-2">
-          <h3 className="text-xl font-medium text-slate-900 dark:text-white">{t('wizard.step1.analyzing')}</h3>
+          <h3 className="text-xl font-medium text-app-text">{t('wizard.step1.analyzing')}</h3>
           <p className="text-yellow-400 max-w-md mx-auto text-sm">
             ⏳ {t('wizard.step3.analyzing_warning')}
           </p>
         </div>
-        <Button variant="ghost" onClick={goToPrevStep} className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">
+        <Button variant="ghost" onClick={goToPrevStep}>
           <ArrowLeft className="w-4 h-4 mr-2" />
           {t('common.back_to_step')} 2
         </Button>
@@ -90,20 +116,16 @@ export default function Step3Analysis() {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{t('wizard.steps.analysis')}</h1>
-          <p className="text-slate-600 dark:text-slate-400 mt-1">{t('wizard.step3.description')}</p>
+          <h1 className="text-2xl font-bold text-app-text">{t('wizard.steps.analysis')}</h1>
+          <p className="text-app-text-muted mt-1">{t('wizard.step3.description')}</p>
         </div>
-        <div className="p-4 bg-red-900/20 border border-red-500/30 rounded-lg text-red-300">
+        <div className="p-4 bg-app-danger-soft border border-app-danger/30 rounded-lg text-app-danger">
           {analyzeMutation.error instanceof Error
             ? analyzeMutation.error.message
             : t('common.error')}
         </div>
         <div className="flex gap-3">
-          <Button
-            variant="ghost"
-            onClick={goToPrevStep}
-            className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-          >
+          <Button variant="ghost" onClick={goToPrevStep}>
             <ArrowLeft className="w-4 h-4 mr-2" />
             {t('common.back_to_step')} 2
           </Button>
@@ -121,34 +143,36 @@ export default function Step3Analysis() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{t('wizard.steps.analysis')}</h1>
-        <p className="text-slate-600 dark:text-slate-400 mt-1">{t('wizard.step3.description')}</p>
+        <h1 className="text-2xl font-bold text-app-text">{t('wizard.steps.analysis')}</h1>
+        <p className="text-app-text-muted mt-1">{t('wizard.step3.description')}</p>
       </div>
 
       {hasAnalysis && (
         <div className="space-y-6">
           {/* Score */}
-          <div className="bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg p-6">
+          <div className="bg-app-surface border border-app-border rounded-lg p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold">{t('wizard.step3.score')}</h2>
               <div className="flex items-center gap-3">
                 {state.previousScore !== null && state.previousScore !== analysis.score && (
-                  <div className="text-2xl text-slate-500 line-through">{state.previousScore}</div>
+                  <div className="text-2xl text-app-text-subtle line-through">
+                    {state.previousScore}
+                  </div>
                 )}
                 <div
                   className={`text-4xl font-bold ${
                     analysis.score >= 70
-                      ? 'text-green-600'
+                      ? 'text-app-success'
                       : analysis.score >= 50
-                        ? 'text-yellow-600'
-                        : 'text-red-600'
+                        ? 'text-app-warning'
+                        : 'text-app-danger'
                   }`}
                 >
                   {analysis.score}
-                  <span className="text-lg text-gray-400">/100</span>
+                  <span className="text-lg text-app-text-subtle">/100</span>
                 </div>
                 {state.previousScore !== null && analysis.score > state.previousScore && (
-                  <span className="text-sm font-medium text-green-400 bg-green-900/30 px-2 py-1 rounded">
+                  <span className="text-sm font-medium text-app-success bg-app-success-soft px-2 py-1 rounded">
                     +{analysis.score - state.previousScore}
                   </span>
                 )}
@@ -195,8 +219,10 @@ export default function Step3Analysis() {
           {/* Skills match */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Required skills */}
-            <div className="bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg p-4">
-              <h3 className="font-medium text-slate-900 dark:text-white mb-3">{t('wizard.step3.required_skills')}</h3>
+            <div className="bg-app-surface border border-app-border rounded-lg p-4">
+              <h3 className="font-medium text-app-text mb-3">
+                {t('wizard.step3.required_skills')}
+              </h3>
               <div className="space-y-2">
                 {analysis.matched_required_skills.map((skill: string) => (
                   <SkillBadge key={skill} skill={skill} matched />
@@ -206,14 +232,16 @@ export default function Step3Analysis() {
                 ))}
                 {analysis.matched_required_skills.length === 0 &&
                   analysis.missing_required_skills.length === 0 && (
-                    <p className="text-sm text-gray-500">{t('wizard.step3.no_data')}</p>
+                    <p className="text-sm text-app-text-subtle">{t('wizard.step3.no_data')}</p>
                   )}
               </div>
             </div>
 
             {/* Preferred skills */}
-            <div className="bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg p-4">
-              <h3 className="font-medium text-slate-900 dark:text-white mb-3">{t('wizard.step3.preferred_skills')}</h3>
+            <div className="bg-app-surface border border-app-border rounded-lg p-4">
+              <h3 className="font-medium text-app-text mb-3">
+                {t('wizard.step3.preferred_skills')}
+              </h3>
               <div className="space-y-2">
                 {analysis.matched_preferred_skills.map((skill: string) => (
                   <SkillBadge key={skill} skill={skill} matched />
@@ -223,7 +251,7 @@ export default function Step3Analysis() {
                 ))}
                 {analysis.matched_preferred_skills.length === 0 &&
                   analysis.missing_preferred_skills.length === 0 && (
-                    <p className="text-sm text-gray-500">{t('wizard.step3.no_data')}</p>
+                    <p className="text-sm text-app-text-subtle">{t('wizard.step3.no_data')}</p>
                   )}
               </div>
             </div>
@@ -231,38 +259,39 @@ export default function Step3Analysis() {
 
           {/* Gaps */}
           {analysis.gaps.length > 0 && (
-            <div className="bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg p-4">
-              <h3 className="font-medium text-slate-900 dark:text-white mb-3">
+            <div className="bg-app-surface border border-app-border rounded-lg p-4">
+              <h3 className="font-medium text-app-text mb-3">
                 {t('wizard.step3.gaps')} ({analysis.gaps.length})
               </h3>
               <div className="space-y-3">
                 {analysis.gaps.map((gap: Gap) => (
                   <div
                     key={gap.id}
-                    className={`p-3 rounded-lg border ${
-                      gap.severity === 'high'
-                        ? 'bg-red-900/20 border-red-500/30'
-                        : gap.severity === 'medium'
-                          ? 'bg-yellow-900/20 border-yellow-500/30'
-                          : 'bg-blue-900/20 border-blue-500/30'
-                    }`}
+                    className={`p-3 rounded-lg border ${getSeverityCardClass(gap.severity)}`}
                   >
                     <div className="flex items-start gap-2">
                       <AlertTriangle
-                        className={`w-4 h-4 mt-0.5 ${
-                          gap.severity === 'high'
-                            ? 'text-red-400'
-                            : gap.severity === 'medium'
-                              ? 'text-yellow-400'
-                              : 'text-blue-400'
-                        }`}
+                        className={`w-4 h-4 mt-0.5 ${getSeverityIconClass(gap.severity)}`}
                       />
                       <div>
-                        <p className="text-sm font-medium text-slate-900 dark:text-white">{gap.message}</p>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className="text-sm font-medium text-app-text">{gap.message}</p>
+                          <span
+                            className={`text-xs px-1.5 py-0.5 rounded font-semibold ${getSeverityBadgeClass(
+                              gap.severity
+                            )}`}
+                          >
+                            {gap.severity === 'high'
+                              ? 'важно'
+                              : gap.severity === 'medium'
+                                ? 'средне'
+                                : 'низкий'}
+                          </span>
+                        </div>
                         {gap.suggestion && (
-                          <p className="text-sm text-slate-700 dark:text-slate-300 mt-1">{gap.suggestion}</p>
+                          <p className="text-sm text-app-text-muted mt-1">{gap.suggestion}</p>
                         )}
-                        <span className="inline-block mt-1 text-xs text-slate-500">
+                        <span className="inline-block mt-1 text-xs text-app-text-subtle">
                           {gap.target_section}
                         </span>
                       </div>
@@ -275,11 +304,7 @@ export default function Step3Analysis() {
 
           {/* Navigation */}
           <div className="flex justify-between pt-4">
-            <Button
-              variant="ghost"
-              onClick={goToPrevStep}
-              className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-            >
+            <Button variant="ghost" onClick={goToPrevStep}>
               <ArrowLeft className="w-4 h-4 mr-2" />
               {t('common.back_to_step')} 2
             </Button>
@@ -291,7 +316,7 @@ export default function Step3Analysis() {
 
           {/* Cache indicator */}
           {analyzeMutation.data?.cache_hit && (
-            <div className="text-sm text-gray-500 bg-gray-50 px-3 py-2 rounded-lg">
+            <div className="text-sm text-app-text-subtle bg-app-surface-muted px-3 py-2 rounded-lg">
               ✓ {t('common.success')} (Cache)
             </div>
           )}
@@ -319,23 +344,27 @@ function ScoreCard({
   const percentage = (value / maxValue) * 100
 
   return (
-    <div className="bg-slate-200 dark:bg-slate-700 rounded-lg p-3">
+    <div className="bg-app-surface-muted rounded-lg p-3">
       <div className="flex items-center justify-between mb-1">
-        <span className="text-sm text-slate-700 dark:text-slate-300">{label}</span>
-        <span className="text-sm font-medium text-slate-900 dark:text-white">
+        <span className="text-sm text-app-text-muted">{label}</span>
+        <span className="text-sm font-medium text-app-text">
           {value}/{maxValue}
         </span>
       </div>
-      <div className="w-full bg-gray-200 rounded-full h-2">
+      <div className="w-full bg-app-border rounded-full h-2">
         <div
           className={`h-2 rounded-full ${
-            percentage >= 70 ? 'bg-green-500' : percentage >= 50 ? 'bg-yellow-500' : 'bg-red-500'
+            percentage >= 70
+              ? 'bg-app-success'
+              : percentage >= 50
+                ? 'bg-app-warning'
+                : 'bg-app-danger'
           }`}
           style={{ width: `${percentage}%` }}
         />
       </div>
       {comment && (
-        <p className="text-xs text-gray-500 mt-1 truncate" title={comment}>
+        <p className="text-xs text-app-text-subtle mt-1 truncate" title={comment}>
           {comment}
         </p>
       )}
@@ -347,13 +376,13 @@ function SkillBadge({ skill, matched }: { skill: string; matched: boolean }) {
   return (
     <div
       className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm ${
-        matched ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'
+        matched ? 'bg-app-success-soft text-app-success' : 'bg-app-danger-soft text-app-danger'
       }`}
     >
       {matched ? (
-        <CheckCircle className="w-4 h-4 text-green-500" />
+        <CheckCircle className="w-4 h-4 text-app-success" />
       ) : (
-        <XCircle className="w-4 h-4 text-red-500" />
+        <XCircle className="w-4 h-4 text-app-danger" />
       )}
       {skill}
     </div>

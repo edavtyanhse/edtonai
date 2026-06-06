@@ -4,14 +4,14 @@
 
 ## Содержание
 
-| Раздел | Описание |
-|--------|----------|
+| Раздел                        | Описание                                 |
+| ----------------------------- | ---------------------------------------- |
 | [Architecture](architecture/) | Архитектура приложения, state management |
-| [Components](components/) | UI компоненты и их API |
-| [Pages](pages/) | Страницы и wizard flow |
-| [API Layer](api/) | HTTP клиент и типы |
-| [Context](context/) | React Context для глобального состояния |
-| [Styling](styling/) | Tailwind CSS, дизайн-система |
+| [Components](components/)     | UI компоненты и их API                   |
+| [Pages](pages/)               | Страницы и wizard flow                   |
+| [API Layer](api/)             | HTTP клиент и типы                       |
+| [Context](context/)           | React Context для глобального состояния  |
+| [Styling](styling/)           | Tailwind CSS, дизайн-система             |
 
 ## Стек технологий
 
@@ -195,15 +195,15 @@ frontend/
 const parseMutation = useMutation({
   mutationFn: () => parseResume({ resume_text: text }),
   onSuccess: (data) => {
-    setResumeData(data.resume_id, data.parsed_resume)
+    setResumeData(data.resume_id, data.parsed_resume);
   },
-})
+});
 
 // Query для загрузки данных
 const { data: versions } = useQuery({
-  queryKey: ['versions'],
+  queryKey: ["versions"],
   queryFn: () => getVersions(),
-})
+});
 ```
 
 ## Wizard Flow
@@ -246,10 +246,12 @@ const { data: versions } = useQuery({
 **Файл:** `pages/wizard/Step1Resume.tsx`
 
 **Режимы:**
+
 - `input` — ввод текста резюме
 - `parsed` — редактирование распознанных данных
 
 **Flow:**
+
 1. Пользователь вставляет текст резюме
 2. Нажимает "Распознать резюме"
 3. API: `POST /v1/resumes/parse`
@@ -257,6 +259,7 @@ const { data: versions } = useQuery({
 5. Изменения можно сохранить: `PATCH /v1/resumes/{id}`
 
 **Ключевые компоненты:**
+
 - `TextAreaWithCounter` — textarea с лимитом символов
 - `ResumeEditor` — форма редактирования parsed данных
 
@@ -265,6 +268,7 @@ const { data: versions } = useQuery({
 **Файл:** `pages/wizard/Step2Vacancy.tsx`
 
 Аналогично Step 1, но для вакансии:
+
 - API: `POST /v1/vacancies/parse`
 - Компонент: `VacancyEditor`
 
@@ -273,6 +277,7 @@ const { data: versions } = useQuery({
 **Файл:** `pages/wizard/Step3Analysis.tsx`
 
 **Flow:**
+
 1. Показывает превью резюме и вакансии
 2. Пользователь нажимает "Запустить анализ"
 3. API: `POST /v1/match/analyze`
@@ -284,6 +289,7 @@ const { data: versions } = useQuery({
    - Checkbox options для улучшений
 
 **Компоненты:**
+
 - `ScoreCard` — карточка с прогресс-баром
 - `SkillBadge` — бейдж навыка (matched/missing)
 
@@ -292,11 +298,13 @@ const { data: versions } = useQuery({
 **Файл:** `pages/wizard/Step4Improvement.tsx`
 
 **Режимы:**
+
 1. `checkboxes` — выбор улучшений из checkbox_options
 2. `review` — подтверждение/отклонение каждого изменения
 3. `analysis` — новый анализ после применения улучшений
 
 **Flow:**
+
 ```
 checkboxes → Apply → review → Confirm → analysis
                                   │
@@ -308,12 +316,14 @@ checkboxes → Apply → review → Confirm → analysis
 ```
 
 **API вызовы:**
+
 1. `POST /v1/resumes/adapt` — применить улучшения
 2. `POST /v1/versions` — сохранить версию
 3. `POST /v1/match/analyze` — повторный анализ
 4. `POST /v1/cover-letter` — генерация сопроводительного письма
 
 **Ключевая логика:**
+
 - `applyImprovedResume()` — делает улучшенное резюме новым базовым
 - `previousScore` — сохраняет старый балл для сравнения
 - Score comparison: TrendingUp/TrendingDown icons
@@ -334,36 +344,37 @@ export const apiClient = {
 ```
 
 **Error handling:**
+
 ```typescript
 export class ApiClientError extends Error {
   constructor(
     message: string,
     public status: number,
-    public detail?: unknown
+    public detail?: unknown,
   ) {}
 }
 ```
 
 ### Endpoints (`api/endpoints.ts`)
 
-| Function | Method | Path | Description |
-|----------|--------|------|-------------|
-| `getHealth()` | GET | `/v1/health` | Health check |
-| `getLimits()` | GET | `/v1/limits` | Get text limits |
-| `parseResume()` | POST | `/v1/resumes/parse` | Parse resume |
-| `getResume()` | GET | `/v1/resumes/{id}` | Get resume |
-| `updateResume()` | PATCH | `/v1/resumes/{id}` | Update parsed data |
-| `parseVacancy()` | POST | `/v1/vacancies/parse` | Parse vacancy |
-| `getVacancy()` | GET | `/v1/vacancies/{id}` | Get vacancy |
-| `updateVacancy()` | PATCH | `/v1/vacancies/{id}` | Update parsed data |
-| `analyzeMatch()` | POST | `/v1/match/analyze` | Analyze match |
-| `adaptResume()` | POST | `/v1/resumes/adapt` | Adapt resume |
-| `generateIdeal()` | POST | `/v1/resumes/ideal` | Generate ideal |
-| `generateCoverLetter()` | POST | `/v1/cover-letter` | Generate cover letter |
-| `createVersion()` | POST | `/v1/versions` | Create version |
-| `getVersions()` | GET | `/v1/versions` | List versions |
-| `getVersion()` | GET | `/v1/versions/{id}` | Get version |
-| `deleteVersion()` | DELETE | `/v1/versions/{id}` | Delete version |
+| Function                | Method | Path                  | Description           |
+| ----------------------- | ------ | --------------------- | --------------------- |
+| `getHealth()`           | GET    | `/v1/health`          | Health check          |
+| `getLimits()`           | GET    | `/v1/limits`          | Get text limits       |
+| `parseResume()`         | POST   | `/v1/resumes/parse`   | Parse resume          |
+| `getResume()`           | GET    | `/v1/resumes/{id}`    | Get resume            |
+| `updateResume()`        | PATCH  | `/v1/resumes/{id}`    | Update parsed data    |
+| `parseVacancy()`        | POST   | `/v1/vacancies/parse` | Parse vacancy         |
+| `getVacancy()`          | GET    | `/v1/vacancies/{id}`  | Get vacancy           |
+| `updateVacancy()`       | PATCH  | `/v1/vacancies/{id}`  | Update parsed data    |
+| `analyzeMatch()`        | POST   | `/v1/match/analyze`   | Analyze match         |
+| `adaptResume()`         | POST   | `/v1/resumes/adapt`   | Adapt resume          |
+| `generateIdeal()`       | POST   | `/v1/resumes/ideal`   | Generate ideal        |
+| `generateCoverLetter()` | POST   | `/v1/cover-letter`    | Generate cover letter |
+| `createVersion()`       | POST   | `/v1/versions`        | Create version        |
+| `getVersions()`         | GET    | `/v1/versions`        | List versions         |
+| `getVersion()`          | GET    | `/v1/versions/{id}`   | Get version           |
+| `deleteVersion()`       | DELETE | `/v1/versions/{id}`   | Delete version        |
 
 ### Types (`api/types.ts`)
 
@@ -419,13 +430,14 @@ interface ChangeLogEntry {
 
 ```tsx
 <CheckboxList
-  options={checkbox_options}  // from analysis
+  options={checkbox_options} // from analysis
   selected={selectedIds}
   onChange={setSelectedIds}
 />
 ```
 
 Отображает checkbox_options с:
+
 - enabled/disabled состоянием
 - priority (high/medium/low)
 - action_hint
@@ -433,6 +445,7 @@ interface ChangeLogEntry {
 ### ResumeEditor / VacancyEditor
 
 Формы для редактирования распознанных данных:
+
 - Секции раскрываются/сворачиваются
 - Inline редактирование полей
 - Добавление/удаление элементов списков
@@ -454,12 +467,12 @@ interface ChangeLogEntry {
 
 ```tsx
 // В App.tsx
-<Toaster />
+<Toaster />;
 
 // Использование
-import { toast } from '@/components/Toast'
-toast.success('Сохранено!')
-toast.error('Ошибка!')
+import { toast } from "@/components/Toast";
+toast.success("Сохранено!");
+toast.error("Ошибка!");
 ```
 
 ## Routing
@@ -469,20 +482,20 @@ toast.error('Ошибка!')
 <Routes>
   {/* Home - mode selection */}
   <Route path="/" element={<HomePage />} />
-  
+
   {/* Wizard - main flow */}
   <Route path="/wizard" element={<WizardPage />} />
-  
+
   {/* Ideal resume generator */}
   <Route path="/ideal-resume" element={<IdealResumePage />} />
-  
+
   {/* With Layout (header/nav) */}
   <Route element={<Layout />}>
     <Route path="workspace" element={<Workspace />} />
     <Route path="history" element={<History />} />
     <Route path="compare" element={<Compare />} />
   </Route>
-  
+
   {/* Fallback */}
   <Route path="*" element={<Navigate to="/" replace />} />
 </Routes>
@@ -490,26 +503,38 @@ toast.error('Ошибка!')
 
 ## Styling
 
+Frontend поддерживает light и dark темы. Для новых UI-элементов используй
+semantic color tokens из `tailwind.config.js` (`app-*`), а не прямые
+`text-blue-*`, `bg-slate-*` и ручные `dark:` пары. Значения tokens объявлены в
+`src/index.css` для `:root` и `html.dark`; подробные правила — в
+[`docs/frontend/styling/README.md`](styling/README.md).
+
 ### Tailwind Config
 
 ```js
 // tailwind.config.js
 module.exports = {
-  content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
+  content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
   theme: {
     extend: {
       colors: {
+        app: {
+          bg: "rgb(var(--color-app-bg) / <alpha-value>)",
+          surface: "rgb(var(--color-app-surface) / <alpha-value>)",
+          text: "rgb(var(--color-app-text) / <alpha-value>)",
+          accent: "rgb(var(--color-app-accent) / <alpha-value>)",
+        },
         primary: {
-          50: '#eff6ff',
-          100: '#dbeafe',
+          50: "#eff6ff",
+          100: "#dbeafe",
           // ...
-          600: '#2563eb',
-          700: '#1d4ed8',
+          600: "#2563eb",
+          700: "#1d4ed8",
         },
       },
     },
   },
-}
+};
 ```
 
 ### CSS Classes Pattern
@@ -519,7 +544,7 @@ module.exports = {
 className={`base-classes ${condition ? 'true-classes' : 'false-classes'}`}
 
 // Score coloring
-className={score >= 70 ? 'text-green-600' : score >= 50 ? 'text-yellow-600' : 'text-red-600'}
+className={score >= 70 ? 'text-app-success' : score >= 50 ? 'text-app-warning' : 'text-app-danger'}
 ```
 
 ## Build & Deploy
@@ -549,11 +574,11 @@ docker build -t edtonai-frontend .
 server {
     listen 80;
     root /usr/share/nginx/html;
-    
+
     location / {
         try_files $uri $uri/ /index.html;
     }
-    
+
     location /api/ {
         proxy_pass http://backend:8000/;
     }
@@ -562,9 +587,9 @@ server {
 
 ## Environment Variables
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `VITE_API_URL` | `/api` | API base URL (for dev) |
+| Variable       | Default | Description            |
+| -------------- | ------- | ---------------------- |
+| `VITE_API_URL` | `/api`  | API base URL (for dev) |
 
 ## Error Handling
 
@@ -578,12 +603,14 @@ class ErrorBoundary extends Component {
   componentDidCatch(error, errorInfo) {
     // Log to console or error tracking service
   }
-  
+
   render() {
     if (this.state.hasError) {
-      return <ErrorFallback onReset={() => this.setState({ hasError: false })} />
+      return (
+        <ErrorFallback onReset={() => this.setState({ hasError: false })} />
+      );
     }
-    return this.props.children
+    return this.props.children;
   }
 }
 ```

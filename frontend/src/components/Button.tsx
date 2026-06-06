@@ -29,14 +29,15 @@ export default function Button({
 
   const variants = {
     primary:
-      'bg-brand-600 text-white hover:bg-brand-500 shadow-lg shadow-brand-500/25 border border-transparent focus:ring-brand-500',
+      'bg-app-accent text-white hover:bg-app-accent-hover shadow-lg shadow-brand-500/25 border border-transparent focus:ring-app-accent',
     secondary:
-      'bg-white dark:bg-slate-800 text-slate-900 dark:text-white hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600 focus:ring-slate-500',
+      'bg-app-surface text-app-text hover:bg-app-surface-muted border border-app-border hover:border-app-border-strong focus:ring-app-border-strong',
     danger:
-      'bg-red-500/10 text-red-400 hover:bg-red-500/20 border border-red-500/20 focus:ring-red-500',
-    ghost: 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/70 dark:hover:bg-slate-800/50 focus:ring-slate-500',
+      'bg-app-danger-soft text-app-danger hover:bg-app-danger-soft/80 border border-app-danger/30 focus:ring-app-danger',
+    ghost:
+      'text-app-text-muted hover:text-app-text hover:bg-app-surface-muted focus:ring-app-border-strong',
     outline:
-      'bg-transparent border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white focus:ring-brand-500',
+      'bg-transparent border border-app-border text-app-text-muted hover:bg-app-surface-muted hover:text-app-text focus:ring-app-accent',
   }
 
   const sizes = {

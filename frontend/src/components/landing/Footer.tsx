@@ -45,11 +45,11 @@ const Footer: React.FC<FooterProps> = ({ lang }) => {
   const t = content[lang]
 
   return (
-    <footer className="bg-slate-50 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 py-12 px-4">
+    <footer className="bg-app-bg border-t border-app-border text-app-text-muted py-12 px-4">
       <div className="container mx-auto grid md:grid-cols-4 gap-8">
         <div className="col-span-1 md:col-span-2">
-          <div className="flex items-center gap-2 text-slate-900 dark:text-white font-bold text-xl mb-4">
-            <div className="w-8 h-8 bg-brand-600 rounded-lg flex items-center justify-center">
+          <div className="flex items-center gap-2 text-app-text font-bold text-xl mb-4">
+            <div className="w-8 h-8 bg-app-accent text-white rounded-lg flex items-center justify-center">
               E
             </div>
             EdtonAI
@@ -58,25 +58,25 @@ const Footer: React.FC<FooterProps> = ({ lang }) => {
         </div>
 
         <div>
-          <h4 className="text-slate-900 dark:text-white font-semibold mb-4">{t.product}</h4>
+          <h4 className="text-app-text font-semibold mb-4">{t.product}</h4>
           <ul className="space-y-2 text-sm">
             <li>
-              <a href="#" className="hover:text-brand-400 transition-colors">
+              <a href="#" className="hover:text-app-accent transition-colors">
                 {t.links.scorer}
               </a>
             </li>
             <li>
-              <a href="#" className="hover:text-brand-400 transition-colors">
+              <a href="#" className="hover:text-app-accent transition-colors">
                 {t.links.coverLetter}
               </a>
             </li>
             <li>
-              <a href="#" className="hover:text-brand-400 transition-colors">
+              <a href="#" className="hover:text-app-accent transition-colors">
                 {t.links.linkedin}
               </a>
             </li>
             <li>
-              <a href="#" className="hover:text-brand-400 transition-colors">
+              <a href="#" className="hover:text-app-accent transition-colors">
                 {t.links.pricing}
               </a>
             </li>
@@ -84,25 +84,25 @@ const Footer: React.FC<FooterProps> = ({ lang }) => {
         </div>
 
         <div>
-          <h4 className="text-slate-900 dark:text-white font-semibold mb-4">{t.company}</h4>
+          <h4 className="text-app-text font-semibold mb-4">{t.company}</h4>
           <ul className="space-y-2 text-sm">
             <li>
-              <a href="#" className="hover:text-brand-400 transition-colors">
+              <a href="#" className="hover:text-app-accent transition-colors">
                 {t.links.about}
               </a>
             </li>
             <li>
-              <a href="#" className="hover:text-brand-400 transition-colors">
+              <a href="#" className="hover:text-app-accent transition-colors">
                 {t.links.blog}
               </a>
             </li>
             <li>
-              <a href="#" className="hover:text-brand-400 transition-colors">
+              <a href="#" className="hover:text-app-accent transition-colors">
                 {t.links.privacy}
               </a>
             </li>
             <li>
-              <a href="#" className="hover:text-brand-400 transition-colors">
+              <a href="#" className="hover:text-app-accent transition-colors">
                 {t.links.terms}
               </a>
             </li>
@@ -110,16 +110,16 @@ const Footer: React.FC<FooterProps> = ({ lang }) => {
         </div>
       </div>
 
-      <div className="container mx-auto mt-12 pt-8 border-t border-slate-200 dark:border-slate-800 flex flex-col md:flex-row justify-between items-center gap-4">
+      <div className="container mx-auto mt-12 pt-8 border-t border-app-border flex flex-col md:flex-row justify-between items-center gap-4">
         <p className="text-xs">&copy; {new Date().getFullYear()} EdtonAI. All rights reserved.</p>
         <div className="flex gap-4">
-          <a href="#" className="hover:text-slate-900 dark:hover:text-white transition-colors">
+          <a href="#" className="hover:text-app-text transition-colors">
             <Twitter className="w-5 h-5" />
           </a>
-          <a href="#" className="hover:text-slate-900 dark:hover:text-white transition-colors">
+          <a href="#" className="hover:text-app-text transition-colors">
             <Linkedin className="w-5 h-5" />
           </a>
-          <a href="#" className="hover:text-slate-900 dark:hover:text-white transition-colors">
+          <a href="#" className="hover:text-app-text transition-colors">
             <Github className="w-5 h-5" />
           </a>
         </div>

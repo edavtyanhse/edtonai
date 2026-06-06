@@ -32,13 +32,13 @@ describe('Button', () => {
 
   it('applies variant classes', () => {
     const { rerender } = render(<Button variant="primary">Primary</Button>)
-    expect(screen.getByRole('button').className).toContain('bg-brand-600')
+    expect(screen.getByRole('button').className).toContain('bg-app-accent')
 
     rerender(<Button variant="danger">Danger</Button>)
-    expect(screen.getByRole('button').className).toContain('text-red-400')
+    expect(screen.getByRole('button').className).toContain('text-app-danger')
 
     rerender(<Button variant="secondary">Secondary</Button>)
-    expect(screen.getByRole('button').className).toContain('bg-white dark:bg-slate-800')
+    expect(screen.getByRole('button').className).toContain('bg-app-surface')
   })
 
   it('applies size classes', () => {
@@ -66,7 +66,11 @@ describe('Button', () => {
 
   it('does not call onClick when disabled', () => {
     const onClick = vi.fn()
-    render(<Button onClick={onClick} disabled>Disabled</Button>)
+    render(
+      <Button onClick={onClick} disabled>
+        Disabled
+      </Button>
+    )
     fireEvent.click(screen.getByRole('button'))
     expect(onClick).not.toHaveBeenCalled()
   })

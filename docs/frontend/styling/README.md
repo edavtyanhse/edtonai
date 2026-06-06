@@ -6,7 +6,8 @@
 
 - **CSS Framework:** Tailwind CSS v3
 - **Icons:** Lucide React
-- **Подход:** Utility-first CSS
+- **Подход:** Utility-first CSS + semantic theme tokens
+- **Темы:** light/dark через `next-themes`, класс `html.dark` и CSS variables
 
 ## Файлы конфигурации
 
@@ -18,32 +19,75 @@ frontend/
 │   └── index.css          # Global styles, Tailwind imports
 ```
 
+## Theme Tokens
+
+Цвета интерфейса задаются не прямыми `slate/blue/green` классами, а semantic
+tokens. Значения токенов объявлены в `frontend/src/index.css` для `:root`
+(light theme) и `html.dark` (dark theme), а Tailwind подключает их через
+`frontend/tailwind.config.js`.
+
+### Основные токены
+
+| Token class                               | Назначение                                      |
+| ----------------------------------------- | ----------------------------------------------- |
+| `bg-app-bg`                               | Фон страницы                                    |
+| `bg-app-surface`                          | Основная поверхность: карточки, модалки, header |
+| `bg-app-surface-muted`                    | Вторичная поверхность, hover, readonly поля     |
+| `border-app-border`                       | Обычная рамка                                   |
+| `border-app-border-strong`                | Более заметная рамка/hover                      |
+| `text-app-text`                           | Основной текст                                  |
+| `text-app-text-muted`                     | Вторичный текст                                 |
+| `text-app-text-subtle`                    | Подписи, счетчики, muted text                   |
+| `bg-app-accent`, `text-app-accent`        | Основной brand/accent                           |
+| `bg-app-accent-soft`                      | Мягкий accent-фон                               |
+| `bg-app-icon-tile`, `text-app-accent`     | Плашки с иконками                               |
+| `text-app-success`, `bg-app-success-soft` | Успех/добавления/matched                        |
+| `text-app-warning`, `bg-app-warning-soft` | Предупреждения/medium severity                  |
+| `text-app-danger`, `bg-app-danger-soft`   | Ошибки/удаления/high severity                   |
+
+Правило: новые UI-компоненты должны использовать `app-*` tokens или существующие
+shared-компоненты (`Button`, `TextAreaWithCounter`, `ConfirmDialog`, `Toast`).
+Прямые цвета Tailwind (`text-blue-400`, `bg-slate-800`, `dark:*`) допустимы
+только для редких декоративных деталей, где обе темы проверены вручную.
+
 ## Tailwind Configuration
 
 ```js
 // tailwind.config.js
 module.exports = {
-  content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
+  content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
   theme: {
     extend: {
       colors: {
+        app: {
+          bg: "rgb(var(--color-app-bg) / <alpha-value>)",
+          surface: "rgb(var(--color-app-surface) / <alpha-value>)",
+          "surface-muted":
+            "rgb(var(--color-app-surface-muted) / <alpha-value>)",
+          border: "rgb(var(--color-app-border) / <alpha-value>)",
+          text: "rgb(var(--color-app-text) / <alpha-value>)",
+          accent: "rgb(var(--color-app-accent) / <alpha-value>)",
+          success: "rgb(var(--color-app-success) / <alpha-value>)",
+          warning: "rgb(var(--color-app-warning) / <alpha-value>)",
+          danger: "rgb(var(--color-app-danger) / <alpha-value>)",
+        },
         primary: {
-          50: '#eff6ff',
-          100: '#dbeafe',
-          200: '#bfdbfe',
-          300: '#93c5fd',
-          400: '#60a5fa',
-          500: '#3b82f6',
-          600: '#2563eb',
-          700: '#1d4ed8',
-          800: '#1e40af',
-          900: '#1e3a8a',
+          50: "#eff6ff",
+          100: "#dbeafe",
+          200: "#bfdbfe",
+          300: "#93c5fd",
+          400: "#60a5fa",
+          500: "#3b82f6",
+          600: "#2563eb",
+          700: "#1d4ed8",
+          800: "#1e40af",
+          900: "#1e3a8a",
         },
       },
     },
   },
   plugins: [],
-}
+};
 ```
 
 ## Global Styles
@@ -54,66 +98,57 @@ module.exports = {
 @tailwind components;
 @tailwind utilities;
 
-/* Custom base styles */
-@layer base {
-  body {
-    @apply bg-gray-50 text-gray-900 antialiased;
-  }
+:root {
+  --color-app-bg: 246 248 251;
+  --color-app-surface: 255 255 255;
+  --color-app-text: 15 23 42;
+  --color-app-accent: 29 78 216;
+  color-scheme: light;
 }
 
-/* Custom component classes */
-@layer components {
-  .btn-primary {
-    @apply bg-primary-600 text-white px-4 py-2 rounded-lg 
-           hover:bg-primary-700 focus:ring-2 focus:ring-primary-500 
-           focus:ring-offset-2 transition-colors;
-  }
-  
-  .btn-outline {
-    @apply border border-gray-300 text-gray-700 px-4 py-2 rounded-lg
-           hover:bg-gray-50 focus:ring-2 focus:ring-gray-500 
-           focus:ring-offset-2 transition-colors;
-  }
+html.dark {
+  --color-app-bg: 15 23 42;
+  --color-app-surface: 30 41 59;
+  --color-app-text: 248 250 252;
+  --color-app-accent: 96 165 250;
+  color-scheme: dark;
 }
 ```
 
 ## Цветовая палитра
 
-### Primary (Blue)
+### Brand / Primary
 
-| Token | Hex | Usage |
-|-------|-----|-------|
-| `primary-50` | `#eff6ff` | Background hover |
-| `primary-100` | `#dbeafe` | Active background |
-| `primary-500` | `#3b82f6` | Focus rings |
-| `primary-600` | `#2563eb` | Primary buttons |
-| `primary-700` | `#1d4ed8` | Button hover |
+`primary-*` и `brand-*` остаются в Tailwind для совместимости и декоративных
+деталей. Для новой UI-разметки предпочитай `app-accent`, потому что он
+автоматически меняет значение между light/dark темой.
 
 ### Semantic Colors
 
-| Color | Class | Usage |
-|-------|-------|-------|
-| Success | `text-green-600`, `bg-green-50` | Positive states, matched skills |
-| Warning | `text-yellow-600`, `bg-yellow-50` | Warnings, medium severity |
-| Error | `text-red-600`, `bg-red-50` | Errors, missing skills, high severity |
-| Neutral | `text-gray-*`, `bg-gray-*` | Text, backgrounds, borders |
+| State   | Text                  | Soft Background        | Usage                                      |
+| ------- | --------------------- | ---------------------- | ------------------------------------------ |
+| Success | `text-app-success`    | `bg-app-success-soft`  | Positive states, matched skills, additions |
+| Warning | `text-app-warning`    | `bg-app-warning-soft`  | Warnings, medium severity                  |
+| Danger  | `text-app-danger`     | `bg-app-danger-soft`   | Errors, missing skills, removals           |
+| Accent  | `text-app-accent`     | `bg-app-accent-soft`   | Brand, active states, info                 |
+| Neutral | `text-app-text-muted` | `bg-app-surface-muted` | Secondary content                          |
 
 ### Score Colors
 
 ```tsx
 // Color by score value
 const getScoreColor = (score: number) => {
-  if (score >= 70) return 'text-green-600'
-  if (score >= 50) return 'text-yellow-600'
-  return 'text-red-600'
-}
+  if (score >= 70) return "text-app-success";
+  if (score >= 50) return "text-app-warning";
+  return "text-app-danger";
+};
 
 // Progress bar color
 const getBarColor = (percentage: number) => {
-  if (percentage >= 70) return 'bg-green-500'
-  if (percentage >= 50) return 'bg-yellow-500'
-  return 'bg-red-500'
-}
+  if (percentage >= 70) return "bg-app-success";
+  if (percentage >= 50) return "bg-app-warning";
+  return "bg-app-danger";
+};
 ```
 
 ## Компонентные паттерны
@@ -121,21 +156,21 @@ const getBarColor = (percentage: number) => {
 ### Cards
 
 ```tsx
-// White card with border
-<div className="bg-white border border-gray-200 rounded-lg p-4">
+// Surface card with border
+<div className="bg-app-surface border border-app-border rounded-lg p-4">
   {/* content */}
 </div>
 
 // Card with shadow
-<div className="bg-white rounded-lg shadow-md p-6">
+<div className="bg-app-surface rounded-lg shadow-md p-6">
   {/* content */}
 </div>
 
 // Status card (colored)
 <div className={`rounded-lg p-4 border ${
-  status === 'success' ? 'bg-green-50 border-green-200' :
-  status === 'warning' ? 'bg-yellow-50 border-yellow-200' :
-  'bg-red-50 border-red-200'
+  status === 'success' ? 'bg-app-success-soft border-app-success/30' :
+  status === 'warning' ? 'bg-app-warning-soft border-app-warning/30' :
+  'bg-app-danger-soft border-app-danger/30'
 }`}>
   {/* content */}
 </div>
@@ -145,7 +180,7 @@ const getBarColor = (percentage: number) => {
 
 ```tsx
 // Primary button
-<button className="bg-primary-600 hover:bg-primary-700 text-white 
+<button className="bg-app-accent hover:bg-app-accent-hover text-white
                    px-4 py-2 rounded-lg transition-colors
                    focus:ring-2 focus:ring-primary-500 focus:ring-offset-2
                    disabled:opacity-50 disabled:cursor-not-allowed">
@@ -153,15 +188,15 @@ const getBarColor = (percentage: number) => {
 </button>
 
 // Outline button
-<button className="border border-gray-300 text-gray-700 
-                   px-4 py-2 rounded-lg hover:bg-gray-50
+<button className="border border-app-border text-app-text-muted
+                   px-4 py-2 rounded-lg hover:bg-app-surface-muted
                    transition-colors">
   Outline
 </button>
 
 // Ghost button
-<button className="text-gray-600 px-4 py-2 rounded-lg 
-                   hover:bg-gray-100 transition-colors">
+<button className="text-app-text-muted px-4 py-2 rounded-lg
+                   hover:bg-app-surface-muted hover:text-app-text transition-colors">
   Ghost
 </button>
 ```
@@ -170,28 +205,29 @@ const getBarColor = (percentage: number) => {
 
 ```tsx
 // Text input
-<input 
+<input
   type="text"
-  className="w-full px-3 py-2 border border-gray-300 rounded-lg
-             focus:ring-2 focus:ring-primary-500 focus:border-transparent
-             placeholder-gray-400"
+  className="w-full px-3 py-2 border border-app-border rounded-lg
+             focus:ring-2 focus:ring-app-accent focus:border-transparent
+             bg-app-surface text-app-text placeholder:text-app-text-subtle"
   placeholder="Enter text..."
 />
 
 // Textarea
 <textarea
-  className="w-full px-3 py-2 border border-gray-300 rounded-lg
-             focus:ring-2 focus:ring-primary-500 focus:border-transparent
+  className="w-full px-3 py-2 border border-app-border rounded-lg
+             focus:ring-2 focus:ring-app-accent focus:border-transparent
+             bg-app-surface text-app-text
              resize-none"
   rows={10}
 />
 
 // Checkbox
 <label className="flex items-center gap-2 cursor-pointer">
-  <input type="checkbox" className="w-4 h-4 text-primary-600 
-                                     rounded border-gray-300
-                                     focus:ring-primary-500" />
-  <span className="text-sm text-gray-700">Label</span>
+  <input type="checkbox" className="w-4 h-4 text-app-accent
+                                     rounded border-app-border
+                                     focus:ring-app-accent" />
+  <span className="text-sm text-app-text-muted">Label</span>
 </label>
 ```
 
@@ -199,24 +235,24 @@ const getBarColor = (percentage: number) => {
 
 ```tsx
 // Skill badge (matched)
-<span className="inline-flex items-center gap-1 px-3 py-1.5 
-                 rounded-lg text-sm bg-green-50 text-green-800">
-  <CheckCircle className="w-4 h-4 text-green-500" />
+<span className="inline-flex items-center gap-1 px-3 py-1.5
+                 rounded-lg text-sm bg-app-success-soft text-app-success">
+  <CheckCircle className="w-4 h-4 text-app-success" />
   Python
 </span>
 
 // Skill badge (missing)
-<span className="inline-flex items-center gap-1 px-3 py-1.5 
-                 rounded-lg text-sm bg-red-50 text-red-800">
-  <XCircle className="w-4 h-4 text-red-500" />
+<span className="inline-flex items-center gap-1 px-3 py-1.5
+                 rounded-lg text-sm bg-app-danger-soft text-app-danger">
+  <XCircle className="w-4 h-4 text-app-danger" />
   Kubernetes
 </span>
 
 // Impact badge
 <span className={`text-xs px-2 py-0.5 rounded ${
-  impact === 'high' ? 'bg-red-100 text-red-700' :
-  impact === 'medium' ? 'bg-yellow-100 text-yellow-700' :
-  'bg-gray-100 text-gray-600'
+  impact === 'high' ? 'bg-app-danger-soft text-app-danger' :
+  impact === 'medium' ? 'bg-app-warning-soft text-app-warning' :
+  'bg-app-surface-muted text-app-text-muted'
 }`}>
   {impact}
 </span>
@@ -225,12 +261,14 @@ const getBarColor = (percentage: number) => {
 ### Progress Bar
 
 ```tsx
-<div className="w-full bg-gray-200 rounded-full h-2">
-  <div 
+<div className="w-full bg-app-border rounded-full h-2">
+  <div
     className={`h-2 rounded-full ${
-      percentage >= 70 ? 'bg-green-500' : 
-      percentage >= 50 ? 'bg-yellow-500' : 
-      'bg-red-500'
+      percentage >= 70
+        ? "bg-app-success"
+        : percentage >= 50
+          ? "bg-app-warning"
+          : "bg-app-danger"
     }`}
     style={{ width: `${percentage}%` }}
   />
@@ -242,9 +280,7 @@ const getBarColor = (percentage: number) => {
 ### Container
 
 ```tsx
-<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-  {/* content */}
-</div>
+<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">{/* content */}</div>
 ```
 
 ### Grid
@@ -308,27 +344,27 @@ const getBarColor = (percentage: number) => {
 ### Import
 
 ```tsx
-import { 
-  FileText,      // Resume/document
-  Briefcase,     // Vacancy/job
-  BarChart2,     // Analysis/chart
-  Sparkles,      // Improvement/AI
-  ArrowRight,    // Navigation
+import {
+  FileText, // Resume/document
+  Briefcase, // Vacancy/job
+  BarChart2, // Analysis/chart
+  Sparkles, // Improvement/AI
+  ArrowRight, // Navigation
   ArrowLeft,
-  Check,         // Success/confirm
-  X,             // Close/reject
+  Check, // Success/confirm
+  X, // Close/reject
   AlertTriangle, // Warning
-  CheckCircle,   // Matched
-  XCircle,       // Missing
-  TrendingUp,    // Score improved
-  TrendingDown,  // Score decreased
-  Minus,         // No change
-  Loader2,       // Loading spinner
-  Copy,          // Copy to clipboard
-  RotateCcw,     // Reset
-  Edit3,         // Edit
-  Save,          // Save
-} from 'lucide-react'
+  CheckCircle, // Matched
+  XCircle, // Missing
+  TrendingUp, // Score improved
+  TrendingDown, // Score decreased
+  Minus, // No change
+  Loader2, // Loading spinner
+  Copy, // Copy to clipboard
+  RotateCcw, // Reset
+  Edit3, // Edit
+  Save, // Save
+} from "lucide-react";
 ```
 
 ### Usage
@@ -340,8 +376,8 @@ import {
   Улучшить
 </Button>
 
-// Standalone
-<CheckCircle className="w-5 h-5 text-green-500" />
+// Standalone semantic icon
+<CheckCircle className="w-5 h-5 text-app-success" />
 
 // Loading spinner
 <Loader2 className="w-4 h-4 animate-spin" />
@@ -349,22 +385,22 @@ import {
 
 ### Icon Sizes
 
-| Size | Class | Usage |
-|------|-------|-------|
-| Small | `w-4 h-4` | In buttons, badges |
-| Medium | `w-5 h-5` | Standalone icons |
-| Large | `w-6 h-6` | Headers, empty states |
+| Size   | Class     | Usage                 |
+| ------ | --------- | --------------------- |
+| Small  | `w-4 h-4` | In buttons, badges    |
+| Medium | `w-5 h-5` | Standalone icons      |
+| Large  | `w-6 h-6` | Headers, empty states |
 
 ## Responsive Design
 
 ### Breakpoints
 
-| Breakpoint | Min Width | Usage |
-|------------|-----------|-------|
-| `sm` | 640px | Mobile landscape |
-| `md` | 768px | Tablet |
-| `lg` | 1024px | Desktop |
-| `xl` | 1280px | Large desktop |
+| Breakpoint | Min Width | Usage            |
+| ---------- | --------- | ---------------- |
+| `sm`       | 640px     | Mobile landscape |
+| `md`       | 768px     | Tablet           |
+| `lg`       | 1024px    | Desktop          |
+| `xl`       | 1280px    | Large desktop    |
 
 ### Patterns
 
@@ -394,7 +430,7 @@ import {
 <Loader2 className="animate-spin" />
 
 // Pulse (skeleton)
-<div className="animate-pulse bg-gray-200 h-4 rounded" />
+<div className="animate-pulse bg-app-surface-muted h-4 rounded" />
 
 // Bounce (attention)
 <div className="animate-bounce" />
@@ -404,7 +440,7 @@ import {
 
 ```tsx
 // Color transition (buttons)
-<button className="transition-colors duration-200 hover:bg-gray-100">
+<button className="transition-colors duration-200 hover:bg-app-surface-muted">
 
 // All transitions
 <div className="transition-all duration-300">
@@ -413,16 +449,15 @@ import {
 <div className="transition-transform hover:scale-105">
 ```
 
-## Dark Mode (TODO)
+## Theme Review Checklist
 
-Пока не реализован. Для добавления:
+Перед merge UI-изменений:
 
-1. Добавить `darkMode: 'class'` в `tailwind.config.js`
-2. Использовать `dark:` префиксы
-3. Добавить toggle в UI
-
-```tsx
-// Example
-<div className="bg-white dark:bg-gray-800 
-                text-gray-900 dark:text-gray-100">
-```
+1. Используй semantic tokens (`app-*`) для текста, поверхности, рамок и состояний.
+2. Не переопределяй `Button` raw фоном без смены `variant`; иначе легко получить
+   белый текст на светлом фоне.
+3. Проверяй light и dark тему для новых карточек, иконок, badge, diff/highlight.
+4. Для priority/severity UI цвет должен быть виден не только в тексте: добавляй
+   фон, рамку, левую полосу или icon state.
+5. Для long-form текста не используй `text-app-text-subtle`; это только для
+   вторичных подписей.
