@@ -6,8 +6,8 @@
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
-  color: #0f172a;
-  background-color: #f8fafc;
+  color: #111827;
+  background-color: #f6f8fb;
   color-scheme: light;
 }
 
@@ -21,6 +21,138 @@ body {
   margin: 0;
   min-height: 100vh;
   transition: background-color 200ms ease, color 200ms ease;
+}
+
+/* Light theme palette overrides.
+   Several screens reuse dark-theme semantic tokens (e.g. text-green-400 on
+   white). Keep component structure intact, but map light mode to accessible
+   "on surface" colors with stronger luminance contrast. */
+html:not(.dark) body {
+  background:
+    radial-gradient(circle at 20% -10%, rgba(29, 78, 216, 0.08), transparent 32rem),
+    radial-gradient(circle at 90% 8%, rgba(4, 120, 87, 0.08), transparent 28rem),
+    #f6f8fb;
+  color: #111827;
+}
+
+html:not(.dark) .bg-slate-50 {
+  background-color: #f6f8fb;
+}
+
+html:not(.dark) .bg-slate-100\/70 {
+  background-color: rgba(226, 232, 240, 0.78);
+}
+
+html:not(.dark) .bg-slate-200\/60 {
+  background-color: rgba(226, 232, 240, 0.86);
+}
+
+html:not(.dark) .text-brand-400,
+html:not(.dark) .text-blue-400,
+html:not(.dark) .text-blue-300,
+html:not(.dark) .text-blue-300\/80 {
+  color: #1d4ed8;
+}
+
+html:not(.dark) .hover\:text-brand-300:hover,
+html:not(.dark) .hover\:text-blue-300:hover {
+  color: #1e40af;
+}
+
+html:not(.dark) .bg-brand-500\/10,
+html:not(.dark) .bg-blue-500\/5,
+html:not(.dark) .bg-blue-500\/15,
+html:not(.dark) .bg-blue-500\/20,
+html:not(.dark) .bg-blue-900\/15,
+html:not(.dark) .bg-blue-900\/20 {
+  background-color: #eff6ff;
+}
+
+html:not(.dark) .border-brand-500\/20,
+html:not(.dark) .border-blue-500\/20,
+html:not(.dark) .border-blue-500\/30 {
+  border-color: #bfdbfe;
+}
+
+html:not(.dark) .text-green-200,
+html:not(.dark) .text-green-300,
+html:not(.dark) .text-green-400,
+html:not(.dark) .text-green-500,
+html:not(.dark) .text-green-600,
+html:not(.dark) .text-green-300\/70 {
+  color: #047857;
+}
+
+html:not(.dark) .bg-green-500\/10,
+html:not(.dark) .bg-green-500\/20,
+html:not(.dark) .bg-green-800\/50,
+html:not(.dark) .bg-green-900\/10,
+html:not(.dark) .bg-green-900\/20,
+html:not(.dark) .bg-green-900\/30 {
+  background-color: #ecfdf5;
+}
+
+html:not(.dark) .border-green-500\/20,
+html:not(.dark) .border-green-500\/30,
+html:not(.dark) .border-green-500\/40,
+html:not(.dark) .border-green-500\/50 {
+  border-color: #86efac;
+}
+
+html:not(.dark) .text-red-300,
+html:not(.dark) .text-red-400,
+html:not(.dark) .text-red-500 {
+  color: #b91c1c;
+}
+
+html:not(.dark) .bg-red-500\/10,
+html:not(.dark) .bg-red-500\/20,
+html:not(.dark) .bg-red-800\/40,
+html:not(.dark) .bg-red-900\/20,
+html:not(.dark) .bg-red-900\/30,
+html:not(.dark) .bg-red-900\/50 {
+  background-color: #fef2f2;
+}
+
+html:not(.dark) .border-red-500\/20,
+html:not(.dark) .border-red-500\/30,
+html:not(.dark) .border-red-500\/40 {
+  border-color: #fecaca;
+}
+
+html:not(.dark) .text-amber-400,
+html:not(.dark) .text-yellow-400,
+html:not(.dark) .text-yellow-500,
+html:not(.dark) .text-yellow-600 {
+  color: #92400e;
+}
+
+html:not(.dark) .bg-amber-900\/30 {
+  background-color: #fffbeb;
+}
+
+html:not(.dark) .border-amber-500\/30 {
+  border-color: #fcd34d;
+}
+
+html:not(.dark) .text-slate-500 {
+  color: #475569;
+}
+
+html:not(.dark) .text-slate-600 {
+  color: #334155;
+}
+
+html:not(.dark) .text-gray-400 {
+  color: #64748b;
+}
+
+html:not(.dark) .text-gray-500 {
+  color: #475569;
+}
+
+html:not(.dark) .text-gray-600 {
+  color: #334155;
 }
 
 /* Custom scrollbar — light */

@@ -444,7 +444,7 @@ function ListEditor({
             ) : (
               <input
                 type="text"
-                className="flex-1 px-2 py-1 border border-transparent hover:border-slate-400 dark:hover:border-slate-600 rounded bg-transparent text-slate-900 dark:text-white focus:bg-slate-900 focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-colors"
+                className="flex-1 px-2 py-1 border border-transparent hover:border-slate-400 dark:hover:border-slate-600 rounded bg-transparent text-slate-900 dark:text-white focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-colors"
                 value={item}
                 onChange={(e) => handleUpdate(index, e.target.value)}
               />

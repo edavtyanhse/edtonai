@@ -34,7 +34,7 @@ export default function WizardLayout({ steps, currentStep, children }: WizardLay
                 title={t('wizard.home_tooltip')}
               >
                 <Home className="w-5 h-5" />
-                <span className="text-sm font-medium group-hover:text-white transition-colors">
+                <span className="text-sm font-medium group-hover:text-slate-900 dark:group-hover:text-white transition-colors">
                   {t('common.back_home')}
                 </span>
               </button>
