@@ -113,9 +113,9 @@ substitutions:
   _BACKEND_SERVICE_NAME: edtonai-backend
   _FRONTEND_SERVICE_NAME: edtonai-frontend
   # Defaults (Non-secret)
-  _POSTGRES_USER: postgres.qwxfmnhkgepyksdkibvw
-  _POSTGRES_HOST: aws-1-us-east-1.pooler.supabase.com
-  _POSTGRES_PORT: '6543'
+  _POSTGRES_USER: postgres.ipnjvmwkvbvtvbgwudkl
+  _POSTGRES_HOST: aws-0-eu-west-1.pooler.supabase.com
+  _POSTGRES_PORT: '5432'
   _POSTGRES_DB: postgres
   _AI_PROVIDER: deepseek
   _DEEPSEEK_BASE_URL: https://api.deepseek.com/v1
