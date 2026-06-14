@@ -106,6 +106,10 @@ vacancy_raw
 
 ## Security And Integrity Rules
 
+- All application tables in exposed `public` schema must have RLS enabled.
+  Supabase `anon`/`authenticated` table and sequence grants are revoked by
+  default; browser access should go through backend API routes unless an
+  explicit RLS policy is added with a matching product requirement.
 - User-bound tables must use `UUID` foreign keys to `users.id`, not string IDs.
 - Raw card data must never be added to this schema. Future payments should use
   provider-hosted checkout and store only provider IDs, statuses, hashes and

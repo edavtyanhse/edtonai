@@ -59,14 +59,19 @@ def test_billing_schema_has_idempotency_constraints():
     assert "uq_user_subscription_provider_subscription" in constraints
     assert "uq_usage_event_user_feature_idempotency" in constraints
     assert "uq_payment_checkout_session_provider_session" in constraints
+    assert "uq_payment_checkout_session_provider_order" in constraints
     assert "uq_payment_transaction_provider_payment" in constraints
     assert "uq_payment_provider_event_provider_event" in constraints
 
 
 def test_billing_schema_tracks_provider_status_separately():
+    checkout_columns = set(Base.metadata.tables["payment_checkout_session"].columns.keys())
     payment_columns = set(Base.metadata.tables["payment_transaction"].columns.keys())
     event_columns = set(Base.metadata.tables["payment_provider_event"].columns.keys())
 
+    assert "provider_order_id" in checkout_columns
+    assert "payment_url" in checkout_columns
+    assert "idempotency_key" in checkout_columns
     assert "provider_status" in payment_columns
     assert "provider_status" in event_columns
 

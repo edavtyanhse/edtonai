@@ -3,7 +3,9 @@
 from .ai_result import AIResultRepository
 from .billing import (
     BillingPlanRepository,
+    PaymentCheckoutSessionRepository,
     PaymentEventRepository,
+    PaymentTransactionRepository,
     SubscriptionRepository,
     UsageEventRepository,
 )
@@ -28,4 +30,6 @@ __all__ = [
     "SubscriptionRepository",
     "UsageEventRepository",
     "PaymentEventRepository",
+    "PaymentCheckoutSessionRepository",
+    "PaymentTransactionRepository",
 ]

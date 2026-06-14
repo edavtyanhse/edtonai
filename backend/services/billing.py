@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from calendar import monthrange
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta, timezone
@@ -17,10 +18,12 @@ from backend.domain.billing import (
     BillingPriceView,
     CheckoutSessionRequest,
     CheckoutSessionResult,
+    CheckoutSessionStatus,
     EntitlementDecision,
     PaymentStatus,
     PlanEntitlementView,
     ProviderWebhookEvent,
+    SubscriptionStatus,
     SubscriptionView,
     UsageReservation,
     UsageView,
@@ -37,11 +40,38 @@ from backend.repositories.interfaces import (
     IBillingPlanRepository,
     IPaymentCheckoutSessionRepository,
     IPaymentEventRepository,
+    IPaymentTransactionRepository,
     ISubscriptionRepository,
     IUsageEventRepository,
 )
 
 _COUNTED_USAGE_STATUSES = ["reserved", "committed"]
+_PAID_PERIOD_MONTHS = {
+    "month": 1,
+    "quarter": 3,
+}
+_FINAL_FAILED_PAYMENT_STATUSES = {
+    PaymentStatus.FAILED,
+    PaymentStatus.CANCELED,
+    PaymentStatus.PARTIALLY_CANCELED,
+}
+_REVERSAL_PAYMENT_STATUSES = {
+    PaymentStatus.REFUNDED,
+    PaymentStatus.PARTIALLY_REFUNDED,
+    PaymentStatus.CHARGEBACK,
+}
+_PAYMENT_STATUS_RANK = {
+    PaymentStatus.UNKNOWN: 0,
+    PaymentStatus.PENDING: 10,
+    PaymentStatus.AUTHORIZED: 20,
+    PaymentStatus.SUCCEEDED: 30,
+    PaymentStatus.FAILED: 30,
+    PaymentStatus.CANCELED: 30,
+    PaymentStatus.PARTIALLY_CANCELED: 30,
+    PaymentStatus.PARTIALLY_REFUNDED: 40,
+    PaymentStatus.REFUNDED: 40,
+    PaymentStatus.CHARGEBACK: 50,
+}
 
 
 def _to_uuid(value: str | UUID) -> UUID:
@@ -50,6 +80,35 @@ def _to_uuid(value: str | UUID) -> UUID:
 
 def _utcnow() -> datetime:
     return datetime.now(timezone.utc)
+
+
+def _is_stale_payment_status(
+    current_status: PaymentStatus,
+    incoming_status: PaymentStatus,
+) -> bool:
+    if current_status == incoming_status:
+        return False
+    if current_status in _REVERSAL_PAYMENT_STATUSES:
+        return True
+    if current_status in _FINAL_FAILED_PAYMENT_STATUSES:
+        return True
+    if current_status == PaymentStatus.SUCCEEDED:
+        return incoming_status not in _REVERSAL_PAYMENT_STATUSES
+    return _PAYMENT_STATUS_RANK[incoming_status] < _PAYMENT_STATUS_RANK[current_status]
+
+
+def _add_billing_period(start: datetime, billing_period: str) -> datetime:
+    period = billing_period.strip().lower()
+    if period == "week":
+        return start + timedelta(days=7)
+    months = _PAID_PERIOD_MONTHS.get(period)
+    if months is None:
+        raise ValueError(f"Unsupported billing period: {billing_period}")
+    month_index = start.month - 1 + months
+    year = start.year + month_index // 12
+    month = month_index % 12 + 1
+    day = min(start.day, monthrange(year, month)[1])
+    return start.replace(year=year, month=month, day=day)
 
 
 def _calendar_month_window(now: datetime) -> tuple[datetime, datetime]:
@@ -401,18 +460,20 @@ class PaymentStatusMapper:
 
 
 class PaymentWebhookService:
-    """Idempotent skeleton for verified provider webhook processing.
-
-    This service records sanitized provider events and deliberately avoids
-    activating subscriptions until a real provider adapter is implemented.
-    """
+    """Idempotent verified provider webhook processing."""
 
     def __init__(
         self,
         payment_event_repo: IPaymentEventRepository,
+        payment_transaction_repo: IPaymentTransactionRepository,
+        checkout_repo: IPaymentCheckoutSessionRepository,
+        subscription_repo: ISubscriptionRepository,
         audit_log_repo: IBillingAuditLogRepository,
     ) -> None:
         self._payment_event_repo = payment_event_repo
+        self._payment_transaction_repo = payment_transaction_repo
+        self._checkout_repo = checkout_repo
+        self._subscription_repo = subscription_repo
         self._audit_log_repo = audit_log_repo
 
     async def process_verified_event(
@@ -478,15 +539,233 @@ class PaymentWebhookService:
             )
             return claim
 
+        if not event.provider_payment_id:
+            await self._fail_unmatched_event(
+                claim.event_id,
+                event,
+                reason="missing_provider_payment_id",
+            )
+            return claim
+
+        match = await self._payment_transaction_repo.get_with_checkout_by_provider_payment_id(
+            provider=event.provider,
+            provider_payment_id=event.provider_payment_id,
+        )
+        if match is None:
+            await self._fail_unmatched_event(
+                claim.event_id,
+                event,
+                reason="payment_transaction_not_found",
+            )
+            return claim
+
+        transaction, checkout, price = match
+        mismatch_reason = self._matching_failure_reason(event, transaction, checkout)
+        if mismatch_reason is not None:
+            await self._fail_unmatched_event(
+                claim.event_id,
+                event,
+                reason=mismatch_reason,
+                payment_transaction_id=getattr(transaction, "id", None),
+            )
+            return claim
+
+        try:
+            current_status = PaymentStatus(str(transaction.status))
+        except ValueError:
+            current_status = PaymentStatus.UNKNOWN
+        if _is_stale_payment_status(current_status, normalized_status):
+            await self._payment_event_repo.mark_ignored(
+                claim.event_id,
+                reason="stale_provider_status",
+            )
+            await self._audit_log_repo.create(
+                action="payment_provider_event_stale",
+                actor_type="provider",
+                payment_transaction_id=transaction.id,
+                payment_provider_event_id=claim.event_id,
+                old_status=current_status.value,
+                new_status=normalized_status.value,
+                reason="stale_provider_status",
+                metadata={"provider": event.provider},
+            )
+            return claim
+
+        now = _utcnow()
+        paid_at = now if normalized_status == PaymentStatus.SUCCEEDED else None
+        refunded_at = now if normalized_status in _REVERSAL_PAYMENT_STATUSES else None
+        failure_reason = (
+            event.provider_status
+            if normalized_status in _FINAL_FAILED_PAYMENT_STATUSES
+            else None
+        )
+        subscription = None
+        if normalized_status == PaymentStatus.SUCCEEDED:
+            subscription = await self._activate_subscription_once(
+                transaction=transaction,
+                checkout=checkout,
+                price=price,
+                at=now,
+            )
+        subscription_id = (
+            getattr(subscription, "id", None)
+            or getattr(transaction, "subscription_id", None)
+        )
+
+        await self._payment_transaction_repo.update_status(
+            transaction_id=transaction.id,
+            status=normalized_status.value,
+            provider_status=event.provider_status,
+            paid_at=paid_at,
+            refunded_at=refunded_at,
+            failure_reason=failure_reason,
+            subscription_id=subscription_id,
+        )
+        await self._sync_checkout_status(checkout, normalized_status, now)
         await self._payment_event_repo.mark_processed(claim.event_id)
         await self._audit_log_repo.create(
-            action="payment_provider_event_recorded",
+            action="payment_transaction_status_updated",
             actor_type="provider",
+            user_id=transaction.user_id,
+            subscription_id=subscription_id,
+            payment_transaction_id=transaction.id,
             payment_provider_event_id=claim.event_id,
+            old_status=current_status.value,
             new_status=normalized_status.value,
             metadata={"provider": event.provider},
         )
         return claim
+
+    async def _activate_subscription_once(
+        self,
+        transaction,
+        checkout,
+        price,
+        at: datetime,
+    ):
+        existing_subscription_id = getattr(transaction, "subscription_id", None)
+        if existing_subscription_id is not None:
+            return None
+
+        current = await self._subscription_repo.lock_current_for_user(transaction.user_id)
+        if current is None:
+            period_start = at
+            period_end = _add_billing_period(period_start, str(price.billing_period))
+            subscription = await self._subscription_repo.create_active(
+                user_id=transaction.user_id,
+                plan_id=checkout.plan_id,
+                provider=transaction.provider,
+                current_period_start=period_start,
+                current_period_end=period_end,
+            )
+            await self._audit_log_repo.create(
+                action="subscription_activated",
+                actor_type="provider",
+                user_id=transaction.user_id,
+                subscription_id=subscription.id,
+                payment_transaction_id=transaction.id,
+                new_status=SubscriptionStatus.ACTIVE.value,
+                reason="payment_confirmed",
+                metadata={"billing_period": str(price.billing_period)},
+            )
+            return subscription
+
+        period_start, period_end = self._renewal_window(current, price, at)
+        old_status = str(current.status)
+        subscription = await self._subscription_repo.update_active_period(
+            subscription_id=current.id,
+            plan_id=checkout.plan_id,
+            provider=transaction.provider,
+            current_period_start=period_start,
+            current_period_end=period_end,
+        )
+        await self._audit_log_repo.create(
+            action="subscription_extended",
+            actor_type="provider",
+            user_id=transaction.user_id,
+            subscription_id=current.id,
+            payment_transaction_id=transaction.id,
+            old_status=old_status,
+            new_status=SubscriptionStatus.ACTIVE.value,
+            reason="payment_confirmed",
+            metadata={"billing_period": str(price.billing_period)},
+        )
+        return subscription
+
+    @staticmethod
+    def _renewal_window(current, price, at: datetime) -> tuple[datetime, datetime]:
+        if (
+            str(current.status) == SubscriptionStatus.ACTIVE.value
+            and current.current_period_end is not None
+            and current.current_period_end > at
+        ):
+            period_start = current.current_period_start or at
+            extension_base = current.current_period_end
+        else:
+            period_start = at
+            extension_base = at
+        period_end = _add_billing_period(extension_base, str(price.billing_period))
+        return period_start, period_end
+
+    async def _fail_unmatched_event(
+        self,
+        event_id: UUID,
+        event: ProviderWebhookEvent,
+        *,
+        reason: str,
+        payment_transaction_id: UUID | None = None,
+    ) -> None:
+        await self._payment_event_repo.mark_failed(event_id, reason)
+        await self._audit_log_repo.create(
+            action="payment_provider_event_unmatched",
+            actor_type="provider",
+            payment_transaction_id=payment_transaction_id,
+            payment_provider_event_id=event_id,
+            reason=reason,
+            metadata={"provider": event.provider},
+        )
+
+    @staticmethod
+    def _matching_failure_reason(
+        event: ProviderWebhookEvent,
+        transaction,
+        checkout,
+    ) -> str | None:
+        if transaction.user_id != checkout.user_id:
+            return "checkout_user_mismatch"
+        if event.provider_order_id is None:
+            return "missing_provider_order_id"
+        if checkout.provider_order_id != event.provider_order_id:
+            return "provider_order_id_mismatch"
+        if event.amount_minor is None:
+            return "missing_amount"
+        if transaction.amount_minor != event.amount_minor:
+            return "amount_mismatch"
+        if event.currency and transaction.currency.upper() != event.currency.upper():
+            return "currency_mismatch"
+        return None
+
+    async def _sync_checkout_status(
+        self,
+        checkout,
+        payment_status: PaymentStatus,
+        at: datetime,
+    ) -> None:
+        if payment_status == PaymentStatus.SUCCEEDED:
+            await self._checkout_repo.update_status(
+                checkout.id,
+                status=CheckoutSessionStatus.COMPLETED.value,
+                completed_at=at,
+            )
+            return
+        if (
+            payment_status in _FINAL_FAILED_PAYMENT_STATUSES
+            and checkout.status != CheckoutSessionStatus.COMPLETED.value
+        ):
+            await self._checkout_repo.update_status(
+                checkout.id,
+                status=CheckoutSessionStatus.CANCELED.value,
+            )
 
 
 class BillingService:
@@ -499,6 +778,7 @@ class BillingService:
         usage_repo: IUsageEventRepository,
         entitlement_service: EntitlementService,
         checkout_repo: IPaymentCheckoutSessionRepository | None = None,
+        payment_transaction_repo: IPaymentTransactionRepository | None = None,
         payment_provider: PaymentProviderClient | None = None,
         settings: Settings | None = None,
     ) -> None:
@@ -507,6 +787,7 @@ class BillingService:
         self._usage_repo = usage_repo
         self._entitlement_service = entitlement_service
         self._checkout_repo = checkout_repo
+        self._payment_transaction_repo = payment_transaction_repo
         self._payment_provider = payment_provider
         self._settings = settings
 
@@ -553,6 +834,7 @@ class BillingService:
         self,
         user_id: str | UUID,
         plan_code: str,
+        idempotency_key: str | None = None,
     ) -> CheckoutSessionResult:
         """Create a non-activating provider checkout reference.
 
@@ -575,32 +857,72 @@ class BillingService:
         )
         if price is None:
             raise PaymentProviderDisabledError("No active provider price is configured")
+        if self._payment_transaction_repo is None:
+            raise PaymentProviderDisabledError(
+                "Payment transaction repository is not configured"
+            )
+
+        user_uuid = _to_uuid(user_id)
+        reusable = await self._checkout_repo.find_reusable(
+            user_id=user_uuid,
+            plan_id=plan.id,
+            price_id=price.id,
+            provider=self._payment_provider.provider_name,
+            at=_utcnow(),
+        )
+        if reusable is not None:
+            return CheckoutSessionResult(
+                provider=reusable.provider,
+                provider_session_id=reusable.provider_session_id,
+                payment_url=reusable.payment_url,
+                provider_order_id=reusable.provider_order_id,
+                status=reusable.status,
+                expires_at=reusable.expires_at,
+                can_activate_entitlement=False,
+            )
 
         frontend_url = self._settings.frontend_url.rstrip("/")
         request = CheckoutSessionRequest(
-            user_id=_to_uuid(user_id),
+            user_id=user_uuid,
             plan_code=plan_code,
             amount_minor=price.amount_minor,
             currency=price.currency,
             provider_price_id=price.provider_price_id,
             success_url=f"{frontend_url}/billing/success",
             cancel_url=f"{frontend_url}/billing/cancel",
+            idempotency_key=idempotency_key,
         )
         result = await self._payment_provider.create_checkout_session(request)
         if result.can_activate_entitlement:
             raise PaymentProviderDisabledError(
                 "Checkout session cannot activate entitlements directly"
             )
-        await self._checkout_repo.create(
+        checkout = await self._checkout_repo.create(
             user_id=request.user_id,
             plan_id=plan.id,
             price_id=price.id,
             provider=result.provider,
             provider_session_id=result.provider_session_id,
+            provider_order_id=result.provider_order_id,
+            payment_url=result.payment_url,
+            idempotency_key=idempotency_key,
             status=result.status,
             success_url=request.success_url,
             cancel_url=request.cancel_url,
             expires_at=result.expires_at,
+        )
+        initial_status = normalize_tbank_payment_status(result.provider_status)
+        if initial_status == PaymentStatus.UNKNOWN:
+            initial_status = PaymentStatus.PENDING
+        await self._payment_transaction_repo.create(
+            user_id=request.user_id,
+            checkout_session_id=checkout.id,
+            provider=result.provider,
+            provider_payment_id=result.provider_session_id,
+            amount_minor=price.amount_minor,
+            currency=price.currency,
+            status=initial_status.value,
+            provider_status=result.provider_status,
         )
         return result
 

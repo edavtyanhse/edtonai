@@ -2,6 +2,7 @@
 
 from .adapt import AdaptResumeRequest
 from .analytics import AnalyticsEventCreate
+from .billing import CreateCheckoutSessionRequest
 from .cover_letter import CoverLetterRequest
 from .feedback import FeedbackCreate
 from .ideal import IdealResumeRequest
@@ -18,6 +19,7 @@ __all__ = [
     "MatchAnalyzeRequest",
     "AdaptResumeRequest",
     "AnalyticsEventCreate",
+    "CreateCheckoutSessionRequest",
     "IdealResumeRequest",
     "CoverLetterRequest",
     "VersionCreateRequest",

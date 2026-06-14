@@ -239,10 +239,30 @@ class ISubscriptionRepository(Protocol):
 
     async def get_current_for_user(self, user_id: UUID) -> Any: ...
 
+    async def lock_current_for_user(self, user_id: UUID) -> Any: ...
+
     async def get_by_provider_subscription_id(
         self,
         provider: str,
         provider_subscription_id: str,
+    ) -> Any: ...
+
+    async def create_active(
+        self,
+        user_id: UUID,
+        plan_id: UUID,
+        provider: str,
+        current_period_start: Any,
+        current_period_end: Any,
+    ) -> Any: ...
+
+    async def update_active_period(
+        self,
+        subscription_id: UUID,
+        plan_id: UUID,
+        provider: str,
+        current_period_start: Any,
+        current_period_end: Any,
     ) -> Any: ...
 
 
@@ -353,9 +373,62 @@ class IPaymentCheckoutSessionRepository(Protocol):
         provider: str,
         provider_session_id: str,
         status: str,
+        provider_order_id: str | None = None,
+        payment_url: str | None = None,
+        idempotency_key: str | None = None,
         success_url: str | None = None,
         cancel_url: str | None = None,
         expires_at: Any | None = None,
+    ) -> Any: ...
+
+    async def find_reusable(
+        self,
+        user_id: UUID,
+        plan_id: UUID,
+        price_id: UUID,
+        provider: str,
+        at: Any,
+    ) -> Any: ...
+
+    async def update_status(
+        self,
+        checkout_session_id: UUID,
+        status: str,
+        completed_at: Any | None = None,
+    ) -> Any: ...
+
+
+@runtime_checkable
+class IPaymentTransactionRepository(Protocol):
+    """Protocol for provider payment attempts."""
+
+    async def create(
+        self,
+        user_id: UUID,
+        checkout_session_id: UUID,
+        provider: str,
+        provider_payment_id: str,
+        amount_minor: int,
+        currency: str,
+        status: str,
+        provider_status: str | None = None,
+    ) -> Any: ...
+
+    async def get_with_checkout_by_provider_payment_id(
+        self,
+        provider: str,
+        provider_payment_id: str,
+    ) -> Any: ...
+
+    async def update_status(
+        self,
+        transaction_id: UUID,
+        status: str,
+        provider_status: str | None = None,
+        paid_at: Any | None = None,
+        refunded_at: Any | None = None,
+        failure_reason: str | None = None,
+        subscription_id: UUID | None = None,
     ) -> Any: ...
 
 

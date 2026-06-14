@@ -52,6 +52,16 @@ def _rate_limit_rule(path: str) -> tuple[str, RateLimitRule] | None:
             "scraper",
             RateLimitRule(settings.scraper_rate_limit_per_minute),
         )
+    if path == "/v1/billing/checkout":
+        return (
+            "checkout",
+            RateLimitRule(settings.checkout_rate_limit_per_minute),
+        )
+    if path == "/v1/billing/webhooks/tbank":
+        return (
+            "payment_webhook",
+            RateLimitRule(settings.payment_webhook_rate_limit_per_minute),
+        )
     if path in {
         "/v1/resumes/parse",
         "/v1/match/analyze",

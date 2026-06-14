@@ -17,7 +17,7 @@ from dataclasses import dataclass
 from backend.core.config import settings
 from backend.domain.billing import AI_OPERATION_FEATURE
 from backend.models.billing import BillingPlan, BillingPrice, PlanEntitlement
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 
@@ -28,6 +28,7 @@ class SeedPrice:
     amount_minor: int
     currency: str
     billing_period: str
+    is_active: bool = True
 
 
 @dataclass(frozen=True)
@@ -44,8 +45,38 @@ class SeedPlan:
     description: str
     billing_period: str
     trial_days: int
+    is_active: bool
     prices: tuple[SeedPrice, ...]
     entitlements: tuple[SeedEntitlement, ...]
+
+
+def _paid_plan(
+    code: str,
+    title: str,
+    billing_period: str,
+    amount_minor: int,
+) -> SeedPlan:
+    """Create a paid subscription period configured from DB."""
+    return SeedPlan(
+        code=code,
+        title=title,
+        description="Paid subscription with unlimited AI operations.",
+        billing_period=billing_period,
+        trial_days=0,
+        is_active=True,
+        prices=(
+            SeedPrice(
+                provider="tbank",
+                provider_price_id=f"tbank_{code}",
+                amount_minor=amount_minor,
+                currency="RUB",
+                billing_period=billing_period,
+            ),
+        ),
+        entitlements=(
+            SeedEntitlement(AI_OPERATION_FEATURE, None, billing_period),
+        ),
+    )
 
 
 PLANS: tuple[SeedPlan, ...] = (
@@ -55,6 +86,7 @@ PLANS: tuple[SeedPlan, ...] = (
         description="Temporary public access before commercial launch.",
         billing_period="month",
         trial_days=0,
+        is_active=True,
         prices=(
             SeedPrice(
                 provider="noop",
@@ -65,48 +97,15 @@ PLANS: tuple[SeedPlan, ...] = (
             ),
         ),
         entitlements=(
-            SeedEntitlement(AI_OPERATION_FEATURE, 1_000_000, "month"),
+            SeedEntitlement(AI_OPERATION_FEATURE, 5, "month"),
         ),
     ),
-    SeedPlan(
-        code="basic",
-        title="Basic",
-        description="Starter subscription placeholder.",
-        billing_period="month",
-        trial_days=7,
-        prices=(
-            SeedPrice(
-                provider="noop",
-                provider_price_id="noop_basic_monthly",
-                amount_minor=49000,
-                currency="RUB",
-                billing_period="month",
-            ),
-        ),
-        entitlements=(
-            SeedEntitlement(AI_OPERATION_FEATURE, 100, "month"),
-        ),
-    ),
-    SeedPlan(
-        code="pro",
-        title="Pro",
-        description="Higher usage subscription placeholder.",
-        billing_period="month",
-        trial_days=7,
-        prices=(
-            SeedPrice(
-                provider="noop",
-                provider_price_id="noop_pro_monthly",
-                amount_minor=99000,
-                currency="RUB",
-                billing_period="month",
-            ),
-        ),
-        entitlements=(
-            SeedEntitlement(AI_OPERATION_FEATURE, 300, "month"),
-        ),
-    ),
+    _paid_plan("paid_weekly", "Subscription - weekly", "week", 15000),
+    _paid_plan("paid_monthly", "Subscription - monthly", "month", 30000),
+    _paid_plan("paid_quarterly", "Subscription - 3 months", "quarter", 60000),
 )
+
+OBSOLETE_PLAN_CODES = ("basic", "pro")
 
 
 async def _upsert_plan(session, seed: SeedPlan) -> None:
@@ -122,7 +121,7 @@ async def _upsert_plan(session, seed: SeedPlan) -> None:
     plan.description = seed.description
     plan.billing_period = seed.billing_period
     plan.trial_days = seed.trial_days
-    plan.is_active = True
+    plan.is_active = seed.is_active
     await session.flush()
 
     for price_seed in seed.prices:
@@ -144,7 +143,7 @@ async def _upsert_plan(session, seed: SeedPlan) -> None:
         price.amount_minor = price_seed.amount_minor
         price.currency = price_seed.currency
         price.billing_period = price_seed.billing_period
-        price.is_active = True
+        price.is_active = price_seed.is_active
 
     for entitlement_seed in seed.entitlements:
         entitlement_result = await session.execute(
@@ -164,12 +163,26 @@ async def _upsert_plan(session, seed: SeedPlan) -> None:
         entitlement.reset_period = entitlement_seed.reset_period
 
 
+async def _deactivate_obsolete_plans(session) -> None:
+    result = await session.execute(
+        select(BillingPlan).where(BillingPlan.code.in_(OBSOLETE_PLAN_CODES))
+    )
+    for plan in result.scalars():
+        plan.is_active = False
+        await session.execute(
+            update(BillingPrice)
+            .where(BillingPrice.plan_id == plan.id)
+            .values(is_active=False)
+        )
+
+
 async def main() -> None:
     engine = create_async_engine(settings.database_url)
     session_factory = async_sessionmaker(engine, expire_on_commit=False)
     async with session_factory() as session:
         for plan in PLANS:
             await _upsert_plan(session, plan)
+        await _deactivate_obsolete_plans(session)
         await session.commit()
     await engine.dispose()
 

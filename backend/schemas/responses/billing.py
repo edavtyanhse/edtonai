@@ -66,3 +66,11 @@ class BillingAccountResponse(BaseModel):
 
     subscription: CurrentSubscriptionResponse | None = None
     usage: list[UsageFeatureResponse]
+
+
+class CheckoutSessionResponse(BaseModel):
+    """Hosted checkout response safe for frontend redirect."""
+
+    provider: str
+    status: str
+    payment_url: str | None = None

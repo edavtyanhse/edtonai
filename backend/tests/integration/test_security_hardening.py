@@ -7,9 +7,10 @@ import pytest
 from starlette.requests import Request
 
 from backend.core.config import Settings, settings
+from backend.core.logging import _redact_text
 from backend.errors.integration import ScraperError
 from backend.integration.scraper.scraper import WebScraper
-from backend.main import _client_ip, container
+from backend.main import _client_ip, _rate_limit_rule, container
 from backend.tests.integration.conftest import InMemoryResumeRepo
 
 
@@ -253,7 +254,6 @@ def test_enabled_tbank_provider_requires_backend_secrets(monkeypatch):
     monkeypatch.setenv("PAYMENT_PROVIDER", "tbank")
     monkeypatch.delenv("TBANK_TERMINAL_KEY", raising=False)
     monkeypatch.delenv("TBANK_PASSWORD", raising=False)
-    monkeypatch.delenv("TBANK_WEBHOOK_SECRET", raising=False)
 
     with pytest.raises(ValueError, match="T-Bank payments require"):
         Settings()
@@ -263,7 +263,6 @@ def test_enabled_tbank_provider_rejects_blank_secret_values(monkeypatch):
     monkeypatch.setenv("PAYMENT_PROVIDER", "tbank")
     monkeypatch.setenv("TBANK_TERMINAL_KEY", "terminal-test")
     monkeypatch.setenv("TBANK_PASSWORD", " ")
-    monkeypatch.setenv("TBANK_WEBHOOK_SECRET", "")
 
     with pytest.raises(ValueError, match="T-Bank payments require"):
         Settings()
@@ -273,10 +272,19 @@ def test_enabled_tbank_provider_rejects_blank_terminal_key(monkeypatch):
     monkeypatch.setenv("PAYMENT_PROVIDER", "tbank")
     monkeypatch.setenv("TBANK_TERMINAL_KEY", " ")
     monkeypatch.setenv("TBANK_PASSWORD", "password-test")
-    monkeypatch.setenv("TBANK_WEBHOOK_SECRET", "webhook-test")
 
     with pytest.raises(ValueError, match="T-Bank payments require"):
         Settings()
+
+
+def test_enabled_tbank_provider_accepts_terminal_key_and_password(monkeypatch):
+    monkeypatch.setenv("PAYMENT_PROVIDER", "tbank")
+    monkeypatch.setenv("TBANK_TERMINAL_KEY", "terminal-test")
+    monkeypatch.setenv("TBANK_PASSWORD", "password-test")
+
+    settings = Settings()
+
+    assert settings.payment_provider == "tbank"
 
 
 def test_rate_limit_ip_ignores_untrusted_forwarded_for():
@@ -309,6 +317,27 @@ def test_rate_limit_ip_uses_forwarded_for_from_trusted_proxy():
         )
 
         assert _client_ip(request) == "203.0.113.10"
+
+
+def test_payment_webhook_route_has_dedicated_rate_limit():
+    category, rule = _rate_limit_rule("/v1/billing/webhooks/tbank")
+
+    assert category == "payment_webhook"
+    assert rule.max_requests == settings.payment_webhook_rate_limit_per_minute
+
+
+def test_payment_log_redaction_covers_urls_tokens_and_signatures():
+    message = (
+        'PaymentURL: https://securepay.tinkoff.ru/new/pay_1 '
+        'Token: secret-token Signature: secret-signature'
+    )
+
+    redacted = _redact_text(message)
+
+    assert "https://securepay.tinkoff.ru" not in redacted
+    assert "secret-token" not in redacted
+    assert "secret-signature" not in redacted
+    assert "[REDACTED]" in redacted
 
 
 @pytest.mark.anyio

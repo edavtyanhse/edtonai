@@ -375,6 +375,11 @@ class PaymentCheckoutSession(Base):
             "provider_session_id",
             name="uq_payment_checkout_session_provider_session",
         ),
+        UniqueConstraint(
+            "provider",
+            "provider_order_id",
+            name="uq_payment_checkout_session_provider_order",
+        ),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(
@@ -402,7 +407,10 @@ class PaymentCheckoutSession(Base):
     )
     provider: Mapped[str] = mapped_column(String(32), nullable=False)
     provider_session_id: Mapped[str] = mapped_column(String(255), nullable=False)
+    provider_order_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    idempotency_key: Mapped[str | None] = mapped_column(String(255), nullable=True)
     status: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
+    payment_url: Mapped[str | None] = mapped_column(String(2048), nullable=True)
     success_url: Mapped[str | None] = mapped_column(String(2048), nullable=True)
     cancel_url: Mapped[str | None] = mapped_column(String(2048), nullable=True)
     created_at: Mapped[datetime] = mapped_column(

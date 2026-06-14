@@ -20,6 +20,18 @@ class PaymentProviderDisabledError(RuntimeError):
     """Raised when live payment provider functionality is intentionally disabled."""
 
 
+class PaymentProviderError(RuntimeError):
+    """Raised when a live payment provider returns an unusable response."""
+
+
+class PaymentProviderUnavailableError(PaymentProviderError):
+    """Raised when a live payment provider cannot be reached reliably."""
+
+
+class PaymentWebhookVerificationError(PaymentProviderError):
+    """Raised when a provider webhook cannot be verified."""
+
+
 class PaymentProviderClient(Protocol):
     """Protocol for hosted checkout and signed webhook providers."""
 

@@ -8,7 +8,7 @@ import hashlib
 from datetime import datetime, timezone
 from uuid import UUID
 
-from sqlalchemy import func, select, text, update
+from sqlalchemy import desc, func, or_, select, text, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -20,6 +20,7 @@ from backend.models.billing import (
     BillingPrice,
     PaymentCheckoutSession,
     PaymentProviderEvent,
+    PaymentTransaction,
     UsageEvent,
     UserSubscription,
 )
@@ -97,6 +98,19 @@ class SubscriptionRepository:
         )
         return result.scalars().first()
 
+    async def lock_current_for_user(self, user_id: UUID) -> UserSubscription | None:
+        result = await self._session.execute(
+            select(UserSubscription)
+            .where(
+                UserSubscription.user_id == user_id,
+                UserSubscription.status.in_(self._CURRENT_STATUSES),
+            )
+            .order_by(UserSubscription.created_at.desc())
+            .limit(1)
+            .with_for_update()
+        )
+        return result.scalar_one_or_none()
+
     async def get_by_provider_subscription_id(
         self,
         provider: str,
@@ -107,6 +121,58 @@ class SubscriptionRepository:
                 UserSubscription.provider == provider,
                 UserSubscription.provider_subscription_id == provider_subscription_id,
             )
+        )
+        return result.scalar_one_or_none()
+
+    async def create_active(
+        self,
+        user_id: UUID,
+        plan_id: UUID,
+        provider: str,
+        current_period_start: datetime,
+        current_period_end: datetime,
+    ) -> UserSubscription:
+        subscription = UserSubscription(
+            user_id=user_id,
+            plan_id=plan_id,
+            provider=provider,
+            status="active",
+            current_period_start=current_period_start,
+            current_period_end=current_period_end,
+            cancel_at_period_end=False,
+            renewal_retry_count=0,
+        )
+        self._session.add(subscription)
+        await self._session.flush()
+        return subscription
+
+    async def update_active_period(
+        self,
+        subscription_id: UUID,
+        plan_id: UUID,
+        provider: str,
+        current_period_start: datetime,
+        current_period_end: datetime,
+    ) -> UserSubscription | None:
+        await self._session.execute(
+            update(UserSubscription)
+            .where(UserSubscription.id == subscription_id)
+            .values(
+                plan_id=plan_id,
+                provider=provider,
+                status="active",
+                current_period_start=current_period_start,
+                current_period_end=current_period_end,
+                cancel_at_period_end=False,
+                canceled_at=None,
+                last_failure_reason=None,
+                renewal_retry_count=0,
+                updated_at=datetime.now(timezone.utc),
+            )
+        )
+        await self._session.flush()
+        result = await self._session.execute(
+            select(UserSubscription).where(UserSubscription.id == subscription_id)
         )
         return result.scalar_one_or_none()
 
@@ -376,6 +442,9 @@ class PaymentCheckoutSessionRepository:
         provider: str,
         provider_session_id: str,
         status: str,
+        provider_order_id: str | None = None,
+        payment_url: str | None = None,
+        idempotency_key: str | None = None,
         success_url: str | None = None,
         cancel_url: str | None = None,
         expires_at: datetime | None = None,
@@ -386,6 +455,9 @@ class PaymentCheckoutSessionRepository:
             price_id=price_id,
             provider=provider,
             provider_session_id=provider_session_id,
+            provider_order_id=provider_order_id,
+            payment_url=payment_url,
+            idempotency_key=idempotency_key,
             status=status,
             success_url=success_url,
             cancel_url=cancel_url,
@@ -394,6 +466,143 @@ class PaymentCheckoutSessionRepository:
         self._session.add(session)
         await self._session.flush()
         return session
+
+    async def find_reusable(
+        self,
+        user_id: UUID,
+        plan_id: UUID,
+        price_id: UUID,
+        provider: str,
+        at: datetime,
+    ) -> PaymentCheckoutSession | None:
+        result = await self._session.execute(
+            select(PaymentCheckoutSession)
+            .where(
+                PaymentCheckoutSession.user_id == user_id,
+                PaymentCheckoutSession.plan_id == plan_id,
+                PaymentCheckoutSession.price_id == price_id,
+                PaymentCheckoutSession.provider == provider,
+                PaymentCheckoutSession.status.in_(("created", "redirected")),
+                PaymentCheckoutSession.payment_url.is_not(None),
+                or_(
+                    PaymentCheckoutSession.expires_at.is_(None),
+                    PaymentCheckoutSession.expires_at > at,
+                ),
+            )
+            .order_by(desc(PaymentCheckoutSession.created_at))
+            .limit(1)
+        )
+        return result.scalar_one_or_none()
+
+    async def update_status(
+        self,
+        checkout_session_id: UUID,
+        status: str,
+        completed_at: datetime | None = None,
+    ) -> PaymentCheckoutSession | None:
+        values = {"status": status}
+        if completed_at is not None:
+            values["completed_at"] = completed_at
+        await self._session.execute(
+            update(PaymentCheckoutSession)
+            .where(PaymentCheckoutSession.id == checkout_session_id)
+            .values(**values)
+        )
+        await self._session.flush()
+        result = await self._session.execute(
+            select(PaymentCheckoutSession).where(
+                PaymentCheckoutSession.id == checkout_session_id
+            )
+        )
+        return result.scalar_one_or_none()
+
+
+class PaymentTransactionRepository:
+    """Data access for provider payment attempts."""
+
+    def __init__(self, session: AsyncSession) -> None:
+        self._session = session
+
+    async def create(
+        self,
+        user_id: UUID,
+        checkout_session_id: UUID,
+        provider: str,
+        provider_payment_id: str,
+        amount_minor: int,
+        currency: str,
+        status: str,
+        provider_status: str | None = None,
+    ) -> PaymentTransaction:
+        transaction = PaymentTransaction(
+            user_id=user_id,
+            checkout_session_id=checkout_session_id,
+            provider=provider,
+            provider_payment_id=provider_payment_id,
+            provider_status=provider_status,
+            amount_minor=amount_minor,
+            currency=currency,
+            status=status,
+        )
+        self._session.add(transaction)
+        await self._session.flush()
+        return transaction
+
+    async def get_with_checkout_by_provider_payment_id(
+        self,
+        provider: str,
+        provider_payment_id: str,
+    ) -> tuple[PaymentTransaction, PaymentCheckoutSession, BillingPrice] | None:
+        result = await self._session.execute(
+            select(PaymentTransaction, PaymentCheckoutSession, BillingPrice)
+            .join(
+                PaymentCheckoutSession,
+                PaymentTransaction.checkout_session_id == PaymentCheckoutSession.id,
+            )
+            .join(BillingPrice, PaymentCheckoutSession.price_id == BillingPrice.id)
+            .where(
+                PaymentTransaction.provider == provider,
+                PaymentTransaction.provider_payment_id == provider_payment_id,
+            )
+            .limit(1)
+        )
+        row = result.one_or_none()
+        if row is None:
+            return None
+        return row[0], row[1], row[2]
+
+    async def update_status(
+        self,
+        transaction_id: UUID,
+        status: str,
+        provider_status: str | None = None,
+        paid_at: datetime | None = None,
+        refunded_at: datetime | None = None,
+        failure_reason: str | None = None,
+        subscription_id: UUID | None = None,
+    ) -> PaymentTransaction | None:
+        values = {
+            "status": status,
+            "provider_status": provider_status,
+            "failure_reason": failure_reason,
+            "updated_at": datetime.now(timezone.utc),
+        }
+        if subscription_id is not None:
+            values["subscription_id"] = subscription_id
+        if paid_at is not None:
+            values["paid_at"] = paid_at
+        if refunded_at is not None:
+            values["refunded_at"] = refunded_at
+        await self._session.execute(
+            update(PaymentTransaction)
+            .where(PaymentTransaction.id == transaction_id)
+            .values(**values)
+        )
+        await self._session.flush()
+        result = await self._session.execute(
+            select(PaymentTransaction).where(PaymentTransaction.id == transaction_id)
+        )
+        return result.scalar_one_or_none()
 
 
 class BillingAuditLogRepository:

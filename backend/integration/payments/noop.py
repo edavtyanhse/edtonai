@@ -2,12 +2,8 @@
 
 from __future__ import annotations
 
-from uuid import uuid4
-
 from backend.domain.billing import (
     CheckoutSessionRequest,
-    CheckoutSessionResult,
-    CheckoutSessionStatus,
     ProviderWebhookEvent,
 )
 from backend.integration.payments.base import PaymentProviderDisabledError
@@ -21,16 +17,10 @@ class NoopPaymentProvider:
     async def create_checkout_session(
         self,
         request: CheckoutSessionRequest,
-    ) -> CheckoutSessionResult:
-        """Return a non-activating checkout reference without a payment URL."""
-        return CheckoutSessionResult(
-            provider=self.provider_name,
-            provider_session_id=f"noop_{uuid4()}",
-            payment_url=None,
-            status=CheckoutSessionStatus.CREATED.value,
-            expires_at=None,
-            provider_status="disabled",
-            can_activate_entitlement=False,
+    ):
+        """Reject public checkout creation while payments are disabled."""
+        raise PaymentProviderDisabledError(
+            "Payment provider is disabled and cannot create checkout sessions"
         )
 
     async def verify_webhook(

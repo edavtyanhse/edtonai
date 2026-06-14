@@ -177,6 +177,7 @@ class CheckoutSessionRequest:
     success_url: str
     cancel_url: str
     provider_price_id: str | None = None
+    idempotency_key: str | None = None
 
 
 @dataclass(frozen=True)
@@ -187,6 +188,7 @@ class CheckoutSessionResult:
     provider_session_id: str
     payment_url: str | None
     status: str
+    provider_order_id: str | None = None
     expires_at: datetime | None = None
     provider_status: str | None = None
     can_activate_entitlement: bool = False
@@ -201,6 +203,9 @@ class ProviderWebhookEvent:
     event_type: str
     payload_hash: str
     provider_payment_id: str | None = None
+    provider_order_id: str | None = None
+    amount_minor: int | None = None
+    currency: str | None = None
     provider_subscription_id: str | None = None
     provider_status: str | None = None
 

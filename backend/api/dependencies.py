@@ -10,9 +10,11 @@ from dependency_injector.wiring import Provide, inject
 from fastapi import Depends
 
 from backend.containers import Container
+from backend.core.config import Settings
+from backend.integration.payments.base import PaymentProviderClient
 from backend.services.adapt import AdaptResumeService
 from backend.services.analytics import AnalyticsService
-from backend.services.billing import BillingService
+from backend.services.billing import BillingService, PaymentWebhookService
 from backend.services.cover_letter import CoverLetterService
 from backend.services.feedback import FeedbackService
 from backend.services.ideal import IdealResumeService
@@ -100,6 +102,30 @@ async def get_billing_service(
 ) -> BillingService:
     """Provide BillingService assembled by DI container."""
     return service
+
+
+@inject
+async def get_payment_webhook_service(
+    service: PaymentWebhookService = Depends(Provide[Container.payment_webhook_service]),
+) -> PaymentWebhookService:
+    """Provide PaymentWebhookService assembled by DI container."""
+    return service
+
+
+@inject
+async def get_payment_provider(
+    provider: PaymentProviderClient = Depends(Provide[Container.payment_provider]),
+) -> PaymentProviderClient:
+    """Provide configured payment provider assembled by DI container."""
+    return provider
+
+
+@inject
+async def get_settings(
+    settings: Settings = Depends(Provide[Container.config]),
+) -> Settings:
+    """Provide application settings assembled by DI container."""
+    return settings
 
 
 @inject

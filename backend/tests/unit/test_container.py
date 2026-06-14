@@ -37,6 +37,7 @@ class TestContainerSmoke:
             "entitlement_service",
             "usage_service",
             "billing_service",
+            "payment_provider",
             "payment_webhook_service",
         ]
         for name in expected:
@@ -58,6 +59,7 @@ class TestContainerSmoke:
             "usage_event_repo",
             "payment_event_repo",
             "payment_checkout_session_repo",
+            "payment_transaction_repo",
             "billing_audit_log_repo",
         ]
         for name in expected:

@@ -118,7 +118,7 @@ class Container(DeclarativeContainer):
 | `AI_MAX_RETRIES` | int | `3` | Retry count on network errors |
 | `AI_TEMPERATURE` | float | `0.0` | LLM temperature |
 | `AI_MAX_TOKENS` | int | `4096` | Max output tokens |
-| `AI_MONTHLY_FREE_QUOTA` | int | `1000000` | Temporary pre-commercial monthly AI quota for free entitlement gates |
+| `AI_MONTHLY_FREE_QUOTA` | int | `5` | Monthly AI quota for free entitlement gates |
 | `AI_MONTHLY_TRIAL_QUOTA` | int | `100` | Default monthly AI quota for future trial entitlement gates |
 
 ### Security, Scraper And Billing Variables
@@ -128,6 +128,9 @@ class Container(DeclarativeContainer):
 | `AUTH_RATE_LIMIT_PER_MINUTE` | int | `20` | Auth route rate limit |
 | `AI_RATE_LIMIT_PER_MINUTE` | int | `120` | AI-heavy route rate limit |
 | `SCRAPER_RATE_LIMIT_PER_MINUTE` | int | `30` | Vacancy URL scraping route rate limit |
+| `CHECKOUT_RATE_LIMIT_PER_MINUTE` | int | `10` | Hosted checkout creation rate limit |
+| `PAYMENT_WEBHOOK_RATE_LIMIT_PER_MINUTE` | int | `120` | Payment webhook route rate limit |
+| `PAYMENT_WEBHOOK_MAX_BODY_BYTES` | int | `16384` | Max payment webhook request body size |
 | `TRUSTED_PROXY_IPS` | str | `""` | Comma-separated proxy IPs whose `X-Forwarded-For` may be trusted |
 | `SCRAPER_ALLOWED_HOSTS` | str | `hh.ru,hh.kz,headhunter.ru,headhunter.kz` | Comma-separated allowlist for user-submitted vacancy URLs |
 | `SCRAPER_TIMEOUT_SECONDS` | float | `15` | HTTP timeout for scraper requests |

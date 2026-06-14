@@ -101,8 +101,11 @@ class Settings(BaseSettings):
     auth_rate_limit_per_minute: int = 20
     ai_rate_limit_per_minute: int = 120
     scraper_rate_limit_per_minute: int = 30
+    checkout_rate_limit_per_minute: int = 10
+    payment_webhook_rate_limit_per_minute: int = 120
+    payment_webhook_max_body_bytes: int = 16_384
     trusted_proxy_ips: str = ""
-    ai_monthly_free_quota: int = 1_000_000
+    ai_monthly_free_quota: int = 5
     ai_monthly_trial_quota: int = 100
     billing_temporary_high_free_quota_enabled: bool = False
 
@@ -208,11 +211,9 @@ class Settings(BaseSettings):
         if provider == "tbank" and (
             not self.tbank_terminal_key.strip()
             or not has_secret_value(self.tbank_password)
-            or not has_secret_value(self.tbank_webhook_secret)
         ):
             raise ValueError(
-                "T-Bank payments require TBANK_TERMINAL_KEY, TBANK_PASSWORD, "
-                "and TBANK_WEBHOOK_SECRET"
+                "T-Bank payments require TBANK_TERMINAL_KEY and TBANK_PASSWORD"
             )
         if self.scraper_timeout_seconds <= 0:
             raise ValueError("SCRAPER_TIMEOUT_SECONDS must be positive")
@@ -233,6 +234,12 @@ class Settings(BaseSettings):
             raise ValueError(
                 "PAYMENT_WEBHOOK_REPLAY_TOLERANCE_SECONDS must be positive"
             )
+        if self.checkout_rate_limit_per_minute <= 0:
+            raise ValueError("CHECKOUT_RATE_LIMIT_PER_MINUTE must be positive")
+        if self.payment_webhook_rate_limit_per_minute <= 0:
+            raise ValueError("PAYMENT_WEBHOOK_RATE_LIMIT_PER_MINUTE must be positive")
+        if self.payment_webhook_max_body_bytes <= 0:
+            raise ValueError("PAYMENT_WEBHOOK_MAX_BODY_BYTES must be positive")
         return self
 
 

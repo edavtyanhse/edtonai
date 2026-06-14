@@ -38,12 +38,14 @@ from backend.integration.oauth.base import OAuthProvider
 from backend.integration.oauth.google import GoogleOAuthProvider
 from backend.integration.oauth.yandex import YandexOAuthProvider
 from backend.integration.payments.noop import NoopPaymentProvider
+from backend.integration.payments.tbank import TBankPaymentProvider
 from backend.repositories.ai_result import AIResultRepository
 from backend.repositories.billing import (
     BillingAuditLogRepository,
     BillingPlanRepository,
     PaymentCheckoutSessionRepository,
     PaymentEventRepository,
+    PaymentTransactionRepository,
     SubscriptionRepository,
     UsageEventRepository,
 )
@@ -172,6 +174,17 @@ def _create_oauth_providers(settings: Settings) -> dict[str, OAuthProvider]:
     return result
 
 
+def _create_payment_provider(settings: Settings):
+    """Build the configured payment provider without leaking it into services."""
+    if settings.payment_provider.lower() == "tbank":
+        return TBankPaymentProvider(
+            terminal_key=settings.tbank_terminal_key,
+            password=settings.tbank_password,
+            backend_url=settings.backend_url,
+        )
+    return NoopPaymentProvider()
+
+
 # ── Container ─────────────────────────────────────────────────────
 
 
@@ -262,7 +275,16 @@ class Container(containers.DeclarativeContainer):
         PaymentCheckoutSessionRepository,
         session=session,
     )
+    payment_transaction_repo = providers.Factory(
+        PaymentTransactionRepository,
+        session=session,
+    )
     billing_audit_log_repo = providers.Factory(BillingAuditLogRepository, session=session)
+
+    payment_provider = providers.Factory(
+        _create_payment_provider,
+        settings=config,
+    )
 
     entitlement_service = providers.Factory(
         EntitlementService,
@@ -374,13 +396,17 @@ class Container(containers.DeclarativeContainer):
         usage_repo=usage_event_repo,
         entitlement_service=entitlement_service,
         checkout_repo=payment_checkout_session_repo,
-        payment_provider=providers.Factory(NoopPaymentProvider),
+        payment_transaction_repo=payment_transaction_repo,
+        payment_provider=payment_provider,
         settings=config,
     )
 
     payment_webhook_service = providers.Factory(
         PaymentWebhookService,
         payment_event_repo=payment_event_repo,
+        payment_transaction_repo=payment_transaction_repo,
+        checkout_repo=payment_checkout_session_repo,
+        subscription_repo=subscription_repo,
         audit_log_repo=billing_audit_log_repo,
     )
 

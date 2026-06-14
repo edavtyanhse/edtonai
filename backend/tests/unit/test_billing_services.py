@@ -12,6 +12,7 @@ from pydantic import ValidationError
 from backend.core.config import Settings
 from backend.domain.billing import (
     AI_OPERATION_FEATURE,
+    CheckoutSessionResult,
     CheckoutSessionStatus,
     PaymentStatus,
     ProviderEventClaim,
@@ -33,8 +34,62 @@ from backend.services.billing import (
 class FakeSubscriptionRepo:
     def __init__(self, subscription=None) -> None:
         self.subscription = subscription
+        self.lock_calls = 0
+        self.created = []
+        self.updated = []
 
     async def get_current_for_user(self, user_id):
+        return self.subscription
+
+    async def lock_current_for_user(self, user_id):
+        self.lock_calls += 1
+        return self.subscription
+
+    async def create_active(
+        self,
+        user_id,
+        plan_id,
+        provider,
+        current_period_start,
+        current_period_end,
+    ):
+        subscription = SimpleNamespace(
+            id=uuid4(),
+            user_id=user_id,
+            plan_id=plan_id,
+            provider=provider,
+            status="active",
+            current_period_start=current_period_start,
+            current_period_end=current_period_end,
+        )
+        self.subscription = subscription
+        self.created.append(subscription)
+        return subscription
+
+    async def update_active_period(
+        self,
+        subscription_id,
+        plan_id,
+        provider,
+        current_period_start,
+        current_period_end,
+    ):
+        if self.subscription is None:
+            return None
+        self.subscription.plan_id = plan_id
+        self.subscription.provider = provider
+        self.subscription.status = "active"
+        self.subscription.current_period_start = current_period_start
+        self.subscription.current_period_end = current_period_end
+        self.updated.append(
+            (
+                subscription_id,
+                plan_id,
+                provider,
+                current_period_start,
+                current_period_end,
+            )
+        )
         return self.subscription
 
 
@@ -178,6 +233,7 @@ class FakePlanRepo:
             id=uuid4(),
             amount_minor=49000,
             currency="RUB",
+            billing_period="month",
             provider_price_id="noop_basic_monthly",
         )
 
@@ -188,7 +244,7 @@ class FakePlanRepo:
         return self.plan if code == self.plan.code else None
 
     async def get_active_price(self, plan_code, provider):
-        if plan_code == self.plan.code and provider == "noop":
+        if plan_code == self.plan.code and provider in {"noop", "fake"}:
             return self.price
         return None
 
@@ -196,10 +252,140 @@ class FakePlanRepo:
 class FakeCheckoutRepo:
     def __init__(self) -> None:
         self.created = []
+        self.reusable = None
+        self.status_updates = []
 
     async def create(self, **kwargs):
         self.created.append(kwargs)
         return SimpleNamespace(id=uuid4(), **kwargs)
+
+    async def find_reusable(self, **kwargs):
+        return self.reusable
+
+    async def update_status(self, checkout_session_id, status, completed_at=None):
+        self.status_updates.append((checkout_session_id, status, completed_at))
+        return SimpleNamespace(
+            id=checkout_session_id,
+            status=status,
+            completed_at=completed_at,
+        )
+
+
+class FakePaymentTransactionRepo:
+    def __init__(self) -> None:
+        self.created = []
+        self.matches = {}
+        self.transactions_by_id = {}
+        self.status_updates = []
+
+    async def create(self, **kwargs):
+        transaction = SimpleNamespace(id=uuid4(), **kwargs)
+        self.created.append(transaction)
+        self.transactions_by_id[transaction.id] = transaction
+        return transaction
+
+    def add_match(self, transaction, checkout, price):
+        self.matches[(transaction.provider, transaction.provider_payment_id)] = (
+            transaction,
+            checkout,
+            price,
+        )
+        self.transactions_by_id[transaction.id] = transaction
+
+    async def get_with_checkout_by_provider_payment_id(
+        self,
+        provider,
+        provider_payment_id,
+    ):
+        return self.matches.get((provider, provider_payment_id))
+
+    async def update_status(
+        self,
+        transaction_id,
+        status,
+        provider_status=None,
+        paid_at=None,
+        refunded_at=None,
+        failure_reason=None,
+        subscription_id=None,
+    ):
+        transaction = self.transactions_by_id[transaction_id]
+        transaction.status = status
+        transaction.provider_status = provider_status
+        if subscription_id is not None:
+            transaction.subscription_id = subscription_id
+        if paid_at is not None:
+            transaction.paid_at = paid_at
+        if refunded_at is not None:
+            transaction.refunded_at = refunded_at
+        transaction.failure_reason = failure_reason
+        self.status_updates.append(
+            (transaction_id, status, provider_status, paid_at, refunded_at)
+        )
+        return transaction
+
+
+def _matched_payment(
+    *,
+    status: str = PaymentStatus.PENDING.value,
+    payment_id: str = "pay_1",
+    order_id: str = "order_1",
+    amount_minor: int = 49000,
+    billing_period: str = "month",
+    subscription_id=None,
+):
+    user_id = uuid4()
+    plan_id = uuid4()
+    transaction = SimpleNamespace(
+        id=uuid4(),
+        user_id=user_id,
+        subscription_id=subscription_id,
+        provider="tbank",
+        provider_payment_id=payment_id,
+        amount_minor=amount_minor,
+        currency="RUB",
+        status=status,
+        provider_status="NEW",
+    )
+    checkout = SimpleNamespace(
+        id=uuid4(),
+        user_id=user_id,
+        plan_id=plan_id,
+        provider="tbank",
+        provider_order_id=order_id,
+        status=CheckoutSessionStatus.CREATED.value,
+    )
+    price = SimpleNamespace(
+        id=uuid4(),
+        plan_id=plan_id,
+        billing_period=billing_period,
+        amount_minor=amount_minor,
+        currency="RUB",
+    )
+    transaction_repo = FakePaymentTransactionRepo()
+    transaction_repo.add_match(transaction, checkout, price)
+    return transaction_repo, transaction, checkout, price
+
+
+class FakeLivePaymentProvider:
+    provider_name = "fake"
+
+    def __init__(self) -> None:
+        self.calls = 0
+
+    async def create_checkout_session(self, request):
+        self.calls += 1
+        return CheckoutSessionResult(
+            provider=self.provider_name,
+            provider_session_id=f"fake_session_{self.calls}",
+            payment_url=f"https://pay.example.com/{self.calls}",
+            provider_order_id=f"order_{self.calls}",
+            status=CheckoutSessionStatus.CREATED.value,
+            can_activate_entitlement=False,
+        )
+
+    async def verify_webhook(self, payload, headers):
+        raise NotImplementedError
 
 
 @pytest.fixture
@@ -390,14 +576,25 @@ def test_subscription_state_machine_rejects_terminal_reactivation():
 @pytest.mark.anyio
 async def test_webhook_service_claims_duplicate_events_without_reprocessing():
     event_repo = FakePaymentEventRepo()
+    transaction_repo, _, _, _ = _matched_payment()
+    checkout_repo = FakeCheckoutRepo()
+    subscription_repo = FakeSubscriptionRepo()
     audit_repo = FakeAuditRepo()
-    service = PaymentWebhookService(event_repo, audit_repo)
+    service = PaymentWebhookService(
+        event_repo,
+        transaction_repo,
+        checkout_repo,
+        subscription_repo,
+        audit_repo,
+    )
     event = ProviderWebhookEvent(
         provider="tbank",
         provider_event_id="evt_1",
         event_type="payment",
         payload_hash="a" * 64,
         provider_payment_id="pay_1",
+        provider_order_id="order_1",
+        amount_minor=49000,
         provider_status="CONFIRMED",
     )
 
@@ -413,14 +610,25 @@ async def test_webhook_service_claims_duplicate_events_without_reprocessing():
 @pytest.mark.anyio
 async def test_webhook_service_flags_duplicate_payload_mismatch():
     event_repo = FakePaymentEventRepo()
+    transaction_repo, _, _, _ = _matched_payment()
+    checkout_repo = FakeCheckoutRepo()
+    subscription_repo = FakeSubscriptionRepo()
     audit_repo = FakeAuditRepo()
-    service = PaymentWebhookService(event_repo, audit_repo)
+    service = PaymentWebhookService(
+        event_repo,
+        transaction_repo,
+        checkout_repo,
+        subscription_repo,
+        audit_repo,
+    )
     original = ProviderWebhookEvent(
         provider="tbank",
         provider_event_id="evt_mismatch",
         event_type="payment",
         payload_hash="a" * 64,
         provider_payment_id="pay_1",
+        provider_order_id="order_1",
+        amount_minor=49000,
         provider_status="CONFIRMED",
     )
     tampered = ProviderWebhookEvent(
@@ -429,6 +637,8 @@ async def test_webhook_service_flags_duplicate_payload_mismatch():
         event_type="payment",
         payload_hash="b" * 64,
         provider_payment_id="pay_1",
+        provider_order_id="order_1",
+        amount_minor=49000,
         provider_status="REFUNDED",
     )
 
@@ -445,8 +655,17 @@ async def test_webhook_service_flags_duplicate_payload_mismatch():
 @pytest.mark.anyio
 async def test_webhook_service_rejects_unverified_event_before_mutation():
     event_repo = FakePaymentEventRepo()
+    transaction_repo = FakePaymentTransactionRepo()
+    checkout_repo = FakeCheckoutRepo()
+    subscription_repo = FakeSubscriptionRepo()
     audit_repo = FakeAuditRepo()
-    service = PaymentWebhookService(event_repo, audit_repo)
+    service = PaymentWebhookService(
+        event_repo,
+        transaction_repo,
+        checkout_repo,
+        subscription_repo,
+        audit_repo,
+    )
 
     with pytest.raises(PaymentProviderDisabledError):
         await service.process_verified_event(
@@ -467,8 +686,17 @@ async def test_webhook_service_rejects_unverified_event_before_mutation():
 @pytest.mark.anyio
 async def test_webhook_service_ignores_unknown_provider_status_fail_closed():
     event_repo = FakePaymentEventRepo()
+    transaction_repo = FakePaymentTransactionRepo()
+    checkout_repo = FakeCheckoutRepo()
+    subscription_repo = FakeSubscriptionRepo()
     audit_repo = FakeAuditRepo()
-    service = PaymentWebhookService(event_repo, audit_repo)
+    service = PaymentWebhookService(
+        event_repo,
+        transaction_repo,
+        checkout_repo,
+        subscription_repo,
+        audit_repo,
+    )
 
     claim = await service.process_verified_event(
         ProviderWebhookEvent(
@@ -487,7 +715,271 @@ async def test_webhook_service_ignores_unknown_provider_status_fail_closed():
 
 
 @pytest.mark.anyio
-async def test_noop_checkout_is_server_priced_and_non_activating(settings):
+async def test_webhook_service_fails_unknown_payment_id():
+    event_repo = FakePaymentEventRepo()
+    transaction_repo = FakePaymentTransactionRepo()
+    checkout_repo = FakeCheckoutRepo()
+    subscription_repo = FakeSubscriptionRepo()
+    audit_repo = FakeAuditRepo()
+    service = PaymentWebhookService(
+        event_repo,
+        transaction_repo,
+        checkout_repo,
+        subscription_repo,
+        audit_repo,
+    )
+
+    claim = await service.process_verified_event(
+        ProviderWebhookEvent(
+            provider="tbank",
+            provider_event_id="evt_unknown_payment",
+            event_type="payment",
+            payload_hash="d" * 64,
+            provider_payment_id="missing",
+            provider_order_id="order_1",
+            amount_minor=49000,
+            provider_status="CONFIRMED",
+        ),
+        signature_verified=True,
+    )
+
+    assert event_repo.failed == [(claim.event_id, "payment_transaction_not_found")]
+    assert audit_repo.events[-1]["action"] == "payment_provider_event_unmatched"
+
+
+@pytest.mark.anyio
+async def test_webhook_service_fails_order_id_mismatch():
+    event_repo = FakePaymentEventRepo()
+    transaction_repo, _, _, _ = _matched_payment()
+    checkout_repo = FakeCheckoutRepo()
+    subscription_repo = FakeSubscriptionRepo()
+    audit_repo = FakeAuditRepo()
+    service = PaymentWebhookService(
+        event_repo,
+        transaction_repo,
+        checkout_repo,
+        subscription_repo,
+        audit_repo,
+    )
+
+    claim = await service.process_verified_event(
+        ProviderWebhookEvent(
+            provider="tbank",
+            provider_event_id="evt_order_mismatch",
+            event_type="payment",
+            payload_hash="e" * 64,
+            provider_payment_id="pay_1",
+            provider_order_id="other_order",
+            amount_minor=49000,
+            provider_status="CONFIRMED",
+        ),
+        signature_verified=True,
+    )
+
+    assert event_repo.failed == [(claim.event_id, "provider_order_id_mismatch")]
+    assert transaction_repo.status_updates == []
+    assert checkout_repo.status_updates == []
+
+
+@pytest.mark.anyio
+async def test_webhook_service_fails_amount_mismatch():
+    event_repo = FakePaymentEventRepo()
+    transaction_repo, _, _, _ = _matched_payment()
+    checkout_repo = FakeCheckoutRepo()
+    subscription_repo = FakeSubscriptionRepo()
+    audit_repo = FakeAuditRepo()
+    service = PaymentWebhookService(
+        event_repo,
+        transaction_repo,
+        checkout_repo,
+        subscription_repo,
+        audit_repo,
+    )
+
+    claim = await service.process_verified_event(
+        ProviderWebhookEvent(
+            provider="tbank",
+            provider_event_id="evt_amount_mismatch",
+            event_type="payment",
+            payload_hash="f" * 64,
+            provider_payment_id="pay_1",
+            provider_order_id="order_1",
+            amount_minor=1,
+            provider_status="CONFIRMED",
+        ),
+        signature_verified=True,
+    )
+
+    assert event_repo.failed == [(claim.event_id, "amount_mismatch")]
+    assert transaction_repo.status_updates == []
+    assert checkout_repo.status_updates == []
+
+
+@pytest.mark.anyio
+async def test_webhook_service_updates_matched_transaction_and_checkout():
+    event_repo = FakePaymentEventRepo()
+    transaction_repo, transaction, checkout, _ = _matched_payment()
+    checkout_repo = FakeCheckoutRepo()
+    subscription_repo = FakeSubscriptionRepo()
+    audit_repo = FakeAuditRepo()
+    service = PaymentWebhookService(
+        event_repo,
+        transaction_repo,
+        checkout_repo,
+        subscription_repo,
+        audit_repo,
+    )
+
+    claim = await service.process_verified_event(
+        ProviderWebhookEvent(
+            provider="tbank",
+            provider_event_id="evt_confirmed",
+            event_type="payment",
+            payload_hash="1" * 64,
+            provider_payment_id="pay_1",
+            provider_order_id="order_1",
+            amount_minor=49000,
+            provider_status="CONFIRMED",
+        ),
+        signature_verified=True,
+    )
+
+    assert event_repo.processed == [claim.event_id]
+    assert transaction.status == PaymentStatus.SUCCEEDED.value
+    assert transaction.paid_at is not None
+    assert transaction.subscription_id == subscription_repo.created[0].id
+    assert subscription_repo.created[0].status == "active"
+    assert checkout_repo.status_updates[0][0] == checkout.id
+    assert checkout_repo.status_updates[0][1] == CheckoutSessionStatus.COMPLETED.value
+    assert audit_repo.events[-1]["action"] == "payment_transaction_status_updated"
+
+
+@pytest.mark.anyio
+async def test_webhook_service_extends_existing_active_subscription():
+    event_repo = FakePaymentEventRepo()
+    transaction_repo, transaction, _, _ = _matched_payment(billing_period="week")
+    checkout_repo = FakeCheckoutRepo()
+    now = datetime.now(timezone.utc)
+    current_start = now - timedelta(days=5)
+    current_end = now + timedelta(days=2)
+    subscription = SimpleNamespace(
+        id=uuid4(),
+        user_id=transaction.user_id,
+        plan_id=uuid4(),
+        provider="tbank",
+        status="active",
+        current_period_start=current_start,
+        current_period_end=current_end,
+    )
+    subscription_repo = FakeSubscriptionRepo(subscription)
+    audit_repo = FakeAuditRepo()
+    service = PaymentWebhookService(
+        event_repo,
+        transaction_repo,
+        checkout_repo,
+        subscription_repo,
+        audit_repo,
+    )
+
+    await service.process_verified_event(
+        ProviderWebhookEvent(
+            provider="tbank",
+            provider_event_id="evt_extend",
+            event_type="payment",
+            payload_hash="3" * 64,
+            provider_payment_id="pay_1",
+            provider_order_id="order_1",
+            amount_minor=49000,
+            provider_status="CONFIRMED",
+        ),
+        signature_verified=True,
+    )
+
+    assert subscription_repo.created == []
+    assert subscription_repo.updated[0][0] == subscription.id
+    assert subscription.current_period_start == current_start
+    assert subscription.current_period_end == current_end + timedelta(days=7)
+    assert transaction.subscription_id == subscription.id
+    assert any(event["action"] == "subscription_extended" for event in audit_repo.events)
+
+
+@pytest.mark.anyio
+async def test_webhook_service_does_not_extend_transaction_already_linked_to_subscription():
+    existing_subscription_id = uuid4()
+    event_repo = FakePaymentEventRepo()
+    transaction_repo, transaction, _, _ = _matched_payment(
+        subscription_id=existing_subscription_id,
+    )
+    checkout_repo = FakeCheckoutRepo()
+    subscription_repo = FakeSubscriptionRepo()
+    audit_repo = FakeAuditRepo()
+    service = PaymentWebhookService(
+        event_repo,
+        transaction_repo,
+        checkout_repo,
+        subscription_repo,
+        audit_repo,
+    )
+
+    await service.process_verified_event(
+        ProviderWebhookEvent(
+            provider="tbank",
+            provider_event_id="evt_already_linked",
+            event_type="payment",
+            payload_hash="4" * 64,
+            provider_payment_id="pay_1",
+            provider_order_id="order_1",
+            amount_minor=49000,
+            provider_status="CONFIRMED",
+        ),
+        signature_verified=True,
+    )
+
+    assert transaction.subscription_id == existing_subscription_id
+    assert subscription_repo.lock_calls == 0
+    assert subscription_repo.created == []
+    assert subscription_repo.updated == []
+
+
+@pytest.mark.anyio
+async def test_webhook_service_ignores_out_of_order_status_after_success():
+    event_repo = FakePaymentEventRepo()
+    transaction_repo, transaction, _, _ = _matched_payment(
+        status=PaymentStatus.SUCCEEDED.value,
+    )
+    checkout_repo = FakeCheckoutRepo()
+    subscription_repo = FakeSubscriptionRepo()
+    audit_repo = FakeAuditRepo()
+    service = PaymentWebhookService(
+        event_repo,
+        transaction_repo,
+        checkout_repo,
+        subscription_repo,
+        audit_repo,
+    )
+
+    claim = await service.process_verified_event(
+        ProviderWebhookEvent(
+            provider="tbank",
+            provider_event_id="evt_stale_authorized",
+            event_type="payment",
+            payload_hash="2" * 64,
+            provider_payment_id="pay_1",
+            provider_order_id="order_1",
+            amount_minor=49000,
+            provider_status="AUTHORIZED",
+        ),
+        signature_verified=True,
+    )
+
+    assert event_repo.ignored == [(claim.event_id, "stale_provider_status")]
+    assert transaction.status == PaymentStatus.SUCCEEDED.value
+    assert transaction_repo.status_updates == []
+    assert checkout_repo.status_updates == []
+
+
+@pytest.mark.anyio
+async def test_noop_checkout_fails_closed_without_creating_session(settings):
     plan_repo = FakePlanRepo()
     checkout_repo = FakeCheckoutRepo()
     billing = BillingService(
@@ -496,17 +988,99 @@ async def test_noop_checkout_is_server_priced_and_non_activating(settings):
         usage_repo=FakeUsageRepo(),
         entitlement_service=EntitlementService(FakeSubscriptionRepo(), settings),
         checkout_repo=checkout_repo,
+        payment_transaction_repo=FakePaymentTransactionRepo(),
         payment_provider=NoopPaymentProvider(),
+        settings=SimpleNamespace(frontend_url="https://example.com"),
+    )
+
+    with pytest.raises(PaymentProviderDisabledError):
+        await billing.create_checkout_session(uuid4(), "basic")
+
+    assert checkout_repo.created == []
+
+
+@pytest.mark.anyio
+async def test_checkout_unknown_plan_raises_before_provider_call(settings):
+    checkout_repo = FakeCheckoutRepo()
+    billing = BillingService(
+        plan_repo=FakePlanRepo(),
+        subscription_repo=FakeSubscriptionRepo(),
+        usage_repo=FakeUsageRepo(),
+        entitlement_service=EntitlementService(FakeSubscriptionRepo(), settings),
+        checkout_repo=checkout_repo,
+        payment_transaction_repo=FakePaymentTransactionRepo(),
+        payment_provider=NoopPaymentProvider(),
+        settings=SimpleNamespace(frontend_url="https://example.com"),
+    )
+
+    with pytest.raises(ValueError, match="Unknown or inactive billing plan"):
+        await billing.create_checkout_session(uuid4(), "missing")
+
+    assert checkout_repo.created == []
+
+
+@pytest.mark.anyio
+async def test_checkout_persists_provider_order_url_and_idempotency(settings):
+    checkout_repo = FakeCheckoutRepo()
+    transaction_repo = FakePaymentTransactionRepo()
+    provider = FakeLivePaymentProvider()
+    billing = BillingService(
+        plan_repo=FakePlanRepo(),
+        subscription_repo=FakeSubscriptionRepo(),
+        usage_repo=FakeUsageRepo(),
+        entitlement_service=EntitlementService(FakeSubscriptionRepo(), settings),
+        checkout_repo=checkout_repo,
+        payment_transaction_repo=transaction_repo,
+        payment_provider=provider,
+        settings=SimpleNamespace(frontend_url="https://example.com"),
+    )
+
+    result = await billing.create_checkout_session(
+        uuid4(),
+        "basic",
+        idempotency_key="checkout-key-1",
+    )
+
+    assert result.provider_order_id == "order_1"
+    assert checkout_repo.created[0]["provider_order_id"] == "order_1"
+    assert checkout_repo.created[0]["payment_url"] == "https://pay.example.com/1"
+    assert checkout_repo.created[0]["idempotency_key"] == "checkout-key-1"
+    assert transaction_repo.created[0].provider_payment_id == "fake_session_1"
+    assert transaction_repo.created[0].amount_minor == 49000
+    assert transaction_repo.created[0].currency == "RUB"
+    assert transaction_repo.created[0].status == PaymentStatus.PENDING.value
+
+
+@pytest.mark.anyio
+async def test_checkout_reuses_active_session_without_provider_call(settings):
+    checkout_repo = FakeCheckoutRepo()
+    checkout_repo.reusable = SimpleNamespace(
+        provider="fake",
+        provider_session_id="existing_session",
+        provider_order_id="existing_order",
+        payment_url="https://pay.example.com/existing",
+        status=CheckoutSessionStatus.CREATED.value,
+        expires_at=None,
+    )
+    provider = FakeLivePaymentProvider()
+    billing = BillingService(
+        plan_repo=FakePlanRepo(),
+        subscription_repo=FakeSubscriptionRepo(),
+        usage_repo=FakeUsageRepo(),
+        entitlement_service=EntitlementService(FakeSubscriptionRepo(), settings),
+        checkout_repo=checkout_repo,
+        payment_transaction_repo=FakePaymentTransactionRepo(),
+        payment_provider=provider,
         settings=SimpleNamespace(frontend_url="https://example.com"),
     )
 
     result = await billing.create_checkout_session(uuid4(), "basic")
 
-    assert result.can_activate_entitlement is False
-    assert result.payment_url is None
-    assert result.status == CheckoutSessionStatus.CREATED.value
-    assert checkout_repo.created[0]["success_url"] == "https://example.com/billing/success"
-    assert checkout_repo.created[0]["cancel_url"] == "https://example.com/billing/cancel"
+    assert result.provider_session_id == "existing_session"
+    assert result.provider_order_id == "existing_order"
+    assert result.payment_url == "https://pay.example.com/existing"
+    assert provider.calls == 0
+    assert checkout_repo.created == []
 
 
 def test_production_requires_explicit_flag_for_temporary_huge_free_quota():
