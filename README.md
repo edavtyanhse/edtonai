@@ -141,8 +141,27 @@ pytest
 backend-образа. Если миграция БД не проходит, выкладка останавливается, чтобы
 новый код не запускался поверх старой схемы.
 
+### Деплой из локального `.env`
+
+`cloudbuild.yaml` берет runtime-настройки из Cloud Build substitutions. Для
+ручного деплоя с актуальными значениями из локального `.env`:
+
+```bash
+scripts/submit_cloudbuild_from_env.sh .env
+```
+
+Скрипт читает поддерживаемые ключи из `.env`, передает их как `_KEY`
+substitutions и запускает `gcloud builds submit`.
+
+Важно: этот режим не коммитит `.env`, но секреты все равно попадают в Cloud
+Build substitutions/build metadata. Для production секреты нужно перенести в
+Secret Manager и подключать Cloud Run через `--set-secrets`.
+
 **Требования к Cloud Build Trigger:**
-Необходимо прописать Substitution variables (начинаются с `_`) в настройках триггера, соответствующие переменным из `.env` (например, `_GROQ_API_KEY`, `_DATABASE_URL` и т.д.).
+Если используется автоматический GitHub trigger, в нем нужно поддерживать
+Substitution variables (начинаются с `_`) синхронными с `.env`, либо перейти на
+Secret Manager для секретов и оставить substitutions только для non-secret
+конфигурации.
 
 ---
 
