@@ -181,6 +181,7 @@ def _create_payment_provider(settings: Settings):
             terminal_key=settings.tbank_terminal_key,
             password=settings.tbank_password,
             backend_url=settings.backend_url,
+            notification_url=settings.tbank_notification_url or None,
         )
     return NoopPaymentProvider()
 

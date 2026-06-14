@@ -46,12 +46,14 @@ class TBankPaymentProvider:
         terminal_key: str,
         password: SecretStr | str | None,
         backend_url: str,
+        notification_url: str | None = None,
         base_url: str = TBANK_API_BASE_URL,
         timeout_seconds: float = 15.0,
     ) -> None:
         self._terminal_key = terminal_key.strip()
         self._password = _secret_value(password)
         self._backend_url = backend_url.rstrip("/")
+        self._notification_url = (notification_url or "").strip()
         self._base_url = base_url.rstrip("/")
         self._timeout_seconds = timeout_seconds
         if not self._terminal_key or not self._password:
@@ -75,7 +77,8 @@ class TBankPaymentProvider:
             "Description": _checkout_description(request.plan_code),
             "SuccessURL": request.success_url,
             "FailURL": request.cancel_url,
-            "NotificationURL": f"{self._backend_url}/v1/billing/webhooks/tbank",
+            "NotificationURL": self._notification_url
+            or f"{self._backend_url}/v1/billing/webhooks/tbank",
         }
         payload["Token"] = _build_tbank_token(payload, self._password)
 

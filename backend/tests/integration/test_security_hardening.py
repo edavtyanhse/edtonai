@@ -252,8 +252,8 @@ def test_production_rejects_weak_jwt_secret(monkeypatch):
 
 def test_enabled_tbank_provider_requires_backend_secrets(monkeypatch):
     monkeypatch.setenv("PAYMENT_PROVIDER", "tbank")
-    monkeypatch.delenv("TBANK_TERMINAL_KEY", raising=False)
-    monkeypatch.delenv("TBANK_PASSWORD", raising=False)
+    monkeypatch.setenv("TBANK_TERMINAL_KEY", "")
+    monkeypatch.setenv("TBANK_PASSWORD", "")
 
     with pytest.raises(ValueError, match="T-Bank payments require"):
         Settings()
@@ -285,6 +285,13 @@ def test_enabled_tbank_provider_accepts_terminal_key_and_password(monkeypatch):
     settings = Settings()
 
     assert settings.payment_provider == "tbank"
+
+
+def test_tbank_notification_url_requires_https(monkeypatch):
+    monkeypatch.setenv("TBANK_NOTIFICATION_URL", "http://example.com/webhook")
+
+    with pytest.raises(ValueError, match="TBANK_NOTIFICATION_URL"):
+        Settings()
 
 
 def test_rate_limit_ip_ignores_untrusted_forwarded_for():

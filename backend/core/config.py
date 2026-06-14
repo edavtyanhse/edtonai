@@ -145,6 +145,7 @@ class Settings(BaseSettings):
     tbank_public_key: str = ""
     tbank_password: SecretStr | None = None
     tbank_webhook_secret: SecretStr | None = None
+    tbank_notification_url: str = ""
 
     # SMTP (email sending)
     smtp_host: str = "smtp.yandex.ru"
@@ -215,6 +216,10 @@ class Settings(BaseSettings):
             raise ValueError(
                 "T-Bank payments require TBANK_TERMINAL_KEY and TBANK_PASSWORD"
             )
+        if self.tbank_notification_url and not self.tbank_notification_url.startswith(
+            "https://"
+        ):
+            raise ValueError("TBANK_NOTIFICATION_URL must use https://")
         if self.scraper_timeout_seconds <= 0:
             raise ValueError("SCRAPER_TIMEOUT_SECONDS must be positive")
         if self.scraper_max_html_bytes <= 0:
