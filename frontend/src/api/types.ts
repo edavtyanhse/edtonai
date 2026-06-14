@@ -25,6 +25,70 @@ export interface LimitsResponse {
 }
 
 // ========================================
+// Billing & Subscription
+// ========================================
+
+export interface BillingPrice {
+  provider: string
+  amount_minor: number
+  currency: string
+  billing_period: string
+}
+
+export interface PlanEntitlement {
+  feature_code: string
+  limit_value?: number | null
+  reset_period?: string | null
+}
+
+export interface BillingPlan {
+  code: string
+  title: string
+  description?: string | null
+  billing_period: string
+  trial_days: number
+  prices: BillingPrice[]
+  entitlements: PlanEntitlement[]
+}
+
+export interface BillingPlanListResponse {
+  items: BillingPlan[]
+}
+
+export interface CurrentSubscription {
+  status: string
+  plan_code?: string | null
+  trial_end?: string | null
+  current_period_end?: string | null
+  cancel_at_period_end: boolean
+}
+
+export interface UsageFeature {
+  feature_code: string
+  used: number
+  limit_value?: number | null
+  remaining?: number | null
+  period_start: string
+  period_end: string
+}
+
+export interface BillingAccountResponse {
+  subscription?: CurrentSubscription | null
+  usage: UsageFeature[]
+}
+
+export interface CreateCheckoutSessionRequest {
+  plan_code: string
+  idempotency_key?: string
+}
+
+export interface CheckoutSessionResponse {
+  provider: string
+  status: string
+  payment_url?: string | null
+}
+
+// ========================================
 // Parsed Resume & Vacancy (NEW for Wizard)
 // ========================================
 

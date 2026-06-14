@@ -28,6 +28,7 @@ const Header: React.FC<HeaderProps> = ({ lang, toggleLang }) => {
       login: 'Log In',
       getStarted: 'Get Started',
       history: 'History',
+      subscription: 'Subscription',
       logout: 'Log Out',
     },
     ru: {
@@ -36,6 +37,7 @@ const Header: React.FC<HeaderProps> = ({ lang, toggleLang }) => {
       login: 'Войти',
       getStarted: 'Начать',
       history: 'История версий',
+      subscription: 'Подписка',
       logout: 'Выйти',
     },
   }
@@ -100,6 +102,12 @@ const Header: React.FC<HeaderProps> = ({ lang, toggleLang }) => {
                 className="bg-app-accent hover:bg-app-accent-hover text-white px-5 py-2.5 rounded-lg text-sm font-bold transition-colors"
               >
                 {t.history}
+              </Link>
+              <Link
+                to="/billing"
+                className="bg-app-surface text-app-text px-5 py-2.5 rounded-lg border border-app-border text-sm font-bold transition-colors hover:bg-app-surface-muted"
+              >
+                {t.subscription}
               </Link>
             </>
           ) : (
@@ -166,6 +174,13 @@ const Header: React.FC<HeaderProps> = ({ lang, toggleLang }) => {
                   className="bg-app-accent text-white text-center py-3 rounded-lg font-bold flex items-center justify-center gap-2"
                 >
                   <UserIcon className="w-4 h-4" /> {t.history}
+                </Link>
+                <Link
+                  to="/billing"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="bg-app-surface text-app-text text-center py-3 rounded-lg border border-app-border font-bold"
+                >
+                  {t.subscription}
                 </Link>
                 <button
                   onClick={handleLogout}

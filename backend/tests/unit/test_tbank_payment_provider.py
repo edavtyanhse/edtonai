@@ -95,6 +95,53 @@ async def test_tbank_checkout_uses_server_controlled_payload(monkeypatch):
 
 
 @pytest.mark.anyio
+async def test_tbank_checkout_rejects_unexpected_payment_url(monkeypatch):
+    class MockAsyncClient:
+        def __init__(self, timeout):
+            self.timeout = timeout
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, exc_type, exc, tb):
+            return None
+
+        async def post(self, url, json):
+            return httpx.Response(
+                200,
+                json={
+                    "Success": True,
+                    "Status": "NEW",
+                    "PaymentId": "123456789",
+                    "PaymentURL": "https://payments.example.net/new/123456789",
+                },
+                request=httpx.Request("POST", url),
+            )
+
+    monkeypatch.setattr(
+        "backend.integration.payments.tbank.httpx.AsyncClient",
+        MockAsyncClient,
+    )
+    provider = TBankPaymentProvider(
+        terminal_key="terminal-test",
+        password=SecretStr("password-test"),
+        backend_url="https://api.example.com",
+    )
+
+    with pytest.raises(Exception, match="unexpected payment URL"):
+        await provider.create_checkout_session(
+            CheckoutSessionRequest(
+                user_id=uuid4(),
+                plan_code="basic",
+                amount_minor=49000,
+                currency="RUB",
+                success_url="https://app.example.com/billing/success",
+                cancel_url="https://app.example.com/billing/cancel",
+            )
+        )
+
+
+@pytest.mark.anyio
 async def test_tbank_webhook_verifies_token_and_sanitizes_event():
     provider = TBankPaymentProvider(
         terminal_key="terminal-test",

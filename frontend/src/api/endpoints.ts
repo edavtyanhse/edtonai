@@ -21,6 +21,10 @@ import type {
   VacancyParseResponse,
   VacancyDetailResponse,
   VacancyPatchRequest,
+  BillingPlanListResponse,
+  BillingAccountResponse,
+  CheckoutSessionResponse,
+  CreateCheckoutSessionRequest,
 } from './types'
 
 // Health & Limits
@@ -30,6 +34,22 @@ export async function getHealth(signal?: AbortSignal): Promise<HealthResponse> {
 
 export async function getLimits(signal?: AbortSignal): Promise<LimitsResponse> {
   return apiClient.get<LimitsResponse>('/v1/limits', { signal })
+}
+
+// Billing & Subscription
+export async function getBillingPlans(signal?: AbortSignal): Promise<BillingPlanListResponse> {
+  return apiClient.get<BillingPlanListResponse>('/v1/billing/plans', { signal })
+}
+
+export async function getBillingAccount(signal?: AbortSignal): Promise<BillingAccountResponse> {
+  return apiClient.get<BillingAccountResponse>('/v1/billing/me', { signal })
+}
+
+export async function createCheckoutSession(
+  data: CreateCheckoutSessionRequest,
+  signal?: AbortSignal
+): Promise<CheckoutSessionResponse> {
+  return apiClient.post<CheckoutSessionResponse>('/v1/billing/checkout', data, { signal })
 }
 
 // ========================================

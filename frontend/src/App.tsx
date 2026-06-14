@@ -8,6 +8,9 @@ import {
   IdealResumePage,
   LoginPage,
   RegisterPage,
+  BillingPage,
+  BillingSuccessPage,
+  BillingCancelPage,
 } from './pages'
 import VerifyEmailPage from './pages/auth/VerifyEmailPage'
 import OAuthCallbackPage from './pages/auth/OAuthCallbackPage'
@@ -68,6 +71,30 @@ function App() {
             element={
               <RequireAuth>
                 <Compare />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="billing"
+            element={
+              <RequireAuth>
+                <BillingPage />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="billing/success"
+            element={
+              <RequireAuth>
+                <BillingSuccessPage />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="billing/cancel"
+            element={
+              <RequireAuth>
+                <BillingCancelPage />
               </RequireAuth>
             }
           />

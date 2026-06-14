@@ -7,7 +7,7 @@ import hmac
 import json
 from datetime import datetime
 from typing import Any
-from urllib.parse import parse_qsl
+from urllib.parse import parse_qsl, urlparse
 from uuid import uuid4
 
 import httpx
@@ -26,6 +26,12 @@ from backend.integration.payments.base import (
 )
 
 TBANK_API_BASE_URL = "https://securepay.tinkoff.ru/v2"
+TBANK_PAYMENT_URL_HOSTS = frozenset(
+    {
+        "securepay.tinkoff.ru",
+        "securepay.tbank.ru",
+    }
+)
 
 
 class TBankPaymentProvider:
@@ -91,6 +97,8 @@ class TBankPaymentProvider:
         payment_url = _optional_str(data.get("PaymentURL"))
         if not provider_payment_id or not payment_url:
             raise PaymentProviderError("T-Bank checkout response is incomplete")
+        if not _is_allowed_payment_url(payment_url):
+            raise PaymentProviderError("T-Bank checkout response has unexpected payment URL")
 
         return CheckoutSessionResult(
             provider=self.provider_name,
@@ -185,6 +193,11 @@ def _tbank_token_value(value: Any) -> str:
 
 def _checkout_description(plan_code: str) -> str:
     return f"EdTon.ai subscription: {plan_code}"[:140]
+
+
+def _is_allowed_payment_url(payment_url: str) -> bool:
+    parsed = urlparse(payment_url)
+    return parsed.scheme == "https" and parsed.hostname in TBANK_PAYMENT_URL_HOSTS
 
 
 def _optional_str(value: Any) -> str | None:

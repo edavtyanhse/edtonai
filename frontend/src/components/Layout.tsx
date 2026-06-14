@@ -1,5 +1,5 @@
 import { NavLink, Outlet } from 'react-router-dom'
-import { History, GitCompare } from 'lucide-react'
+import { CreditCard, History, GitCompare } from 'lucide-react'
 import LanguageSwitcher from './LanguageSwitcher'
 import ThemeSwitcher from './ThemeSwitcher'
 
@@ -47,6 +47,20 @@ export default function Layout() {
               >
                 <GitCompare className="w-4 h-4" />
                 Compare
+              </NavLink>
+
+              <NavLink
+                to="/billing"
+                className={({ isActive }) =>
+                  `flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    isActive
+                      ? 'bg-app-accent-soft/60 text-app-accent border border-app-accent/20'
+                      : 'text-app-text-muted hover:text-app-text hover:bg-app-surface-muted'
+                  }`
+                }
+              >
+                <CreditCard className="w-4 h-4" />
+                Подписка
               </NavLink>
             </nav>
           </div>
