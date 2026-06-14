@@ -53,7 +53,7 @@ async def test_tbank_checkout_uses_server_controlled_payload(monkeypatch):
                     "Success": True,
                     "Status": "NEW",
                     "PaymentId": "123456789",
-                    "PaymentURL": "https://securepay.tinkoff.ru/new/123456789",
+                    "PaymentURL": "https://pay.tbank.ru/new/123456789",
                 },
                 request=httpx.Request("POST", url),
             )

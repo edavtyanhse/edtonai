@@ -28,6 +28,7 @@ from backend.integration.payments.base import (
 TBANK_API_BASE_URL = "https://securepay.tinkoff.ru/v2"
 TBANK_PAYMENT_URL_HOSTS = frozenset(
     {
+        "pay.tbank.ru",
         "securepay.tinkoff.ru",
         "securepay.tbank.ru",
     }
